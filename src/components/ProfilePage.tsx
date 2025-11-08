@@ -4,7 +4,9 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { PlaylistCard } from './PlaylistCard';
+import { AccountSettings } from './AccountSettings';
 import { Edit2, Check, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 
 interface ProfilePageProps {
   user: User;
@@ -129,25 +131,60 @@ export function ProfilePage({
 
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
-          <h2 className="mb-6">Playlists</h2>
-          {userPlaylists.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {userPlaylists.map((playlist) => (
-                <PlaylistCard
-                  key={playlist.id}
-                  playlist={playlist}
-                  user={user}
-                  onPlaylistClick={onPlaylistClick}
-                  onUserClick={onUserClick}
-                  currentUserId={currentUserId}
-                  onLike={onLike}
-                />
-              ))}
-            </div>
+          {isOwnProfile ? (
+            <Tabs defaultValue="playlists" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="playlists">Playlists</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+              <TabsContent value="playlists">
+                {userPlaylists.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {userPlaylists.map((playlist) => (
+                      <PlaylistCard
+                        key={playlist.id}
+                        playlist={playlist}
+                        user={user}
+                        onPlaylistClick={onPlaylistClick}
+                        onUserClick={onUserClick}
+                        currentUserId={currentUserId}
+                        onLike={onLike}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-900 rounded-lg p-12 text-center">
+                    <p className="text-gray-400">No playlists yet</p>
+                  </div>
+                )}
+              </TabsContent>
+              <TabsContent value="settings">
+                <AccountSettings />
+              </TabsContent>
+            </Tabs>
           ) : (
-            <div className="bg-gray-900 rounded-lg p-12 text-center">
-              <p className="text-gray-400">No playlists yet</p>
-            </div>
+            <>
+              <h2 className="mb-6">Playlists</h2>
+              {userPlaylists.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {userPlaylists.map((playlist) => (
+                    <PlaylistCard
+                      key={playlist.id}
+                      playlist={playlist}
+                      user={user}
+                      onPlaylistClick={onPlaylistClick}
+                      onUserClick={onUserClick}
+                      currentUserId={currentUserId}
+                      onLike={onLike}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-900 rounded-lg p-12 text-center">
+                  <p className="text-gray-400">No playlists yet</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

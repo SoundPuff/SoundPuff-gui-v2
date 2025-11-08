@@ -1,5 +1,6 @@
 import { Home, Search, Library, Plus, User, LogOut, Music } from 'lucide-react';
 import { Button } from './ui/button';
+import { ThemeToggle } from './ThemeToggle.tsx';
 
 interface SidebarProps {
   currentPage: string;
@@ -16,10 +17,13 @@ export function Sidebar({ currentPage, onNavigate, onLogout, currentUser }: Side
   ];
 
   return (
-    <div className="w-64 bg-black text-white h-screen flex flex-col p-6">
-      <div className="mb-8 flex items-center gap-2">
-        <Music className="w-8 h-8 text-green-500" />
-        <h1 className="text-green-500">SoundPuff</h1>
+    <div className="w-64 bg-black dark:bg-gray-900 text-white h-screen flex flex-col p-6">
+      <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Music className="w-8 h-8 text-green-500" />
+          <h1 className="text-green-500">SoundPuff</h1>
+        </div>
+        <ThemeToggle />
       </div>
 
       <nav className="flex-1">

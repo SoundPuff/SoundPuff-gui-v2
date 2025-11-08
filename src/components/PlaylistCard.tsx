@@ -7,8 +7,9 @@ interface PlaylistCardProps {
   user: User;
   onPlaylistClick: (playlistId: string) => void;
   onUserClick: (userId: string) => void;
-  currentUserId: string;
+  currentUserId: string | null;
   onLike: (playlistId: string) => void;
+  isGuestMode?: boolean;
 }
 
 export function PlaylistCard({
@@ -18,8 +19,9 @@ export function PlaylistCard({
   onUserClick,
   currentUserId,
   onLike,
+  isGuestMode = false,
 }: PlaylistCardProps) {
-  const isLiked = playlist.likes.includes(currentUserId);
+  const isLiked = currentUserId ? playlist.likes.includes(currentUserId) : false;
 
   return (
     <div className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors group">
@@ -68,9 +70,12 @@ export function PlaylistCard({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onLike(playlist.id);
+            if (!isGuestMode) onLike(playlist.id);
           }}
-          className="flex items-center gap-1 text-gray-400 hover:text-white transition-colors"
+          disabled={isGuestMode}
+          className={`flex items-center gap-1 text-gray-400 hover:text-white transition-colors ${
+            isGuestMode ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
         >
           <Heart className={`w-5 h-5 ${isLiked ? 'fill-green-500 text-green-500' : ''}`} />
           <span className="text-sm">{playlist.likes.length}</span>

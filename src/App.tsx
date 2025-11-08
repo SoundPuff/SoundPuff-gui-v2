@@ -8,55 +8,63 @@ import { PlaylistPage } from './components/PlaylistPage';
 import { CreatePlaylistPage } from './components/CreatePlaylistPage';
 import { LibraryPage } from './components/LibraryPage';
 import { MusicPlayer } from './components/MusicPlayer';
+import { ThemeProvider } from './components/ThemeProvider';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ChatBot } from './components/ChatBot';
+import { GuestLandingPage } from './components/GuestLandingPage';
 import { mockUsers, mockPlaylists, mockComments, mockSongs } from './data/mockData';
 import { User, Playlist, Comment, Song } from './types';
 
-export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+// Main app content component
+function AppContent() {
+  const { user, isAuthenticated, isGuest, isLoading, updateUser, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [editingPlaylistId, setEditingPlaylistId] = useState<string | null>(null);
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [showAuthPage, setShowAuthPage] = useState(false);
 
-  // Mock data state
+  // Mock data state (for development - replace with API calls)
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [playlists, setPlaylists] = useState<Playlist[]>(mockPlaylists);
   const [comments, setComments] = useState<Comment[]>(mockComments);
 
-  const handleLogin = (username: string, password: string) => {
-    // Mock login - find user by username
-    const user = users.find((u) => u.username === username);
-    if (user) {
-      setCurrentUserId(user.id);
-      setIsAuthenticated(true);
+  const handleLogin = async (username: string, password: string) => {
+    // TODO: Replace with actual API call when backend is ready
+    // For now, use mock data
+    const mockUser = users.find((u) => u.username === username);
+    if (mockUser) {
+      // Set user in auth context
+      updateUser(mockUser);
+      setShowAuthPage(false);
     } else {
-      alert('User not found. Try "musiclover99"');
+      throw new Error('User not found');
     }
   };
 
-  const handleSignup = (username: string, email: string, password: string) => {
-    // Mock signup - create new user
+  const handleSignup = async (username: string, email: string, password: string) => {
+    // TODO: Replace with actual API call when backend is ready
+    // Create mock user
     const newUser: User = {
       id: `u${users.length + 1}`,
       username,
       email,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBwb3J0cmFpdHxlbnwxfHx8fDE3NjEzNjk0ODh8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
       bio: 'New to SoundPuff!',
       followers: [],
       following: [],
       createdAt: new Date().toISOString().split('T')[0],
     };
     setUsers([...users, newUser]);
-    setCurrentUserId(newUser.id);
-    setIsAuthenticated(true);
+    updateUser(newUser);
+    setShowAuthPage(false);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setCurrentUserId(null);
+  const handleLogout = async () => {
+    await logout();
     setCurrentPage('home');
+    setShowAuthPage(false);
   };
 
   const handleNavigate = (page: string) => {
@@ -73,7 +81,6 @@ export default function App() {
 
   const handleUserClick = (userId: string) => {
     if (!userId) {
-      // Navigate to search to discover users
       setCurrentPage('search');
       return;
     }
@@ -82,16 +89,17 @@ export default function App() {
   };
 
   const handleLike = (playlistId: string) => {
-    if (!currentUserId) return;
+    if (!user?.id) return;
+    // TODO: Replace with API call - playlistAPI.likePlaylist / unlikePlaylist
     setPlaylists((prev) =>
       prev.map((p) => {
         if (p.id === playlistId) {
-          const isLiked = p.likes.includes(currentUserId);
+          const isLiked = p.likes.includes(user.id);
           return {
             ...p,
             likes: isLiked
-              ? p.likes.filter((id) => id !== currentUserId)
-              : [...p.likes, currentUserId],
+              ? p.likes.filter((id) => id !== user.id)
+              : [...p.likes, user.id],
           };
         }
         return p;
@@ -100,10 +108,11 @@ export default function App() {
   };
 
   const handleFollow = (userId: string) => {
-    if (!currentUserId) return;
+    if (!user?.id) return;
+    // TODO: Replace with API call - userAPI.followUser / unfollowUser
     setUsers((prev) =>
       prev.map((u) => {
-        if (u.id === currentUserId) {
+        if (u.id === user.id) {
           const isFollowing = u.following.includes(userId);
           return {
             ...u,
@@ -113,12 +122,12 @@ export default function App() {
           };
         }
         if (u.id === userId) {
-          const isFollowed = u.followers.includes(currentUserId);
+          const isFollowed = u.followers.includes(user.id);
           return {
             ...u,
             followers: isFollowed
-              ? u.followers.filter((id) => id !== currentUserId)
-              : [...u.followers, currentUserId],
+              ? u.followers.filter((id) => id !== user.id)
+              : [...u.followers, user.id],
           };
         }
         return u;
@@ -127,16 +136,17 @@ export default function App() {
   };
 
   const handleComment = (playlistId: string, text: string) => {
-    if (!currentUserId) return;
-    const user = users.find((u) => u.id === currentUserId);
-    if (!user) return;
+    if (!user?.id) return;
+    // TODO: Replace with API call - commentAPI.addComment
+    const currentUser = users.find((u) => u.id === user.id);
+    if (!currentUser) return;
 
     const newComment: Comment = {
       id: `c${comments.length + 1}`,
       playlistId,
-      userId: currentUserId,
-      username: user.username,
-      avatar: user.avatar,
+      userId: user.id,
+      username: currentUser.username,
+      avatar: currentUser.avatar,
       text,
       createdAt: new Date().toISOString(),
     };
@@ -144,10 +154,13 @@ export default function App() {
   };
 
   const handleUpdateProfile = (bio: string, avatar: string) => {
-    if (!currentUserId) return;
+    if (!user?.id) return;
+    // TODO: Replace with API call - userAPI.updateProfile
+    const updatedUser = { ...user, bio, avatar };
     setUsers((prev) =>
-      prev.map((u) => (u.id === currentUserId ? { ...u, bio, avatar } : u))
+      prev.map((u) => (u.id === user.id ? updatedUser : u))
     );
+    updateUser(updatedUser);
   };
 
   const handleSavePlaylist = (
@@ -156,10 +169,10 @@ export default function App() {
     selectedSongs: Song[],
     coverArt: string
   ) => {
-    if (!currentUserId) return;
+    if (!user?.id) return;
 
     if (editingPlaylistId) {
-      // Edit existing playlist
+      // TODO: Replace with API call - playlistAPI.updatePlaylist
       setPlaylists((prev) =>
         prev.map((p) =>
           p.id === editingPlaylistId
@@ -169,13 +182,13 @@ export default function App() {
       );
       setEditingPlaylistId(null);
     } else {
-      // Create new playlist
+      // TODO: Replace with API call - playlistAPI.createPlaylist
       const newPlaylist: Playlist = {
         id: `p${playlists.length + 1}`,
         title,
         description,
         songs: selectedSongs,
-        userId: currentUserId,
+        userId: user.id,
         likes: [],
         createdAt: new Date().toISOString().split('T')[0],
         coverArt: coverArt || selectedSongs[0]?.coverArt,
@@ -188,6 +201,7 @@ export default function App() {
   const handleDeletePlaylist = () => {
     if (!selectedPlaylistId) return;
     if (confirm('Are you sure you want to delete this playlist?')) {
+      // TODO: Replace with API call - playlistAPI.deletePlaylist
       setPlaylists((prev) => prev.filter((p) => p.id !== selectedPlaylistId));
       setCurrentPage('library');
     }
@@ -199,11 +213,33 @@ export default function App() {
     setCurrentPage('edit-playlist');
   };
 
-  if (!isAuthenticated) {
-    return <AuthPage onLogin={handleLogin} onSignup={handleSignup} />;
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
   }
 
-  const currentUser = users.find((u) => u.id === currentUserId);
+  // Show guest landing page for non-authenticated users
+  if (isGuest && !showAuthPage) {
+    return <GuestLandingPage onShowAuth={() => setShowAuthPage(true)} />;
+  }
+
+  // Show auth page when guest clicks sign up/login
+  if (isGuest && showAuthPage) {
+    return (
+      <AuthPage
+        onLogin={handleLogin}
+        onSignup={handleSignup}
+        onBackToGuest={() => setShowAuthPage(false)}
+      />
+    );
+  }
+
+  // Get current user data
+  const currentUser = users.find((u) => u.id === user?.id) || user;
   if (!currentUser) return null;
 
   const renderPage = () => {
@@ -213,7 +249,7 @@ export default function App() {
           <HomePage
             playlists={playlists}
             users={users}
-            currentUserId={currentUserId!}
+            currentUserId={user!.id}
             onPlaylistClick={handlePlaylistClick}
             onUserClick={handleUserClick}
             onLike={handleLike}
@@ -225,7 +261,7 @@ export default function App() {
             songs={mockSongs}
             playlists={playlists}
             users={users}
-            currentUserId={currentUserId!}
+            currentUserId={user!.id}
             onPlaylistClick={handlePlaylistClick}
             onUserClick={handleUserClick}
             onLike={handleLike}
@@ -237,7 +273,7 @@ export default function App() {
           <LibraryPage
             playlists={playlists}
             users={users}
-            currentUserId={currentUserId!}
+            currentUserId={user!.id}
             onPlaylistClick={handlePlaylistClick}
             onUserClick={handleUserClick}
             onLike={handleLike}
@@ -250,7 +286,7 @@ export default function App() {
             user={currentUser}
             playlists={playlists}
             users={users}
-            currentUserId={currentUserId!}
+            currentUserId={user!.id}
             onPlaylistClick={handlePlaylistClick}
             onUserClick={handleUserClick}
             onLike={handleLike}
@@ -266,7 +302,7 @@ export default function App() {
             user={selectedUser}
             playlists={playlists}
             users={users}
-            currentUserId={currentUserId!}
+            currentUserId={user!.id}
             onPlaylistClick={handlePlaylistClick}
             onUserClick={handleUserClick}
             onLike={handleLike}
@@ -285,16 +321,16 @@ export default function App() {
             playlist={selectedPlaylist}
             user={playlistUser}
             comments={playlistComments}
-            currentUserId={currentUserId!}
+            currentUserId={user!.id}
             onLike={handleLike}
             onComment={handleComment}
             onUserClick={handleUserClick}
             onPlaySong={setCurrentSong}
             onDeletePlaylist={
-              selectedPlaylist.userId === currentUserId ? handleDeletePlaylist : undefined
+              selectedPlaylist.userId === user!.id ? handleDeletePlaylist : undefined
             }
             onEditPlaylist={
-              selectedPlaylist.userId === currentUserId ? handleEditPlaylist : undefined
+              selectedPlaylist.userId === user!.id ? handleEditPlaylist : undefined
             }
           />
         );
@@ -322,8 +358,10 @@ export default function App() {
     }
   };
 
+
+  
   return (
-    <div className="flex h-screen bg-black">
+    <div className="flex h-screen bg-black dark:bg-gray-950">
       <Sidebar
         currentPage={currentPage}
         onNavigate={handleNavigate}
@@ -332,6 +370,20 @@ export default function App() {
       />
       {renderPage()}
       <MusicPlayer currentSong={currentSong} />
+      {isAuthenticated && <ChatBot />}
     </div>
+  );
+
+  
+}
+
+// Main App with providers
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -2,30 +2,50 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Music } from 'lucide-react';
+import { Music, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Alert, AlertDescription } from './ui/alert';
 
 interface AuthPageProps {
-  onLogin: (username: string, password: string) => void;
-  onSignup: (username: string, email: string, password: string) => void;
+  onLogin: (username: string, password: string) => Promise<void>;
+  onSignup: (username: string, email: string, password: string) => Promise<void>;
+  onBackToGuest?: () => void;
 }
 
-export function AuthPage({ onLogin, onSignup }: AuthPageProps) {
+export function AuthPage({ onLogin, onSignup, onBackToGuest }: AuthPageProps) {
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin(loginUsername, loginPassword);
+    setError(null);
+    setLoading(true);
+    try {
+      await onLogin(loginUsername, loginPassword);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignup(signupUsername, signupEmail, signupPassword);
+    setError(null);
+    setLoading(true);
+    try {
+      await onSignup(signupUsername, signupEmail, signupPassword);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Signup failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,7 +57,23 @@ export function AuthPage({ onLogin, onSignup }: AuthPageProps) {
             <h1 className="text-green-500">SoundPuff</h1>
           </div>
           <p className="text-gray-400">Your social music platform</p>
+          {onBackToGuest && (
+            <Button
+              onClick={onBackToGuest}
+              variant="ghost"
+              className="mt-2 text-green-400 hover:text-green-300"
+            >
+              ← Browse as guest
+            </Button>
+          )}
         </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -81,12 +117,13 @@ export function AuthPage({ onLogin, onSignup }: AuthPageProps) {
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-green-500 hover:bg-green-600 text-black">
-                    Login
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-green-500 hover:bg-green-600 text-black"
+                    disabled={loading}
+                  >
+                    {loading ? 'Logging in...' : 'Login'}
                   </Button>
-                  <p className="text-sm text-gray-400 text-center">
-                    Demo: Use username "irem" with any password
-                  </p>
                 </form>
               </CardContent>
             </Card>
@@ -142,8 +179,12 @@ export function AuthPage({ onLogin, onSignup }: AuthPageProps) {
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-green-500 hover:bg-green-600 text-black">
-                    Sign Up
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-green-500 hover:bg-green-600 text-black"
+                    disabled={loading}
+                  >
+                    {loading ? 'Creating account...' : 'Sign Up'}
                   </Button>
                 </form>
               </CardContent>
