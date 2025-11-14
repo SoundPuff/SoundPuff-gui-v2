@@ -113,6 +113,7 @@ export function ChatBot() {
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg z-50"
           size="icon"
+          style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem'}}
         >
           <MessageCircle className="h-6 w-6" />
         </Button>
@@ -120,7 +121,11 @@ export function ChatBot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-gray-900 dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-700">
+        <div 
+          className="fixed bottom-6 right-6 w-96 h-[500px] bg-gray-900 dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-700"
+          style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem' }}
+          >
+          
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-green-500">
             <div className="flex items-center gap-2">
