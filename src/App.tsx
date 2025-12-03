@@ -361,7 +361,7 @@ function AppContent() {
 
   
   return (
-    <div className="flex h-screen bg-black dark:bg-gray-950">
+    <div className="flex flex-col h-screen bg-black dark:bg-gray-950">
       <Sidebar
         currentPage={currentPage}
         onNavigate={handleNavigate}
