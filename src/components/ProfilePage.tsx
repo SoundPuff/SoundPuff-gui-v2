@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { User, Playlist } from '../types';
 import { Button } from './ui/button';

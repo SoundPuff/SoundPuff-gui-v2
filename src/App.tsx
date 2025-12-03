@@ -1,3 +1,5 @@
+import React from 'react'; //there was bug related version, typscript didnt see.
+
 import { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { AuthPage } from './components/AuthPage';

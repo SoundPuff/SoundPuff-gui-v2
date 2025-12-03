@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Music2, Sparkles } from 'lucide-react';
 import { Button } from './ui/button';

@@ -1,3 +1,4 @@
+import React from 'react';
 import { Play, Pause, SkipBack, SkipForward, Volume2, Heart } from 'lucide-react';
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';

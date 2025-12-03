@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { Search, Music2, User as UserIcon } from 'lucide-react';
 import { Input } from './ui/input';

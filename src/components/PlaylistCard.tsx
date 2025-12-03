@@ -1,3 +1,4 @@
+import React from 'react';
 import { Heart, Play, Music2 } from 'lucide-react';
 import { Playlist, User } from '../types';
 import { Button } from './ui/button';

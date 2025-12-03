@@ -1,3 +1,4 @@
+import React from 'react';
 import { Home, Search, Library, Plus, User, LogOut, Music } from 'lucide-react';
 import { Button } from './ui/button';
 import { ThemeToggle } from './ThemeToggle';

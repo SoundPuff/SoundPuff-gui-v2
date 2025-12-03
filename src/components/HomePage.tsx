@@ -1,3 +1,4 @@
+import React from 'react';
 import { Playlist, User } from '../types';
 import { PlaylistCard } from './PlaylistCard';
 

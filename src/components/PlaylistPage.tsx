@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState } from 'react';
 import { Playlist, User, Comment, Song } from '../types';
 import { Heart, Play, MessageCircle, Clock, Send, Trash2, Edit } from 'lucide-react';
