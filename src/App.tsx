@@ -19,7 +19,8 @@ import { User, Playlist, Comment, Song } from './types';
 
 // Main app content component
 function AppContent() {
-  const { user, isAuthenticated, isGuest, isLoading, updateUser, logout } = useAuth();
+  const { user, isAuthenticated, isGuest, isLoading, login, register, logout, updateUser } = useAuth();
+  //const { user, isAuthenticated, isGuest, isLoading, updateUser, logout } = useAuth();
   const [currentPage, setCurrentPage] = useState<string>('home');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -33,36 +34,24 @@ function AppContent() {
   const [comments, setComments] = useState<Comment[]>(mockComments);
 
   const handleLogin = async (username: string, password: string) => {
-    // TODO: Replace with actual API call when backend is ready
-    // For now, use mock data
-    const mockUser = users.find((u) => u.username === username);
-    if (mockUser) {
-      // Set user in auth context
-      updateUser(mockUser);
+    try {
+      await login(username, password); // Artık Context'teki login fonksiyonunu çağırıyoruz
       setShowAuthPage(false);
-    } else {
-      throw new Error('User not found');
+    } catch (err) {
+      // Hata AuthPage içinde yakalanıp gösterilecek
+      throw err;
     }
   };
-
+  
   const handleSignup = async (username: string, email: string, password: string) => {
-    // TODO: Replace with actual API call when backend is ready
-    // Create mock user
-    const newUser: User = {
-      id: `u${users.length + 1}`,
-      username,
-      email,
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200',
-      bio: 'New to SoundPuff!',
-      followers: [],
-      following: [],
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setUsers([...users, newUser]);
-    updateUser(newUser);
-    setShowAuthPage(false);
+    try {
+      await register(username, email, password);
+      setShowAuthPage(false);
+    } catch (err) {
+      throw err;
+    }
   };
-
+  
   const handleLogout = async () => {
     await logout();
     setCurrentPage('home');
