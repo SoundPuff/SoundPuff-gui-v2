@@ -56,5 +56,12 @@
     server: {
       port: 3000,
       open: true,
+      proxy: {
+        '/api': {
+          target: 'https://soundpuff-api.ozten.app', // Hedef Backend Adresi
+          changeOrigin: true, // Backend'i kandırmak için gerekli
+          secure: false,      // SSL hatası almamak için
+        },
+      },
     },
   });
