@@ -1,3 +1,4 @@
+import axios from "axios";
 import React from 'react';
 import { useState } from 'react';
 import { Button } from './ui/button';
@@ -15,7 +16,7 @@ interface AuthPageProps {
 }
 
 export function AuthPage({ onLogin, onSignup, onBackToGuest }: AuthPageProps) {
-  const [loginUsername, setLoginUsername] = useState('');
+  const [loginEmail, setLoginEmail] = useState(''); //username yerşne email yaptım
   const [loginPassword, setLoginPassword] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -28,9 +29,15 @@ export function AuthPage({ onLogin, onSignup, onBackToGuest }: AuthPageProps) {
     setError(null);
     setLoading(true);
     try {
-      await onLogin(loginUsername, loginPassword);
+      // Artık email gönderiyoruz
+      await onLogin(loginEmail, loginPassword);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      // Hata mesajını backend'den geliyorsa onu gösterelim
+      if (axios.isAxiosError(err) && err.response) {
+         setError(err.response.data.detail || 'Login failed');
+      } else {
+         setError(err instanceof Error ? err.message : 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -91,19 +98,21 @@ export function AuthPage({ onLogin, onSignup, onBackToGuest }: AuthPageProps) {
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-username" className="text-white">
-                      Username
+                    {/* LABEL VE INPUT'U EMAIL OLARAK DEĞİŞTİRDİK */}
+                    <Label htmlFor="login-email" className="text-white">
+                      Email
                     </Label>
                     <Input
-                      id="login-username"
-                      type="text"
-                      value={loginUsername}
-                      onChange={(e) => setLoginUsername(e.target.value)}
-                      placeholder="Enter your username"
+                      id="login-email"
+                      type="email" 
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="Enter your email"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
                     />
                   </div>
+                  {/* Password alanı aynı kalacak */}
                   <div className="space-y-2">
                     <Label htmlFor="login-password" className="text-white">
                       Password
