@@ -51,6 +51,15 @@ function AppContent() {
       throw err;
     }
   };
+
+  const handleResetPassword = async (email: string) => {
+    // TODO: Replace with actual API call when backend is ready
+    // Mock password reset - in production, this would send an email
+    console.log('Password reset requested for:', email);
+    // Simulate API delay
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // In production, this would trigger an email with a reset link
+  };
   
   const handleLogout = async () => {
     await logout();
@@ -224,6 +233,7 @@ function AppContent() {
       <AuthPage
         onLogin={handleLogin}
         onSignup={handleSignup}
+        onResetPassword={handleResetPassword}
         onBackToGuest={() => setShowAuthPage(false)}
       />
     );
