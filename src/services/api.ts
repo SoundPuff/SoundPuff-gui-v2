@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Backend'in canlı adresi (Senin verdiğin linkten aldım)
-const API_BASE_URL = 'https://soundpuff-api.ozten.app/api/v1';
+const API_BASE_URL = '/api/v1';
 
 // Axios servisini oluşturuyoruz
 const api = axios.create({
