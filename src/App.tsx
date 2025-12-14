@@ -17,6 +17,8 @@ import { GuestLandingPage } from './components/GuestLandingPage';
 import { mockUsers, mockPlaylists, mockComments, mockSongs } from './data/mockData';
 import { User, Playlist, Comment, Song } from './types';
 
+import { userService } from './services/userService'; 
+
 // Main app content component
 function AppContent() {
   const { user, isAuthenticated, isGuest, isLoading, login, register, logout, updateUser } = useAuth();
@@ -107,32 +109,60 @@ function AppContent() {
     );
   };
 
-  const handleFollow = (userId: string) => {
-    if (!user?.id) return;
-    // TODO: Replace with API call - userAPI.followUser / unfollowUser
-    setUsers((prev) =>
-      prev.map((u) => {
-        if (u.id === user.id) {
-          const isFollowing = u.following.includes(userId);
-          return {
-            ...u,
-            following: isFollowing
-              ? u.following.filter((id) => id !== userId)
-              : [...u.following, userId],
-          };
+  // src/App.tsx içindeki handleFollow fonksiyonu
+
+  const handleFollow = async (userId: string, username: string) => {
+    if (!user) return;
+
+    // UI'daki mevcut durum
+    const isCurrentlyFollowing = user.following.includes(userId);
+
+    try {
+      if (isCurrentlyFollowing) {
+        // Zaten takip ediyorsak -> Takipten çık
+        await userService.unfollowUser(username);
+      } else {
+        // Takip etmiyorsak -> Takip et
+        await userService.followUser(username);
+      }
+
+      // İşlem başarılıysa UI'ı normal şekilde güncelle
+      const updatedFollowingList = isCurrentlyFollowing
+        ? user.following.filter((id) => id !== userId) // Çıkar
+        : [...user.following, userId]; // Ekle
+
+      updateUser({
+        ...user,
+        following: updatedFollowingList
+      });
+
+    } catch (error: any) {
+      // ÖZEL HATA YÖNETİMİ: Senkronizasyon bozuksa düzelt
+      const errorMessage = error.response?.data?.detail;
+
+      if (errorMessage === "Already following this user") {
+        // Backend: "Zaten takip ediyorsun" dedi.
+        // Çözüm: Hata verme, UI'ı "Takip Ediyor" olarak güncelle.
+        if (!user.following.includes(userId)) {
+           updateUser({
+             ...user,
+             following: [...user.following, userId]
+           });
         }
-        if (u.id === userId) {
-          const isFollowed = u.followers.includes(user.id);
-          return {
-            ...u,
-            followers: isFollowed
-              ? u.followers.filter((id) => id !== user.id)
-              : [...u.followers, user.id],
-          };
-        }
-        return u;
-      })
-    );
+      } 
+      else if (errorMessage === "You are not following this user") {
+         // Backend: "Zaten takip etmiyorsun" dedi (Unfollow denerken).
+         // Çözüm: UI'ı "Takip Etmiyor" olarak güncelle.
+         updateUser({
+           ...user,
+           following: user.following.filter((id) => id !== userId)
+         });
+      }
+      else {
+        // Başka bir hata varsa (örn: Kendini takip etme vb.) konsola yaz
+        console.error("Follow işlemi başarısız:", error);
+      }
+    }
   };
 
   const handleComment = (playlistId: string, text: string) => {
@@ -256,19 +286,19 @@ function AppContent() {
             onLike={handleLike}
           />
         );
-      case 'search':
-        return (
-          <SearchPage
-            songs={mockSongs}
-            playlists={playlists}
-            users={users}
-            currentUserId={user!.id}
-            onPlaylistClick={handlePlaylistClick}
-            onUserClick={handleUserClick}
-            onLike={handleLike}
-            onFollow={handleFollow}
-          />
-        );
+        case 'search':
+          return (
+            <SearchPage
+              currentUserId={user!.id}
+              // new prop is added
+              currentUserFollowing={user?.following || []} 
+              
+              onPlaylistClick={handlePlaylistClick}
+              onUserClick={handleUserClick}
+              onLike={handleLike}
+              onFollow={handleFollow}
+            />
+          );
       case 'library':
         return (
           <LibraryPage
@@ -281,36 +311,42 @@ function AppContent() {
             onCreatePlaylist={() => setCurrentPage('create-playlist')}
           />
         );
-      case 'profile':
-        return (
-          <ProfilePage
-            user={currentUser}
-            playlists={playlists}
-            users={users}
-            currentUserId={user!.id}
-            onPlaylistClick={handlePlaylistClick}
-            onUserClick={handleUserClick}
-            onLike={handleLike}
-            onFollow={handleFollow}
-            onUpdateProfile={handleUpdateProfile}
-          />
-        );
-      case 'user-profile':
-        const selectedUser = users.find((u) => u.id === selectedUserId);
-        if (!selectedUser) return null;
-        return (
-          <ProfilePage
-            user={selectedUser}
-            playlists={playlists}
-            users={users}
-            currentUserId={user!.id}
-            onPlaylistClick={handlePlaylistClick}
-            onUserClick={handleUserClick}
-            onLike={handleLike}
-            onFollow={handleFollow}
-            onUpdateProfile={handleUpdateProfile}
-          />
-        );
+        case 'profile':
+          return (
+            <ProfilePage
+              user={currentUser}
+              playlists={playlists}
+              users={users}
+              currentUserId={user!.id}
+              // ✅ YENİ PROP EKLENDİ
+              currentUserFollowing={user?.following || []}
+              
+              onPlaylistClick={handlePlaylistClick}
+              onUserClick={handleUserClick}
+              onLike={handleLike}
+              onFollow={handleFollow}
+              onUpdateProfile={handleUpdateProfile}
+            />
+          );
+        case 'user-profile':
+          const selectedUser = users.find((u) => u.id === selectedUserId);
+          if (!selectedUser) return null;
+          return (
+            <ProfilePage
+              user={selectedUser}
+              playlists={playlists}
+              users={users}
+              currentUserId={user!.id}
+              // ✅ YENİ PROP EKLENDİ
+              currentUserFollowing={user?.following || []}
+              
+              onPlaylistClick={handlePlaylistClick}
+              onUserClick={handleUserClick}
+              onLike={handleLike}
+              onFollow={handleFollow}
+              onUpdateProfile={handleUpdateProfile}
+            />
+          );
       case 'playlist':
         const selectedPlaylist = playlists.find((p) => p.id === selectedPlaylistId);
         if (!selectedPlaylist) return null;

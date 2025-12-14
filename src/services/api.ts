@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-// Backend'in canlı adresi (Senin verdiğin linkten aldım)
+// Backend'in canlı adresi
 const API_BASE_URL = '/api/v1';
 
 // Axios servisini oluşturuyoruz

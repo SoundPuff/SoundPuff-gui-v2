@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
-import { User, Playlist } from '../types';
+import { User, Playlist } from '../types/index';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
@@ -14,10 +14,13 @@ interface ProfilePageProps {
   playlists: Playlist[];
   users: User[];
   currentUserId: string;
+  // Giriş yapmış kullanıcının takip ettikleri
+  currentUserFollowing: string[]; 
+  
   onPlaylistClick: (playlistId: string) => void;
   onUserClick: (userId: string) => void;
   onLike: (playlistId: string) => void;
-  onFollow: (userId: string) => void;
+  onFollow: (userId: string, username: string) => void;
   onUpdateProfile: (bio: string, avatar: string) => void;
 }
 
@@ -26,6 +29,7 @@ export function ProfilePage({
   playlists,
   users,
   currentUserId,
+  currentUserFollowing, //new prop is added
   onPlaylistClick,
   onUserClick,
   onLike,
@@ -33,8 +37,11 @@ export function ProfilePage({
   onUpdateProfile,
 }: ProfilePageProps) {
   const isOwnProfile = user.id === currentUserId;
-  const currentUser = users.find((u) => u.id === currentUserId);
-  const isFollowing = currentUser?.following.includes(user.id);
+
+  // 🌟 KRİTİK DEĞİŞİKLİK:
+  // Eskiden: const isFollowing = currentUser?.following.includes(user.id);
+  // Şimdi: Direkt güncel listeden kontrol ediyoruz.
+  const isFollowing = currentUserFollowing.includes(user.id);
 
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState(user.bio);
@@ -116,10 +123,12 @@ export function ProfilePage({
               )
             ) : (
               <Button
-                onClick={() => onFollow(user.id)}
+                onClick={() => onFollow(user.id, user.username)}
+                // Buton stili artık doğru çalışacak
+                variant={isFollowing ? 'outline' : 'default'}
                 className={
                   isFollowing
-                    ? 'border border-gray-700 bg-transparent hover:bg-gray-800'
+                    ? 'border border-gray-700 bg-transparent hover:bg-gray-800 text-white'
                     : 'bg-green-500 hover:bg-green-600 text-black'
                 }
               >
