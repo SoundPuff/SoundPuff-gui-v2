@@ -1,6 +1,6 @@
-import axios from "axios";
 import React from 'react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -8,23 +8,11 @@ import { Music, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from './ui/dialog';
+import { useAuth } from '../contexts/AuthContext';
 
-interface AuthPageProps {
-  onLogin: (username: string, password: string) => Promise<void>;
-  onSignup: (username: string, email: string, password: string) => Promise<void>;
-  onBackToGuest?: () => void;
-  onResetPassword?: (email: string) => Promise<void>;
-}
-
-export function AuthPage({ onLogin, onSignup, onBackToGuest, onResetPassword }: AuthPageProps) {
+export function AuthPage() {
+  const navigate = useNavigate();
+  const { login, register } = useAuth();
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
@@ -41,7 +29,8 @@ export function AuthPage({ onLogin, onSignup, onBackToGuest, onResetPassword }: 
     setError(null);
     setLoading(true);
     try {
-      await onLogin(loginUsername, loginPassword);
+      await login(loginUsername, loginPassword);
+      navigate('/app/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -54,7 +43,8 @@ export function AuthPage({ onLogin, onSignup, onBackToGuest, onResetPassword }: 
     setError(null);
     setLoading(true);
     try {
-      await onSignup(signupUsername, signupEmail, signupPassword);
+      await register(signupUsername, signupEmail, signupPassword);
+      navigate('/app/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
     } finally {
@@ -67,10 +57,9 @@ export function AuthPage({ onLogin, onSignup, onBackToGuest, onResetPassword }: 
     setError(null);
     setLoading(true);
     try {
-      if (onResetPassword) {
-        await onResetPassword(resetEmail);
-        setResetSuccess(true);
-      }
+      // TODO: Implement password reset service
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      setResetSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Reset failed');
     } finally {
@@ -87,15 +76,13 @@ export function AuthPage({ onLogin, onSignup, onBackToGuest, onResetPassword }: 
             <h1 className="text-green-500">SoundPuff</h1>
           </div>
           <p className="text-gray-400">Your social music platform</p>
-          {onBackToGuest && (
-            <Button
-              onClick={onBackToGuest}
-              variant="ghost"
-              className="mt-2 text-green-400 hover:text-green-300"
-            >
-              ← Browse as guest
-            </Button>
-          )}
+          <Button
+            onClick={() => navigate('/')}
+            variant="ghost"
+            className="mt-2 text-green-400 hover:text-green-300"
+          >
+            ← Browse as guest
+          </Button>
         </div>
 
         {error && (

@@ -54,16 +54,38 @@ export const searchService = {
       }));
 
       // 3. Playlistleri Dönüştür
-      const mappedPlaylists: Playlist[] = data.playlists.map((item) => ({
-        id: item.playlist.id.toString(),
-        title: item.playlist.title,
-        description: item.playlist.description || "",
-        userId: item.playlist.user_id,
-        songs: [], 
-        likes: [], 
-        coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200",
-        createdAt: item.playlist.created_at
-      }));
+      // Note: API returns full Playlist schema in search results
+      const mappedPlaylists: Playlist[] = data.playlists.map((item) => {
+        const mappedSongs: Song[] = item.playlist.songs.map((song) => ({
+          id: song.id.toString(),
+          title: song.title,
+          artist: song.artist,
+          album: "Single",
+          coverArt: song.album_art_url === "no" || !song.album_art_url
+            ? "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200"
+            : song.album_art_url,
+          duration: 180,
+          url: song.song_url,
+        }));
+
+        return {
+          id: item.playlist.id, // Keep as number to match API
+          title: item.playlist.title,
+          description: item.playlist.description || "",
+          songs: mappedSongs,
+          userId: item.playlist.user_id,
+          user_id: item.playlist.user_id,
+          likes: [],
+          createdAt: item.playlist.created_at,
+          created_at: item.playlist.created_at,
+          updated_at: item.playlist.updated_at,
+          privacy: item.playlist.privacy,
+          owner: item.playlist.owner,
+          likes_count: item.playlist.likes_count,
+          comments_count: item.playlist.comments_count,
+          coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200",
+        };
+      });
 
       return {
         songs: mappedSongs,
@@ -104,7 +126,7 @@ export const searchService = {
     }
   },
 
-  // Searcjing Playlists
+  // Searching Playlists
   searchPlaylists: async (query: string): Promise<Playlist[]> => {
     if (!query) return [];
     try {
@@ -114,17 +136,36 @@ export const searchService = {
       });
 
       return response.data.playlists.map((item) => {
+        // API returns full Playlist schema in search results
         const pl = item.playlist;
+        const mappedSongs: Song[] = pl.songs.map((song) => ({
+          id: song.id.toString(),
+          title: song.title,
+          artist: song.artist,
+          album: "Single",
+          coverArt: song.album_art_url === "no" || !song.album_art_url
+            ? "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200"
+            : song.album_art_url,
+          duration: 180,
+          url: song.song_url,
+        }));
+
         return {
-          id: pl.id.toString(),
+          id: pl.id, // Keep as number to match API
           title: pl.title,
           description: pl.description || "",
+          songs: mappedSongs,
           userId: pl.user_id,
-          // Backend'den bu veriler gelmiyor, varsayılan atıyoruz:
-          songs: [], 
-          likes: [], 
-          coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200", // Varsayılan Playlist Görseli
-          createdAt: pl.created_at
+          user_id: pl.user_id,
+          likes: [],
+          createdAt: pl.created_at,
+          created_at: pl.created_at,
+          updated_at: pl.updated_at,
+          privacy: pl.privacy,
+          owner: pl.owner,
+          likes_count: pl.likes_count,
+          comments_count: pl.comments_count,
+          coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200",
         };
       });
     } catch (error) {

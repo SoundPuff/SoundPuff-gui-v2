@@ -3,13 +3,10 @@ import { Play, Pause, SkipBack, SkipForward, Volume2, Heart } from 'lucide-react
 import { Button } from './ui/button';
 import { Slider } from './ui/slider';
 import { useState } from 'react';
-import { Song } from '../types';
+import { usePlayer } from '../contexts/PlayerContext';
 
-interface MusicPlayerProps {
-  currentSong: Song | null;
-}
-
-export function MusicPlayer({ currentSong }: MusicPlayerProps) {
+export function MusicPlayer() {
+  const { currentSong } = usePlayer();
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [volume, setVolume] = useState(70);

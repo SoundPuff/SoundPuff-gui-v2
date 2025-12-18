@@ -2,7 +2,8 @@
 import React from "react"
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { authService } from '../services/authService'; // Servisi import ettik
+import { authService } from '../services/authService';
+import { userService } from '../services/userService';
 
 interface AuthContextType {
   user: User | null;
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = localStorage.getItem('access_token');
       if (token) {
         try {
-          const userData = await authService.getMe();
+          const userData = await userService.getMe();
           setUser(userData);
         } catch (error) {
           console.error("Token geçersiz veya süresi dolmuş:", error);
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('access_token', data.access_token);
       
       // 2. Hemen ardından kullanıcı detaylarını çek (Çünkü login endpoint'i user dönmüyor)
-      const userData = await authService.getMe();
+      const userData = await userService.getMe();
       setUser(userData);
       
     } catch (error) {
@@ -69,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Eğer backend kayıt sonrası direkt token dönüyorsa otomatik giriş yap:
       if (data.access_token) {
         localStorage.setItem('access_token', data.access_token);
-        const userData = await authService.getMe();
+        const userData = await userService.getMe();
         setUser(userData);
       }
     } catch (error) {

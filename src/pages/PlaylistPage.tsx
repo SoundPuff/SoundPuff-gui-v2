@@ -1,46 +1,169 @@
 import React from 'react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Playlist, User, Comment, Song } from '../types';
 import { Heart, Play, MessageCircle, Clock, Send, Trash2, Edit } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Separator } from './ui/separator';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { playlistService } from '../services/playlistService';
+import { useAuth } from '../contexts/AuthContext';
+import { usePlayer } from '../contexts/PlayerContext';
 
-interface PlaylistPageProps {
-  playlist: Playlist;
-  user: User;
-  comments: Comment[];
-  currentUserId: string;
-  onLike: (playlistId: string) => void;
-  onComment: (playlistId: string, text: string) => void;
-  onUserClick: (userId: string) => void;
-  onPlaySong: (song: Song) => void;
-  onDeletePlaylist?: () => void;
-  onEditPlaylist?: () => void;
+interface PlaylistUser {
+  id: string;
+  username: string;
+  avatar: string;
+  bio: string;
 }
 
-export function PlaylistPage({
-  playlist,
-  user,
-  comments,
-  currentUserId,
-  onLike,
-  onComment,
-  onUserClick,
-  onPlaySong,
-  onDeletePlaylist,
-  onEditPlaylist,
-}: PlaylistPageProps) {
+export function PlaylistPage() {
+  const { playlistId } = useParams<{ playlistId: string }>();
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
+  const { setCurrentSong } = usePlayer();
+  const [playlist, setPlaylist] = useState<Playlist | null>(null);
+  const [playlistUser, setPlaylistUser] = useState<PlaylistUser | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
-  const isLiked = playlist.likes.includes(currentUserId);
-  const isOwner = playlist.userId === currentUserId;
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSubmitComment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (commentText.trim()) {
-      onComment(playlist.id, commentText);
-      setCommentText('');
+  useEffect(() => {
+    const fetchPlaylistData = async () => {
+      if (!playlistId || !currentUser?.id) return;
+
+      setIsLoading(true);
+      try {
+        const playlistIdNum = parseInt(playlistId);
+        const [playlistData, commentsData] = await Promise.all([
+          playlistService.getPlaylist(playlistIdNum),
+          playlistService.getPlaylistComments(playlistIdNum),
+        ]);
+
+        setPlaylist(playlistData);
+        setComments(commentsData);
+
+        // For now, create a placeholder user from playlist data
+        // In a real app, you'd fetch user details by ID
+        setPlaylistUser({
+          id: playlistData.owner?.id || '',
+          username: playlistData.owner?.username || '',
+          avatar: playlistData.owner?.avatar_url || 'https://github.com/shadcn.png',
+          bio: playlistData.owner?.bio || '',
+        });
+      } catch (error) {
+        console.error('Failed to fetch playlist details:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPlaylistData();
+  }, [playlistId, currentUser?.id]);
+
+  if (!playlist || !playlistUser || !currentUser) {
+    if (isLoading) {
+      return (
+        <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
+          <div className="bg-gradient-to-b from-green-900/40 to-transparent p-8">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex gap-6 items-end">
+                <div className="w-64 h-64 bg-gray-800 rounded-lg animate-pulse" />
+                <div className="flex-1 pb-4 space-y-4">
+                  <div className="h-4 bg-gray-800 rounded w-24 animate-pulse" />
+                  <div className="h-10 bg-gray-800 rounded w-64 animate-pulse" />
+                  <div className="h-4 bg-gray-800 rounded w-96 animate-pulse" />
+                  <div className="flex gap-2">
+                    <div className="h-4 bg-gray-800 rounded w-20 animate-pulse" />
+                    <div className="h-4 bg-gray-800 rounded w-16 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="p-8">
+            <div className="max-w-7xl mx-auto">
+              <LoadingSkeleton type="list" />
+            </div>
+          </div>
+        </div>
+      );
     }
+    return null;
+  }
+
+  const isLiked = playlist.likes?.includes(currentUser.id);
+  const isOwner = playlist.userId === currentUser.id;
+
+  const handleSubmitComment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentText.trim() || !playlistId || !currentUser?.id) return;
+
+    try {
+      const playlistIdNum = parseInt(playlistId);
+      const newComment = await playlistService.createComment(playlistIdNum, {
+        body: commentText,
+        playlist_id: playlistIdNum,
+      });
+      setComments((prev) => [...prev, newComment]);
+      setCommentText('');
+    } catch (error) {
+      console.error('Failed to create comment:', error);
+    }
+  };
+
+  const handleLike = async () => {
+    if (!playlistId || !currentUser?.id) return;
+
+    try {
+      const playlistIdNum = parseInt(playlistId);
+      if (isLiked) {
+        await playlistService.unlikePlaylist(playlistIdNum);
+        setPlaylist((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            likes: prev.likes?.filter((id) => id !== currentUser.id),
+          };
+        });
+      } else {
+        await playlistService.likePlaylist(playlistIdNum);
+        setPlaylist((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            likes: [...(prev.likes || []), currentUser.id],
+          };
+        });
+      }
+    } catch (error) {
+      console.error('Failed to like/unlike playlist:', error);
+    }
+  };
+
+  const handleDeletePlaylist = async () => {
+    if (!playlistId) return;
+    if (confirm('Are you sure you want to delete this playlist?')) {
+      try {
+        const playlistIdNum = parseInt(playlistId);
+        await playlistService.deletePlaylist(playlistIdNum);
+        navigate('/app/library');
+      } catch (error) {
+        console.error('Failed to delete playlist:', error);
+      }
+    }
+  };
+
+  const handleEditPlaylist = () => {
+    navigate(`/app/edit-playlist/${playlistId}`);
+  };
+
+  const handleUserClick = (userId: string) => {
+    if (!userId) {
+      navigate('/app/search');
+      return;
+    }
+    navigate(`/app/user/${userId}`);
   };
 
   const totalDuration = playlist.songs.reduce((acc, song) => acc + song.duration, 0);
@@ -74,13 +197,13 @@ export function PlaylistPage({
               <p className="text-gray-300 mb-4">{playlist.description}</p>
               <div className="flex items-center gap-2 mb-2">
                 <img
-                  src={user.avatar}
-                  alt={user.username}
+                  src={playlistUser.avatar}
+                  alt={playlistUser.username}
                   className="w-6 h-6 rounded-full object-cover cursor-pointer"
-                  onClick={() => onUserClick(user.id)}
+                  onClick={() => handleUserClick(playlistUser.id)}
                 />
-                <button onClick={() => onUserClick(user.id)} className="hover:underline">
-                  {user.username}
+                <button onClick={() => handleUserClick(playlistUser.id)} className="hover:underline">
+                  {playlistUser.username}
                 </button>
                 <span className="text-gray-400">•</span>
                 <span className="text-gray-400">{playlist.songs.length} songs</span>
@@ -94,29 +217,29 @@ export function PlaylistPage({
             <Button
               size="lg"
               className="bg-green-500 hover:bg-green-600 text-black rounded-full w-14 h-14 p-0"
-              onClick={() => playlist.songs.length > 0 && onPlaySong(playlist.songs[0])}
+              onClick={() => playlist.songs.length > 0 && setCurrentSong(playlist.songs[0])}
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
             </Button>
             <Button
               variant="ghost"
               size="lg"
-              onClick={() => onLike(playlist.id)}
+              onClick={handleLike}
               className="text-gray-400 hover:text-white"
             >
               <Heart className={`w-8 h-8 ${isLiked ? 'fill-green-500 text-green-500' : ''}`} />
             </Button>
-            <span className="text-gray-400">{playlist.likes.length} likes</span>
-            {isOwner && onEditPlaylist && (
-              <Button variant="ghost" onClick={onEditPlaylist} className="text-gray-400 hover:text-white">
+            <span className="text-gray-400">{playlist.likes_count || 0} likes</span>
+            {isOwner && (
+              <Button variant="ghost" onClick={handleEditPlaylist} className="text-gray-400 hover:text-white">
                 <Edit className="w-5 h-5 mr-2" />
                 Edit
               </Button>
             )}
-            {isOwner && onDeletePlaylist && (
+            {isOwner && (
               <Button
                 variant="ghost"
-                onClick={onDeletePlaylist}
+                onClick={handleDeletePlaylist}
                 className="text-gray-400 hover:text-red-500"
               >
                 <Trash2 className="w-5 h-5 mr-2" />
@@ -143,7 +266,7 @@ export function PlaylistPage({
               <div
                 key={song.id}
                 className="grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-3 hover:bg-white/5 rounded transition-colors group cursor-pointer"
-                onClick={() => onPlaySong(song)}
+                onClick={() => setCurrentSong(song)}
               >
                 <div className="w-8 text-gray-400 flex items-center">
                   <span className="group-hover:hidden">{index + 1}</span>
@@ -213,3 +336,4 @@ export function PlaylistPage({
     </div>
   );
 }
+

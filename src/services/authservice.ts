@@ -51,10 +51,6 @@ export const authService = {
     return response.data;
   },
 
-  // Profil Çekme
-  getMe: async () => {
-    // Token ile profil bilgilerini çekiyoruz
-    const response = await api.get<BackendUser>('/users/me');
-    return mapUser(response.data);
-  }
+  // Note: getMe has been moved to userService.getMe() for consistency
+  // This keeps all user-related endpoints in one service
 };

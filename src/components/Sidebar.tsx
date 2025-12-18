@@ -1,41 +1,59 @@
-import React from 'react';
-import { Home, Search, Library, Plus, User, LogOut, Music } from 'lucide-react';
-import { Button } from './ui/button';
-import { ThemeToggle } from './ThemeToggle';
+import React from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Home, Search, Library, Plus, User, LogOut, Music } from "lucide-react";
+import { Button } from "./ui/button";
+import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "../contexts/AuthContext";
+import { User as UserType } from "../types";
 
 interface SidebarProps {
-  currentPage: string;
-  onNavigate: (page: string) => void;
-  onLogout: () => void;
-  currentUser: { username: string; avatar: string } | null;
+  currentUser: UserType | null;
 }
 
-export function Sidebar({ currentPage, onNavigate, onLogout, currentUser }: SidebarProps) {
+export function Sidebar({ currentUser }: SidebarProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { logout } = useAuth();
+
   const menuItems = [
-    { icon: Home, label: 'Home', page: 'home' },
-    { icon: Search, label: 'Search', page: 'search' },
-    { icon: Library, label: 'My Playlists', page: 'library' },
+    { icon: Home, label: "Home", path: "/app/home" },
+    { icon: Search, label: "Search", path: "/app/search" },
+    { icon: Library, label: "My Playlists", path: "/app/library" },
   ];
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/");
+  };
+
+  const isActive = (path: string) => {
+    return (
+      location.pathname === path || location.pathname.startsWith(path + "/")
+    );
+  };
 
   return (
     <nav className="bg-black dark:bg-gray-900 text-white border-b border-gray-800">
       <div className="flex items-center justify-between px-6 py-4">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <Music className="w-8 h-8 text-green-500" />
-          <h1 className="text-green-500">SoundPuff</h1>
+        <div
+          className="flex items-center gap-2"
+          onClick={() => navigate("/app/home")}
+        >
+          <Music className="w-8 h-8 text-green-500 cursor-pointer" />
+          <h1 className="text-green-500 cursor-pointer">SoundPuff</h1>
         </div>
 
         {/* Menu Items */}
         <ul className="flex items-center gap-2">
           {menuItems.map((item) => (
-            <li key={item.page}>
+            <li key={item.path}>
               <button
-                onClick={() => onNavigate(item.page)}
+                onClick={() => navigate(item.path)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                  currentPage === item.page
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-400 hover:text-white'
+                  isActive(item.path)
+                    ? "bg-gray-800 text-white"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
                 <item.icon className="w-5 h-5" />
@@ -45,8 +63,12 @@ export function Sidebar({ currentPage, onNavigate, onLogout, currentUser }: Side
           ))}
           <li>
             <button
-              onClick={() => onNavigate('create-playlist')}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-colors"
+              onClick={() => navigate("/app/create-playlist")}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-colors ${
+                isActive("/app/create-playlist")
+                  ? "bg-gray-800 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
             >
               <Plus className="w-5 h-5" />
               <span>Create Playlist</span>
@@ -60,7 +82,7 @@ export function Sidebar({ currentPage, onNavigate, onLogout, currentUser }: Side
           {currentUser && (
             <div className="flex items-center gap-2 border-l border-gray-800 pl-4">
               <button
-                onClick={() => onNavigate('profile')}
+                onClick={() => navigate("/app/profile")}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-400 hover:text-white transition-colors"
               >
                 <img
@@ -71,7 +93,7 @@ export function Sidebar({ currentPage, onNavigate, onLogout, currentUser }: Side
                 <span>{currentUser.username}</span>
               </button>
               <Button
-                onClick={onLogout}
+                onClick={handleLogout}
                 variant="ghost"
                 className="gap-2 text-gray-400 hover:text-white"
               >

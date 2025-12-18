@@ -1,30 +1,26 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Music, LogIn, UserPlus } from 'lucide-react';
 import { Button } from './ui/button';
 import { PlaylistCard } from './PlaylistCard';
+import { LoadingSkeleton } from './LoadingSkeleton';
 import { Playlist, User } from '../types';
 import { mockPlaylists, mockUsers } from '../data/mockData';
+import { playlistService } from '../services/playlistService';
 
-interface GuestLandingPageProps {
-  onShowAuth: () => void;
-}
-
-export function GuestLandingPage({ onShowAuth }: GuestLandingPageProps) {
+export function GuestLandingPage() {
+  const navigate = useNavigate();
   const [publicPlaylists, setPublicPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // FR15: Load public playlists for guest users
-    // TODO: Replace with actual API call - playlistAPI.getPublicPlaylists(10)
     const loadPublicPlaylists = async () => {
       try {
         setLoading(true);
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // Use mock data - take first 10 playlists
-        setPublicPlaylists(mockPlaylists.slice(0, 10));
+        const playlists = await playlistService.getPlaylists(0, 10);
+        setPublicPlaylists(playlists);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load playlists');
       } finally {
@@ -53,7 +49,7 @@ export function GuestLandingPage({ onShowAuth }: GuestLandingPageProps) {
           </p>
           <div className="flex gap-4 justify-center">
             <Button
-              onClick={onShowAuth}
+              onClick={() => navigate('/auth')}
               size="lg"
               className="bg-green-500 hover:bg-green-600"
             >
@@ -61,7 +57,7 @@ export function GuestLandingPage({ onShowAuth }: GuestLandingPageProps) {
               Sign Up Free
             </Button>
             <Button
-              onClick={onShowAuth}
+              onClick={() => navigate('/auth')}
               size="lg"
               variant="outline"
               className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
@@ -77,8 +73,8 @@ export function GuestLandingPage({ onShowAuth }: GuestLandingPageProps) {
           <h3 className="text-white mb-6">Trending Public Playlists</h3>
           
           {loading && (
-            <div className="text-center text-gray-400 py-12">
-              <div className="animate-pulse">Loading playlists...</div>
+            <div className="py-12">
+              <LoadingSkeleton type="playlist" count={4} />
             </div>
           )}
 
@@ -106,14 +102,12 @@ export function GuestLandingPage({ onShowAuth }: GuestLandingPageProps) {
                       playlist={playlist}
                       user={playlistUser}
                       currentUserId={null}
-                      onPlaylistClick={() => {}}
-                      onUserClick={() => {}}
                       onLike={() => {}}
                       isGuestMode={true}
                     />
                     <div className="mt-2 text-center">
                       <Button
-                        onClick={onShowAuth}
+                        onClick={() => navigate('/auth')}
                         size="sm"
                         variant="ghost"
                         className="text-green-400 hover:text-green-300"

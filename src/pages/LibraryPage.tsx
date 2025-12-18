@@ -1,0 +1,146 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Playlist } from '../types';
+import { PlaylistCard } from '../components/PlaylistCard';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { Plus } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { playlistService } from '../services/playlistService';
+import { useAuth } from '../contexts/AuthContext';
+
+export function LibraryPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [myPlaylists, setMyPlaylists] = useState<Playlist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMyPlaylists = async () => {
+      if (!user?.id) return;
+      
+      setIsLoading(true);
+      try {
+        const playlists = await playlistService.getPlaylists(0, 100);
+        setMyPlaylists(playlists.filter((p) => p.userId === user.id));
+      } catch (error) {
+        console.error('Failed to fetch playlists:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchMyPlaylists();
+  }, [user?.id]);
+
+  const handlePlaylistClick = (playlistId: string) => {
+    navigate(`/app/playlist/${playlistId}`);
+  };
+
+  const handleUserClick = (userId: string) => {
+    if (!userId) {
+      navigate('/app/search');
+      return;
+    }
+    navigate(`/app/user/${userId}`);
+  };
+
+  const handleLike = async (playlistId: string) => {
+    if (!user?.id) return;
+    try {
+      const playlistIdNum = parseInt(playlistId);
+      const playlist = myPlaylists.find((p) => p.id === playlistIdNum);
+      const isLiked = playlist?.likes?.includes(user.id) || false;
+
+      if (isLiked) {
+        await playlistService.unlikePlaylist(playlistIdNum);
+        setMyPlaylists((prev) =>
+          prev.map((p) => {
+            if (p.id === playlistIdNum) {
+              return {
+                ...p,
+                likes: p.likes?.filter((id) => id !== user.id),
+              };
+            }
+            return p;
+          })
+        );
+      } else {
+        await playlistService.likePlaylist(playlistIdNum);
+        setMyPlaylists((prev) =>
+          prev.map((p) => {
+            if (p.id === playlistIdNum) {
+              return {
+                ...p,
+                likes: [...(p.likes || []), user.id],
+              };
+            }
+            return p;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Failed to like/unlike playlist:', error);
+    }
+  };
+
+  if (!user) return null;
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div className="h-8 bg-gray-800 rounded w-48 animate-pulse" />
+            <div className="h-10 bg-gray-800 rounded w-40 animate-pulse" />
+          </div>
+          <LoadingSkeleton type="playlist" count={8} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h1>My Playlists</h1>
+          <Button
+            onClick={() => navigate('/app/create-playlist')}
+            className="bg-green-500 hover:bg-green-600 text-black"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Playlist
+          </Button>
+        </div>
+
+        {myPlaylists.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {myPlaylists.map((playlist) => (
+              <PlaylistCard
+                key={playlist.id}
+                playlist={playlist}
+                user={user}
+                currentUserId={user.id}
+                onLike={handleLike}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-900 rounded-lg p-12 text-center">
+            <p className="text-gray-400 mb-4">
+              You haven't created any playlists yet
+            </p>
+            <Button
+              onClick={() => navigate('/app/create-playlist')}
+              className="bg-green-500 hover:bg-green-600 text-black"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Playlist
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
