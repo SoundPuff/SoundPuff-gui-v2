@@ -13,7 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 export function AuthPage() {
   const navigate = useNavigate();
   const { login, register } = useAuth();
-  const [loginUsername, setLoginUsername] = useState('');
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
@@ -29,7 +29,7 @@ export function AuthPage() {
     setError(null);
     setLoading(true);
     try {
-      await login(loginUsername, loginPassword);
+      await login(loginEmail, loginPassword);
       navigate('/app/home');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -107,15 +107,15 @@ export function AuthPage() {
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-username" className="text-white">
-                      Username
+                    <Label htmlFor="login-email" className="text-white">
+                      Login
                     </Label>
                     <Input
-                      id="login-username"
-                      type="text"
-                      value={loginUsername}
-                      onChange={(e) => setLoginUsername(e.target.value)}
-                      placeholder="Enter your username"
+                      id="login-email"
+                      type="email"
+                      value={loginEmail}
+                      onChange={(e) => setLoginEmail(e.target.value)}
+                      placeholder="Enter your email"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
                     />
