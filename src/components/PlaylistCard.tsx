@@ -6,7 +6,6 @@ import { useNavigate } from "react-router-dom";
 
 interface PlaylistCardProps {
   playlist: Playlist;
-  user: User;
   currentUserId: string | null;
   onLike: (playlistId: string) => void;
   isGuestMode?: boolean;
@@ -14,7 +13,6 @@ interface PlaylistCardProps {
 
 export function PlaylistCard({
   playlist,
-  user,
   currentUserId,
   onLike,
   isGuestMode = false,
@@ -25,6 +23,7 @@ export function PlaylistCard({
     : false;
 
   const onUserClick = () => {
+    if (isGuestMode) return;
     if (!playlist.owner?.username) {
       navigate("/app/search");
       return;
@@ -32,6 +31,7 @@ export function PlaylistCard({
     navigate(`/app/user/${playlist.owner?.username}`);
   };
   const onPlaylistClick = (playlistId: string) => {
+    if (isGuestMode) return;
     navigate(`/app/playlist/${playlistId}`);
   };
 

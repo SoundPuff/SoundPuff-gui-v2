@@ -93,28 +93,15 @@ export function GuestLandingPage() {
           {!loading && !error && publicPlaylists.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {publicPlaylists.map((playlist) => {
-                const playlistUser = mockUsers.find(u => u.id === playlist.userId);
-                if (!playlistUser) return null;
                 
                 return (
                   <div key={playlist.id} className="opacity-75 hover:opacity-100 transition-opacity">
                     <PlaylistCard
                       playlist={playlist}
-                      user={playlistUser}
                       currentUserId={null}
                       onLike={() => {}}
                       isGuestMode={true}
                     />
-                    <div className="mt-2 text-center">
-                      <Button
-                        onClick={() => navigate('/auth')}
-                        size="sm"
-                        variant="ghost"
-                        className="text-green-400 hover:text-green-300"
-                      >
-                        Sign up to interact
-                      </Button>
-                    </div>
                   </div>
                 );
               })}
