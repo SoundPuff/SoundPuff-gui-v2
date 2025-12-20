@@ -1,8 +1,9 @@
 import React from "react";
 import { Heart, Play, Music2 } from "lucide-react";
-import { Playlist, User } from "../types";
+import { Playlist } from "../types";
 import { Button } from "./ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext"; // 1. EKLENDİ
 
 interface PlaylistCardProps {
   playlist: Playlist;
@@ -18,18 +19,20 @@ export function PlaylistCard({
   isGuestMode = false,
 }: PlaylistCardProps) {
   const navigate = useNavigate();
-  const isLiked = currentUserId
-    ? playlist.likes?.includes(currentUserId)
-    : false;
+  const { user } = useAuth(); // 2. EKLENDİ
+
+  // 3. KRİTİK DÜZELTME:
+  // Artık boş gelen "playlist.likes" yerine, kullanıcının gerçek listesine bakıyoruz.
+  const isLiked = user?.likedPlaylists?.includes(playlist.id.toString()) 
+    || (currentUserId && playlist.likes?.includes(currentUserId)) 
+    || false;
 
   const onUserClick = () => {
     if (isGuestMode) return;
-    if (!playlist.owner?.username) {
-      navigate("/app/search");
-      return;
-    }
-    navigate(`/app/user/${playlist.owner?.username}`);
+    const username = playlist.owner?.username || "unknown";
+    navigate(`/app/user/${username}`);
   };
+
   const onPlaylistClick = (playlistId: string) => {
     if (isGuestMode) return;
     navigate(`/app/playlist/${playlistId}`);
@@ -96,9 +99,9 @@ export function PlaylistCard({
             if (!isGuestMode) onLike(playlist.id.toString());
           }}
           disabled={isGuestMode}
-          className={`flex items-center gap-1 text-gray-400 hover:text-white transition-colors ${
-            isGuestMode ? "opacity-50 cursor-not-allowed" : ""
-          }`}
+          className={`flex items-center gap-1 transition-colors ${
+            isGuestMode ? "opacity-50 cursor-not-allowed" : "hover:text-white"
+          } ${isLiked ? "text-green-500" : "text-gray-400"}`}
         >
           <Heart
             className={`w-5 h-5 ${

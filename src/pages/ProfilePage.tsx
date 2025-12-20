@@ -303,7 +303,7 @@ export function ProfilePage() {
                       <PlaylistCard
                         key={playlist.id}
                         playlist={playlist}
-                        user={user}
+                        //user={user}
                         currentUserId={currentUser.id}
                         onLike={handleLike}
                       />
@@ -328,7 +328,7 @@ export function ProfilePage() {
                     <PlaylistCard
                       key={playlist.id}
                       playlist={playlist}
-                      user={user}
+                      //user={user}
                       currentUserId={currentUser.id}
                       onLike={handleLike}
                     />

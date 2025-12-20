@@ -1,22 +1,22 @@
 // src/services/userService.ts
 import api from './api';
-import { User, BackendUser } from '../types';
+import { User, BackendUser, Playlist, Song } from '../types';
 
 // Map backend user to frontend user
 const mapBackendUserToFrontend = (backendUser: BackendUser): User => {
   return {
     id: backendUser.id,
     username: backendUser.username,
-    email: '', // Email is not returned in User schema for privacy
+    email: '', 
     avatar: backendUser.avatar_url || 'https://github.com/shadcn.png',
     bio: backendUser.bio || '',
-    followers: [], // Not included in User schema, would need separate call
-    following: [], // Not included in User schema, would need separate call
+    followers: [], 
+    following: [], 
+    likedPlaylists: [], 
     createdAt: backendUser.created_at,
   };
 };
 
-// Custom error class for user service errors
 export class UserServiceError extends Error {
   constructor(
     message: string,
@@ -29,11 +29,6 @@ export class UserServiceError extends Error {
 }
 
 export const userService = {
-  /**
-   * Get current authenticated user
-   * @returns Current user profile
-   * @throws {UserServiceError} If user is not authenticated or request fails
-   */
   getMe: async (): Promise<User> => {
     try {
       const response = await api.get<BackendUser>('/users/me');
@@ -41,266 +36,137 @@ export const userService = {
     } catch (error: any) {
       const statusCode = error.response?.status;
       const errorMessage = error.response?.data?.detail || error.message || 'Failed to get current user';
-      
-      if (statusCode === 401) {
-        throw new UserServiceError('Authentication required. Please log in.', 401, error.response?.data);
-      }
-      
-      throw new UserServiceError(
-        `Failed to get current user: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      if (statusCode === 401) throw new UserServiceError('Authentication required.', 401, error.response?.data);
+      throw new UserServiceError(`Failed to get current user: ${errorMessage}`, statusCode, error.response?.data);
     }
   },
 
-  /**
-   * Update current authenticated user profile
-   * @param userData - User update data (bio and/or avatar_url)
-   * @returns Updated user profile
-   * @throws {UserServiceError} If update fails
-   */
   updateMe: async (userData: { bio?: string | null; avatar_url?: string | null }): Promise<User> => {
     try {
       const response = await api.put<BackendUser>('/users/me', userData);
       return mapBackendUserToFrontend(response.data);
     } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to update user';
-      
-      if (statusCode === 401) {
-        throw new UserServiceError('Authentication required. Please log in.', 401, error.response?.data);
-      }
-      
-      if (statusCode === 422) {
-        const validationErrors = error.response?.data?.detail;
-        throw new UserServiceError(
-          `Validation error: ${JSON.stringify(validationErrors)}`,
-          422,
-          validationErrors
-        );
-      }
-      
-      throw new UserServiceError(
-        `Failed to update user: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      throw error; 
     }
   },
 
-  /**
-   * Get user by username
-   * @param username - Username to lookup
-   * @returns User profile
-   * @throws {UserServiceError} If user not found or request fails
-   */
   getUserByUsername: async (username: string): Promise<User> => {
-    if (!username || username.trim().length === 0) {
-      throw new UserServiceError('Username is required', 400);
-    }
-
+    if (!username || username.trim().length === 0) throw new UserServiceError('Username is required', 400);
     try {
       const response = await api.get<BackendUser>(`/users/${encodeURIComponent(username)}`);
       return mapBackendUserToFrontend(response.data);
     } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to get user';
-      
-      if (statusCode === 404) {
-        throw new UserServiceError(`User "${username}" not found`, 404, error.response?.data);
-      }
-      
-      if (statusCode === 422) {
-        const validationErrors = error.response?.data?.detail;
-        throw new UserServiceError(
-          `Validation error: ${JSON.stringify(validationErrors)}`,
-          422,
-          validationErrors
-        );
-      }
-      
-      throw new UserServiceError(
-        `Failed to get user: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      throw error;
     }
   },
 
-  /**
-   * Follow a user
-   * @param username - Username of the user to follow
-   * @throws {UserServiceError} If follow operation fails
-   */
   followUser: async (username: string): Promise<void> => {
-    if (!username || username.trim().length === 0) {
-      throw new UserServiceError('Username is required', 400);
-    }
-
+    if (!username || username.trim().length === 0) throw new UserServiceError('Username is required', 400);
     try {
       await api.post(`/users/${encodeURIComponent(username)}/follow`);
     } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to follow user';
-      
-      if (statusCode === 401) {
-        throw new UserServiceError('Authentication required. Please log in.', 401, error.response?.data);
-      }
-      
-      if (statusCode === 404) {
-        throw new UserServiceError(`User "${username}" not found`, 404, error.response?.data);
-      }
-      
-      if (statusCode === 400 && errorMessage.includes('Already following')) {
-        // This is actually a success case - user is already following
-        // We'll throw a specific error that can be handled gracefully
-        throw new UserServiceError('Already following this user', 400, error.response?.data);
-      }
-      
-      if (statusCode === 400 && errorMessage.includes('cannot follow yourself')) {
-        throw new UserServiceError('You cannot follow yourself', 400, error.response?.data);
-      }
-      
-      if (statusCode === 422) {
-        const validationErrors = error.response?.data?.detail;
-        throw new UserServiceError(
-          `Validation error: ${JSON.stringify(validationErrors)}`,
-          422,
-          validationErrors
-        );
-      }
-      
-      throw new UserServiceError(
-        `Failed to follow user: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      throw error;
     }
   },
 
-  /**
-   * Unfollow a user
-   * @param username - Username of the user to unfollow
-   * @throws {UserServiceError} If unfollow operation fails
-   */
   unfollowUser: async (username: string): Promise<void> => {
-    if (!username || username.trim().length === 0) {
-      throw new UserServiceError('Username is required', 400);
-    }
-
+    if (!username || username.trim().length === 0) throw new UserServiceError('Username is required', 400);
     try {
       await api.delete(`/users/${encodeURIComponent(username)}/follow`);
     } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to unfollow user';
-      
-      if (statusCode === 401) {
-        throw new UserServiceError('Authentication required. Please log in.', 401, error.response?.data);
-      }
-      
-      if (statusCode === 404) {
-        throw new UserServiceError(`User "${username}" not found`, 404, error.response?.data);
-      }
-      
-      if (statusCode === 400 && errorMessage.includes('not following')) {
-        // This is actually a success case - user is already not following
-        // We'll throw a specific error that can be handled gracefully
-        throw new UserServiceError('You are not following this user', 400, error.response?.data);
-      }
-      
-      if (statusCode === 422) {
-        const validationErrors = error.response?.data?.detail;
-        throw new UserServiceError(
-          `Validation error: ${JSON.stringify(validationErrors)}`,
-          422,
-          validationErrors
-        );
-      }
-      
-      throw new UserServiceError(
-        `Failed to unfollow user: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      throw error;
     }
   },
 
-  /**
-   * Get list of users following a specific user
-   * @param username - Username of the user
-   * @returns Array of user profiles who are followers
-   * @throws {UserServiceError} If request fails
-   */
   getUserFollowers: async (username: string): Promise<User[]> => {
-    if (!username || username.trim().length === 0) {
-      throw new UserServiceError('Username is required', 400);
-    }
-
+    if (!username || username.trim().length === 0) throw new UserServiceError('Username is required', 400);
     try {
       const response = await api.get<BackendUser[]>(`/users/${encodeURIComponent(username)}/followers`);
       return response.data.map(mapBackendUserToFrontend);
     } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to get followers';
-      
-      if (statusCode === 404) {
-        throw new UserServiceError(`User "${username}" not found`, 404, error.response?.data);
-      }
-      
-      if (statusCode === 422) {
-        const validationErrors = error.response?.data?.detail;
-        throw new UserServiceError(
-          `Validation error: ${JSON.stringify(validationErrors)}`,
-          422,
-          validationErrors
-        );
-      }
-      
-      throw new UserServiceError(
-        `Failed to get followers: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      throw error;
     }
   },
 
-  /**
-   * Get list of users that a specific user is following
-   * @param username - Username of the user
-   * @returns Array of user profiles who are being followed
-   * @throws {UserServiceError} If request fails
-   */
   getUserFollowing: async (username: string): Promise<User[]> => {
-    if (!username || username.trim().length === 0) {
-      throw new UserServiceError('Username is required', 400);
-    }
-
+    if (!username || username.trim().length === 0) throw new UserServiceError('Username is required', 400);
     try {
       const response = await api.get<BackendUser[]>(`/users/${encodeURIComponent(username)}/following`);
       return response.data.map(mapBackendUserToFrontend);
     } catch (error: any) {
-      const statusCode = error.response?.status;
-      const errorMessage = error.response?.data?.detail || error.message || 'Failed to get following';
-      
-      if (statusCode === 404) {
-        throw new UserServiceError(`User "${username}" not found`, 404, error.response?.data);
-      }
-      
-      if (statusCode === 422) {
-        const validationErrors = error.response?.data?.detail;
-        throw new UserServiceError(
-          `Validation error: ${JSON.stringify(validationErrors)}`,
-          422,
-          validationErrors
-        );
-      }
-      
-      throw new UserServiceError(
-        `Failed to get following: ${errorMessage}`,
-        statusCode,
-        error.response?.data
-      );
+      throw error;
+    }
+  },
+
+  // 🔍 DEBUG EKLENMİŞ VERSİYON
+  // 🔥 GÜNCELLENEN FONKSİYON (BACKEND DEĞİŞMEDEN)
+  getUserLikedPlaylists: async (userId: string): Promise<Playlist[]> => {
+    if (!userId) return [];
+
+    console.log("🔍 [UserService] Workaround Modu: Tüm playlistler çekilip filtrelenecek.");
+
+    try {
+      // 1. ADIM: Backend'deki genel playlist listesini çek (Limiti yüksek tutuyoruz)
+      // '/playlists/' endpoint'i mevcut backend'inde var.
+      const response = await api.get<any[]>('/playlists/', {
+        params: { skip: 0, limit: 100 } 
+      });
+
+      const allPlaylists = response.data;
+      console.log(`📦 [UserService] Toplam ${allPlaylists.length} playlist çekildi.`);
+
+      // 2. ADIM: JavaScript ile filtrele
+      // "Bu playlist'in likes listesinde benim ID'm var mı?"
+      const likedPlaylists = allPlaylists.filter((pl: any) => {
+        // Backend 'likes' array'ini gönderiyor mu kontrol et
+        if (!pl.likes || !Array.isArray(pl.likes)) return false;
+
+        // Beğenenler arasında ben var mıyım?
+        // Backend yapısına göre like objesi { user_id: "..." } veya direkt ID string olabilir.
+        return pl.likes.some((like: any) => {
+            const likerId = like.user_id || like.id || like; // Farklı formatları kapsa
+            return likerId === userId;
+        });
+      });
+
+      console.log(`✅ [UserService] Filtreleme sonucu: ${likedPlaylists.length} beğenilen playlist bulundu.`);
+
+      // 3. ADIM: Frontend formatına çevir
+      return likedPlaylists.map((playlistData: any) => ({
+          id: playlistData.id,
+          title: playlistData.title,
+          description: playlistData.description || "",
+          songs: (playlistData.songs || []).map((s: any) => ({
+              id: s.id?.toString(),
+              title: s.title,
+              artist: s.artist,
+              album: "Single",
+              duration: 180,
+              coverArt: s.album_art_url || "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=200",
+              url: s.song_url
+          })),
+          userId: playlistData.user_id,
+          user_id: playlistData.user_id,
+          likes: [], // Burayı boş bırakabiliriz, detayda zaten var
+          createdAt: playlistData.created_at,
+          created_at: playlistData.created_at,
+          updated_at: playlistData.updated_at,
+          coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200",
+          likes_count: playlistData.likes_count || (playlistData.likes ? playlistData.likes.length : 0),
+          comments_count: playlistData.comments_count || 0,
+          privacy: playlistData.privacy || 'public',
+          owner: playlistData.owner || {
+              id: playlistData.user_id,
+              username: 'Unknown',
+              bio: null,
+              avatar_url: null,
+              created_at: new Date().toISOString()
+          }
+      })) as Playlist[];
+
+    } catch (error) {
+      console.error("❌ [UserService] Get liked playlists error:", error);
+      return [];
     }
   },
 };

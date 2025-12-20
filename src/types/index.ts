@@ -7,6 +7,7 @@ export interface User {
   bio: string;
   followers: string[];
   following: string[];
+  likedPlaylists: string[]; //Beğenilen Playlist ID'leri
   createdAt: string;
 }
 
