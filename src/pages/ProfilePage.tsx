@@ -7,7 +7,7 @@ import { Textarea } from "../components/ui/textarea";
 import { PlaylistCard } from "../components/PlaylistCard";
 import { AccountSettings } from "../components/AccountSettings";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
-import { Edit2, Check, X } from "lucide-react";
+import { Edit2, Check, X } from "lucide-react"; // X ikonu modal kapatmak için lazım
 import {
   Tabs,
   TabsContent,
@@ -23,7 +23,6 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const { user: currentUser, updateUser } = useAuth();
   
-  // Profilde görüntülenen kullanıcı
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   
@@ -32,25 +31,24 @@ export function ProfilePage() {
   const [editBio, setEditBio] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
 
+  // --- MODAL STATE'LERİ ---
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [dialogType, setDialogType] = useState<"followers" | "following">("followers");
+  const [dialogUsers, setDialogUsers] = useState<User[]>([]);
+  const [isDialogLoading, setIsDialogLoading] = useState(false);
+
   useEffect(() => {
     const fetchData = async () => {
-      // Eğer kullanıcı login değilse bekleme
       if (!currentUser) return;
-
       setIsLoading(true);
       try {
-        // Hangi kullanıcıyı çekeceğiz? URL'deki username veya kendi username'imiz
         const targetUsername = username || currentUser.username;
-
-        // 1. Kullanıcı detaylarını (Followers/Following dahil) çek
-        // userService.ts içinde Promise.all ile 3 endpointi birleştiriyoruz.
         const fetchedUser = await userService.getUserByUsername(targetUsername);
 
         setProfileUser(fetchedUser);
         setEditBio(fetchedUser.bio || "");
         setEditAvatar(fetchedUser.avatar || "");
 
-        // 2. Playlistleri çek
         const allPlaylists = await playlistService.getPlaylists(0, 100);
         setPlaylists(allPlaylists.filter((p) => p.userId === fetchedUser.id));
 
@@ -62,78 +60,82 @@ export function ProfilePage() {
     };
 
     fetchData();
-  }, [username, currentUser?.username]); // Dependency updated
+  }, [username, currentUser?.username]);
 
   const isOwnProfile = !username || username === currentUser?.username;
 
-  if (!currentUser || !profileUser) {
-    return null; // veya loading spinner
-  }
+  // Listeyi açan fonksiyon
+  const handleOpenList = async (type: "followers" | "following") => {
+    if (!profileUser) return;
+    
+    setDialogType(type);
+    setIsDialogOpen(true);
+    setDialogUsers([]);
+    setIsDialogLoading(true);
 
-  // Takip durumu kontrolü (currentUser'ın following listesinde var mı?)
-  const isFollowing = currentUser.following?.includes(profileUser.id);
-  const userPlaylists = playlists; // Zaten filtreleyip state'e attık
+    try {
+      const users = type === "followers" 
+        ? await userService.getUserFollowers(profileUser.username)
+        : await userService.getUserFollowing(profileUser.username);
+      
+      setDialogUsers(users);
+    } catch (error) {
+      console.error(`Failed to fetch ${type}:`, error);
+    } finally {
+      setIsDialogLoading(false);
+    }
+  };
 
-  // ----------------------------------------------------------------
-  // GÜNCELLENEN KISIM: Profil Kaydetme
-  // ----------------------------------------------------------------
+  const handleUserClickInModal = (targetUserId: string, targetUsername: string) => {
+     setIsDialogOpen(false);
+     navigate(`/app/user/${targetUsername}`);
+  };
+
   const handleSaveProfile = async () => {
     if (!currentUser) return;
 
     try {
-      // 1. Backend'e PUT isteği at (username ve id gönderilmez, sadece değişenler)
       await userService.updateCurrentUser({
         bio: editBio,
         avatar_url: editAvatar
       });
 
-      // 2. Context'i güncelle (Uygulama genelinde avatar değişsin)
       updateUser({ 
         ...currentUser, 
         bio: editBio, 
         avatar: editAvatar 
       });
 
-      // 3. Mevcut sayfa state'ini güncelle
-      setProfileUser({ 
-        ...profileUser, 
+      setProfileUser(prev => prev ? ({ 
+        ...prev, 
         bio: editBio, 
         avatar: editAvatar 
-      });
+      }) : null);
 
       setIsEditing(false);
     } catch (error) {
       console.error("Profil güncellenemedi:", error);
-      alert("Profil güncellenirken bir hata oluştu.");
     }
   };
 
   const handleCancelEdit = () => {
-    setEditBio(profileUser.bio);
-    setEditAvatar(profileUser.avatar);
+    if (profileUser) {
+        setEditBio(profileUser.bio);
+        setEditAvatar(profileUser.avatar);
+    }
     setIsEditing(false);
   };
 
-  // ----------------------------------------------------------------
-  // GÜNCELLENEN KISIM: Takip Etme (Sayıların Anlık Güncellenmesi)
-  // ----------------------------------------------------------------
   const handleFollow = async (userId: string, targetUsername: string) => {
-    if (!currentUser) return;
-
+    if (!currentUser || !profileUser) return;
     const isCurrentlyFollowing = currentUser.following.includes(userId);
 
-    // OPTIMISTIC UPDATE BAŞLANGIÇ
-    
-    // 1. Sizin (Current User) following listenizi güncelleyin
     const updatedMyFollowing = isCurrentlyFollowing
         ? currentUser.following.filter(id => id !== userId)
         : [...currentUser.following, userId];
 
     updateUser({ ...currentUser, following: updatedMyFollowing });
 
-    // 2. Profildeki Kullanıcının (Profile User) followers listesini güncelleyin
-    // Eğer kendi profilinizdeyseniz (isOwnProfile) bu mantık değişebilir ama
-    // genelde başkasının profilindeyken takip edersiniz.
     const updatedProfileFollowers = isCurrentlyFollowing
         ? profileUser.followers.filter(id => id !== currentUser.id)
         : [...profileUser.followers, currentUser.id];
@@ -141,7 +143,6 @@ export function ProfilePage() {
     setProfileUser({ ...profileUser, followers: updatedProfileFollowers });
 
     try {
-      // API İsteği
       if (isCurrentlyFollowing) {
         await userService.unfollowUser(targetUsername);
       } else {
@@ -149,21 +150,16 @@ export function ProfilePage() {
       }
     } catch (error) {
       console.error("Takip işlemi başarısız:", error);
-      // Hata durumunda Rollback (Geri alma)
       updateUser({ ...currentUser, following: currentUser.following });
       setProfileUser({ ...profileUser, followers: profileUser.followers });
     }
   };
 
-  // Playlist Like işlemleri (Değişmedi, aynen kalabilir)
   const handleLike = async (playlistId: string) => {
-    // ... (Mevcut kodunuzdaki handleLike içeriği)
     if (!currentUser?.id) return;
     try {
       const playlistIdNum = parseInt(playlistId);
       const playlist = playlists.find((p) => p.id === playlistIdNum);
-      // Not: Backend likes array dönmüyorsa burada yine optimistic update hatası olabilir.
-      // SearchPage.tsx için yaptığımız düzeltmenin aynısını buraya da uygulamanız gerekebilir.
       const isLiked = playlist?.likes?.includes(currentUser.id) || false;
 
       if (isLiked) {
@@ -171,7 +167,6 @@ export function ProfilePage() {
         setPlaylists((prev) =>
           prev.map((p) => {
              if (p.id === playlistIdNum) {
-               // Like count güncelleme
                const newCount = Math.max(0, (p.likes_count || 0) - 1);
                return { 
                  ...p, 
@@ -203,13 +198,16 @@ export function ProfilePage() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !currentUser || !profileUser) {
     return (
       <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
-        <LoadingSkeleton type="avatar" /> {/* Basit skeleton örneği */}
+        <LoadingSkeleton type="avatar" />
       </div>
     );
   }
+
+  const userPlaylists = playlists;
+  const isFollowing = currentUser.following?.includes(profileUser.id);
 
   return (
     <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
@@ -242,12 +240,25 @@ export function ProfilePage() {
                   />
                 </div>
               )}
+              
               <div className="flex items-center gap-6 text-sm">
                 <span>{userPlaylists.length} playlists</span>
-                {/* DÜZELTME: Artık doğru sayılar görünecek */}
-                <span>{profileUser.followers.length} followers</span>
-                <span>{profileUser.following.length} following</span>
+                
+                <button 
+                  onClick={() => handleOpenList("followers")}
+                  className="hover:text-green-400 hover:underline transition-colors focus:outline-none"
+                >
+                  <span className="font-bold">{profileUser.followers.length}</span> followers
+                </button>
+
+                <button 
+                  onClick={() => handleOpenList("following")}
+                  className="hover:text-green-400 hover:underline transition-colors focus:outline-none"
+                >
+                  <span className="font-bold">{profileUser.following.length}</span> following
+                </button>
               </div>
+
             </div>
           </div>
 
@@ -300,7 +311,6 @@ export function ProfilePage() {
 
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
-             {/* Playlist listeleme kısmı aynı kalabilir */}
              {userPlaylists.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {userPlaylists.map((playlist) => (
@@ -319,6 +329,73 @@ export function ProfilePage() {
               )}
         </div>
       </div>
+
+      {/* --- CUSTOM MODAL (STANDART CSS/TAILWIND) --- */}
+      {isDialogOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          onClick={() => setIsDialogOpen(false)} // Dışarı tıklayınca kapanır
+        >
+          <div 
+            className="w-full max-w-md bg-gray-900 border border-gray-800 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()} // İçeri tıklayınca kapanmaz
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900/50">
+              <h3 className="text-xl font-bold capitalize text-white">
+                {dialogType}
+              </h3>
+              <button 
+                onClick={() => setIsDialogOpen(false)}
+                className="p-1 rounded-full hover:bg-gray-800 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-400 hover:text-white" />
+              </button>
+            </div>
+            
+            {/* Modal Body */}
+            <div className="p-2 max-h-[60vh] overflow-y-auto">
+              {isDialogLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+                </div>
+              ) : dialogUsers.length > 0 ? (
+                <div className="space-y-1">
+                  {dialogUsers.map((u) => (
+                    <div 
+                      key={u.id} 
+                      className="flex items-center justify-between p-3 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer group"
+                      onClick={() => handleUserClickInModal(u.id, u.username)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src={u.avatar} 
+                          alt={u.username} 
+                          className="w-10 h-10 rounded-full object-cover border border-gray-700"
+                        />
+                        <div>
+                          <p className="font-medium text-white group-hover:text-green-400 transition-colors">
+                            {u.username}
+                          </p>
+                          {u.bio && (
+                            <p className="text-xs text-gray-400 line-clamp-1">{u.bio}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center text-gray-500 py-8">
+                  <p>No users found.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ------------------------------------------- */}
+
     </div>
   );
 }
