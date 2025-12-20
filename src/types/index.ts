@@ -90,6 +90,12 @@ export interface BackendUser {
   created_at: string;
 }
 
+// Backend'den profil güncelleme isteği için (PUT /users/me)
+export interface UserUpdateRequest {
+  bio?: string;
+  avatar_url?: string;
+}
+
 export interface SearchUserItem {
   user: BackendUser;
   relevance: number | null;

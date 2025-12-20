@@ -1,6 +1,6 @@
 // src/services/userService.ts
 import api from './api';
-import { User, BackendUser, Playlist, Song } from '../types';
+import { User, BackendUser, Playlist } from '../types';
 
 // Map backend user to frontend user
 const mapBackendUserToFrontend = (backendUser: BackendUser): User => {
@@ -10,8 +10,8 @@ const mapBackendUserToFrontend = (backendUser: BackendUser): User => {
     email: '', 
     avatar: backendUser.avatar_url || 'https://github.com/shadcn.png',
     bio: backendUser.bio || '',
-    followers: [], 
-    following: [], 
+    followers: [], // Varsayılan boş, getUserByUsername içinde doldurulacak
+    following: [], // Varsayılan boş, getUserByUsername içinde doldurulacak
     likedPlaylists: [], 
     createdAt: backendUser.created_at,
   };
@@ -41,7 +41,8 @@ export const userService = {
     }
   },
 
-  updateMe: async (userData: { bio?: string | null; avatar_url?: string | null }): Promise<User> => {
+  // İsim değişikliği: ProfilePage ile uyumlu olması için updateMe -> updateCurrentUser
+  updateCurrentUser: async (userData: { bio?: string | null; avatar_url?: string | null }): Promise<User> => {
     try {
       const response = await api.put<BackendUser>('/users/me', userData);
       return mapBackendUserToFrontend(response.data);
@@ -50,11 +51,26 @@ export const userService = {
     }
   },
 
+  // 🔥 GÜNCELLENEN FONKSİYON: Takipçi sayılarını düzeltmek için
   getUserByUsername: async (username: string): Promise<User> => {
     if (!username || username.trim().length === 0) throw new UserServiceError('Username is required', 400);
     try {
-      const response = await api.get<BackendUser>(`/users/${encodeURIComponent(username)}`);
-      return mapBackendUserToFrontend(response.data);
+      // 1. Profil, Takipçiler ve Takip Edilenleri PARALEL çekiyoruz
+      // Swagger yapısına göre ayrı endpointlere gitmek gerekiyor.
+      const [userRes, followersRes, followingRes] = await Promise.all([
+        api.get<BackendUser>(`/users/${encodeURIComponent(username)}`),
+        api.get<BackendUser[]>(`/users/${encodeURIComponent(username)}/followers`),
+        api.get<BackendUser[]>(`/users/${encodeURIComponent(username)}/following`)
+      ]);
+
+      // 2. Temel kullanıcıyı map ediyoruz
+      const user = mapBackendUserToFrontend(userRes.data);
+
+      // 3. ID listelerini dolduruyoruz (Böylece profil sayfasında .length çalışır)
+      user.followers = followersRes.data.map(u => u.id);
+      user.following = followingRes.data.map(u => u.id);
+
+      return user;
     } catch (error: any) {
       throw error;
     }
@@ -98,16 +114,13 @@ export const userService = {
     }
   },
 
-  // 🔍 DEBUG EKLENMİŞ VERSİYON
-  // 🔥 GÜNCELLENEN FONKSİYON (BACKEND DEĞİŞMEDEN)
+  // 🔍 SENİN DEBUG EKLENMİŞ VERSİYONUN (DOKUNULMADI)
   getUserLikedPlaylists: async (userId: string): Promise<Playlist[]> => {
     if (!userId) return [];
 
     console.log("🔍 [UserService] Workaround Modu: Tüm playlistler çekilip filtrelenecek.");
 
     try {
-      // 1. ADIM: Backend'deki genel playlist listesini çek (Limiti yüksek tutuyoruz)
-      // '/playlists/' endpoint'i mevcut backend'inde var.
       const response = await api.get<any[]>('/playlists/', {
         params: { skip: 0, limit: 100 } 
       });
@@ -115,23 +128,17 @@ export const userService = {
       const allPlaylists = response.data;
       console.log(`📦 [UserService] Toplam ${allPlaylists.length} playlist çekildi.`);
 
-      // 2. ADIM: JavaScript ile filtrele
-      // "Bu playlist'in likes listesinde benim ID'm var mı?"
       const likedPlaylists = allPlaylists.filter((pl: any) => {
-        // Backend 'likes' array'ini gönderiyor mu kontrol et
         if (!pl.likes || !Array.isArray(pl.likes)) return false;
 
-        // Beğenenler arasında ben var mıyım?
-        // Backend yapısına göre like objesi { user_id: "..." } veya direkt ID string olabilir.
         return pl.likes.some((like: any) => {
-            const likerId = like.user_id || like.id || like; // Farklı formatları kapsa
+            const likerId = like.user_id || like.id || like; 
             return likerId === userId;
         });
       });
 
       console.log(`✅ [UserService] Filtreleme sonucu: ${likedPlaylists.length} beğenilen playlist bulundu.`);
 
-      // 3. ADIM: Frontend formatına çevir
       return likedPlaylists.map((playlistData: any) => ({
           id: playlistData.id,
           title: playlistData.title,
@@ -147,7 +154,7 @@ export const userService = {
           })),
           userId: playlistData.user_id,
           user_id: playlistData.user_id,
-          likes: [], // Burayı boş bırakabiliriz, detayda zaten var
+          likes: [], 
           createdAt: playlistData.created_at,
           created_at: playlistData.created_at,
           updated_at: playlistData.updated_at,
