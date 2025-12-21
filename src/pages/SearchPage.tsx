@@ -35,37 +35,24 @@ export function SearchPage() {
     // 1. Güvenlik Kontrolü
     if (!user || !rawResults.playlists) return rawResults.playlists;
 
-    // Konsola basalım: Kullanıcının beğeni listesi dolu mu?
-    // Eğer burası 0 veya undefined geliyorsa sorun Layout.tsx veya API'dedir.
-    console.log("🔍 [SearchPage] User Liked Playlists:", user.likedPlaylists);
-
     return rawResults.playlists.map((playlist) => {
-      // 2. ID Eşleştirme (String'e çevirerek garanti altına alıyoruz)
+      // 2. ID Eşleştirme
       const playlistIdStr = playlist.id.toString();
-      const userLikedList = user.likedPlaylists || []; // Boşsa boş array al
+      const userLikedList = user.likedPlaylists || []; 
       
       const isLiked = userLikedList.includes(playlistIdStr);
 
-      // Konsolda hangi playlistin kontrol edildiğini görelim
-      if (isLiked) {
-         console.log(`✅ Playlist BEĞENİLMİŞ TESPİT EDİLDİ: ID=${playlistIdStr}`);
-      }
-
       // 3. 'likes' Arrayini Doldurma
-      let updatedLikes = [...(playlist.likes || [])]; // Yeni referans oluştur
+      let updatedLikes = [...(playlist.likes || [])];
 
-      // Eğer kullanıcı beğenmişse ama array'de yoksa EKLE
       if (isLiked && user.id && !updatedLikes.includes(user.id)) {
         updatedLikes.push(user.id);
       } 
-      // Eğer kullanıcı beğenmemişse ama array'de varsa ÇIKAR
       else if (!isLiked && user.id && updatedLikes.includes(user.id)) {
         updatedLikes = updatedLikes.filter(id => id !== user.id);
       }
 
       // 4. Sayı Düzeltme
-      // Eğer kullanıcı beğenmişse sayı en az 1 olmalı.
-      // Search servisi bazen count'u güncel getirmeyebilir, biz düzeltiyoruz.
       let updatedCount = playlist.likes_count || 0;
       if (isLiked && updatedCount === 0) {
         updatedCount = 1;
@@ -73,16 +60,58 @@ export function SearchPage() {
 
       return {
         ...playlist,
-        likes: updatedLikes,       // PlaylistCard kalbin rengini buradan anlar
-        likes_count: updatedCount  // PlaylistCard sayıyı buradan anlar
+        likes: updatedLikes,
+        likes_count: updatedCount
       };
     });
-    // Dependency array'e 'user'ı komple ekledik ki user güncellenince burası tekrar çalışsın.
   }, [rawResults.playlists, user]);
 
+  // --- BAŞLANGIÇ VERİSİ ÇEKME (Random/Recent Content) ---
+  const fetchInitialData = async () => {
+    setIsLoading(true);
+    try {
+      // Endpointleri bozmadan, mevcut playlist listesini çekiyoruz
+      const playlists = await playlistService.getPlaylists(0, 20);
+      
+      // 1. Şarkıları playlistlerin içinden çıkarıp karıştırıyoruz
+      const allSongs = playlists.flatMap(p => p.songs || []);
+      const shuffledSongs = allSongs.sort(() => 0.5 - Math.random()).slice(0, 10);
+
+      // 2. Kullanıcıları playlist sahiplerinden çıkarıyoruz
+      const uniqueUsersMap = new Map();
+      playlists.forEach(p => {
+        if (p.owner && !uniqueUsersMap.has(p.owner.id)) {
+           // BackendUser formatını Frontend User formatına çeviriyoruz
+           uniqueUsersMap.set(p.owner.id, {
+             id: p.owner.id,
+             username: p.owner.username,
+             avatar: p.owner.avatar_url || "https://github.com/shadcn.png", // avatar_url -> avatar mapping
+             bio: p.owner.bio || "",
+             followers: [], 
+             following: [],
+             created_at: p.owner.created_at
+           });
+        }
+      });
+      const initialUsers = Array.from(uniqueUsersMap.values()).slice(0, 10);
+
+      setRawResults({
+        songs: shuffledSongs,
+        playlists: playlists,
+        users: initialUsers as User[]
+      });
+
+    } catch (error) {
+      console.error("Initial fetch error:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
+    // Arama kutusu boşsa başlangıç verilerini çek
     if (!searchQuery.trim()) {
-      setRawResults({ songs: [], playlists: [], users: [] });
+      fetchInitialData();
       return;
     }
 
@@ -124,7 +153,6 @@ export function SearchPage() {
     const isLiked = user.likedPlaylists?.includes(playlistIdStr) ?? false;
     const playlistIdNum = parseInt(playlistId);
 
-    // Optimistic Update
     const updatedLikedPlaylists = isLiked
         ? user.likedPlaylists.filter(id => id !== playlistIdStr)
         : [...(user.likedPlaylists || []), playlistIdStr];
@@ -313,7 +341,8 @@ export function SearchPage() {
                 </div>
               </div>
             )}
-
+            
+            {/* Empty State: Sadece hem arama yapılıp hem de sonuç bulunamazsa göster */}
             {!isLoading &&
               searchQuery &&
               rawResults.songs.length === 0 &&
