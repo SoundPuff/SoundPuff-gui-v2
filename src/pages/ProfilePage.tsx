@@ -5,9 +5,9 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { PlaylistCard } from "../components/PlaylistCard";
-import { AccountSettings } from "../components/AccountSettings";
+import { AccountSettings } from "../components/AccountSettings"; // Bu bileşen zaten import edilmişti, şimdi aşağıda kullanılacak.
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
-import { Edit2, Check, X } from "lucide-react"; // X ikonu modal kapatmak için lazım
+import { Edit2, Check, X } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -62,7 +62,7 @@ export function ProfilePage() {
     fetchData();
   }, [username, currentUser?.username]);
 
-  const isOwnProfile = !username || username === currentUser?.username;
+  const isOwnProfile = !username || (currentUser && username === currentUser.username);
 
   // Listeyi açan fonksiyon
   const handleOpenList = async (type: "followers" | "following") => {
@@ -136,11 +136,14 @@ export function ProfilePage() {
 
     updateUser({ ...currentUser, following: updatedMyFollowing });
 
-    const updatedProfileFollowers = isCurrentlyFollowing
-        ? profileUser.followers.filter(id => id !== currentUser.id)
-        : [...profileUser.followers, currentUser.id];
+    // Eğer şu an görüntülediğimiz profil, takip ettiğimiz kişiyse onun da listesini güncelle
+    if (profileUser.id === userId) {
+        const updatedProfileFollowers = isCurrentlyFollowing
+            ? profileUser.followers.filter(id => id !== currentUser.id)
+            : [...profileUser.followers, currentUser.id];
 
-    setProfileUser({ ...profileUser, followers: updatedProfileFollowers });
+        setProfileUser({ ...profileUser, followers: updatedProfileFollowers });
+    }
 
     try {
       if (isCurrentlyFollowing) {
@@ -151,7 +154,7 @@ export function ProfilePage() {
     } catch (error) {
       console.error("Takip işlemi başarısız:", error);
       updateUser({ ...currentUser, following: currentUser.following });
-      setProfileUser({ ...profileUser, followers: profileUser.followers });
+      // Hata durumunda profil state'ini de geri alabiliriz
     }
   };
 
@@ -311,7 +314,44 @@ export function ProfilePage() {
 
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
-             {userPlaylists.length > 0 ? (
+          {/* --- DEĞİŞİKLİK BURADA BAŞLIYOR --- */}
+          {isOwnProfile ? (
+            /* Eğer kendi profilimizse: TABS yapısı (Playlists | Settings) */
+            <Tabs defaultValue="playlists" className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="playlists">Playlists</TabsTrigger>
+                <TabsTrigger value="settings">Settings</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="playlists">
+                {userPlaylists.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    {userPlaylists.map((playlist) => (
+                      <PlaylistCard
+                        key={playlist.id}
+                        playlist={playlist}
+                        currentUserId={currentUser.id}
+                        onLike={handleLike}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="bg-gray-900 rounded-lg p-12 text-center">
+                    <p className="text-gray-400">No playlists yet</p>
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="settings">
+                {/* AccountSettings bileşeni burada çağrılıyor (Eski kodda olduğu gibi) */}
+                <AccountSettings />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            /* Eğer başkasının profiliyse: Sadece Playlists başlığı ve listesi */
+            <>
+              <h2 className="mb-6">Playlists</h2>
+              {userPlaylists.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {userPlaylists.map((playlist) => (
                     <PlaylistCard
@@ -327,6 +367,9 @@ export function ProfilePage() {
                   <p className="text-gray-400">No playlists yet</p>
                 </div>
               )}
+            </>
+          )}
+          {/* --- DEĞİŞİKLİK BURADA BİTİYOR --- */}
         </div>
       </div>
 
