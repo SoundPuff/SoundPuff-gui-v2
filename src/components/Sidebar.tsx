@@ -5,6 +5,7 @@ import { Button } from "./ui/button";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "../contexts/AuthContext";
 import { User as UserType } from "../types";
+import logoGif from '../data/soundpuff_logo.gif';
 
 interface SidebarProps {
   currentUser: UserType | null;
@@ -33,15 +34,20 @@ export function Sidebar({ currentUser }: SidebarProps) {
   };
 
   return (
-    <nav className="bg-black dark:bg-gray-900 text-white border-b border-gray-800">
-      <div className="flex items-center justify-between px-6 py-4">
+    <nav
+      className="text-white flex rounded-lg"
+      style={{
+        background: 'linear-gradient(to bottom, black, #5b0425 15%, #5b0425 85%, black)',
+        minHeight: '80px',
+      }}
+    >
+      <div className="flex items-center justify-between px-6 w-full">
         {/* Logo */}
         <div
           className="flex items-center gap-2"
           onClick={() => navigate("/app/home")}
         >
-          <Music className="w-8 h-8 text-green-500 cursor-pointer" />
-          <h1 className="text-green-500 cursor-pointer">SoundPuff</h1>
+          <img src={logoGif} alt="SoundPuff Logo" width="175"/>
         </div>
 
         {/* Menu Items */}
