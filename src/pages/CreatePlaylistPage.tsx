@@ -24,6 +24,8 @@ export function CreatePlaylistPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isCreatePlaylistHovered, setIsCreatePlaylistHovered] = useState(false);
+  const [isCancelHovered, setIsCancelHovered] = useState(false);
 
   useEffect(() => {
     const fetchPlaylistData = async () => {
@@ -110,7 +112,16 @@ export function CreatePlaylistPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+      <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
         <div className="max-w-4xl mx-auto">
           <div className="h-8 bg-gray-800 rounded w-48 mb-8 animate-pulse" />
           <div className="bg-gray-900 rounded-lg p-6 space-y-6">
@@ -129,17 +140,31 @@ export function CreatePlaylistPage() {
   }
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+    <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+    style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
       <div className="max-w-4xl mx-auto">
-        <h1 className="mb-8">
+        <h1 className="text-white mb-4 text-4xl font-bold"
+            style={{ 
+              color: '#d95a96', 
+              WebkitTextStroke: '0.5px #5b0425'
+            }}>
           {isEditing ? 'Edit Playlist' : 'Create New Playlist'}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-gray-900 rounded-lg p-6 space-y-6">
+          <div className="bg-gray-900 rounded-lg p-6 space-y-6"
+          style={{ outline: '3px solid #33ace3' }}>
             <div className="space-y-2">
               <Label htmlFor="title" className="text-white">
-                Playlist Title *
+                Playlist Title
               </Label>
               <Input
                 id="title"
@@ -148,6 +173,7 @@ export function CreatePlaylistPage() {
                 placeholder="Enter playlist title"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
+                style={{ outline: '1px solid #33ace3' }}
               />
             </div>
 
@@ -161,6 +187,7 @@ export function CreatePlaylistPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your playlist..."
                 className="bg-gray-800 border-gray-700 text-white"
+                style={{ outline: '1px solid #33ace3' }}
                 rows={3}
               />
             </div>
@@ -175,6 +202,7 @@ export function CreatePlaylistPage() {
                 onChange={(e) => setCoverArt(e.target.value)}
                 placeholder="https://example.com/image.jpg"
                 className="bg-gray-800 border-gray-700 text-white"
+                style={{ outline: '1px solid #33ace3' }}
               />
               {coverArt && (
                 <div className="mt-2">
@@ -188,9 +216,10 @@ export function CreatePlaylistPage() {
             </div>
           </div>
 
-          <div className="bg-gray-900 rounded-lg p-6">
+          <div className="bg-gray-900 rounded-lg p-6"
+          style={{ outline: '3px solid #33ace3' }}>
             <div className="flex items-center justify-between mb-4">
-              <h2>Select Songs *</h2>
+              <h2>Select Songs</h2>
               <span className="text-gray-400 text-sm">
                 {selectedSongs.length} selected
               </span>
@@ -204,7 +233,7 @@ export function CreatePlaylistPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search songs..."
-                  style={{ paddingLeft: '32px' }}
+                  style={{ outline: '1px solid #33ace3', paddingLeft: '32px' }}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>
@@ -217,11 +246,17 @@ export function CreatePlaylistPage() {
                   <div
                     key={song.id}
                     className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
-                      isSelected
-                        ? 'bg-green-900/20 border border-green-500/30'
-                        : 'hover:bg-gray-800'
+                      !isSelected ? 'hover:bg-gray-800' : ''
                     }`}
                     onClick={() => handleToggleSong(song)}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: 'rgba(51, 172, 227, 0.2)',
+                            border: '1px solid rgba(51, 172, 227, 0.3)',
+                          }
+                        : undefined
+                    }
                   >
                     <div onClick={(e) => e.stopPropagation()}>
                       <Checkbox
@@ -262,22 +297,29 @@ export function CreatePlaylistPage() {
             </div>
 
             {selectedSongs.length === 0 && availableSongs.length !== 0 && (
-              <p className="text-gray-400 text-center py-8">
-                Select at least one song
-              </p>
-            )}
+              <p className='text-white text-center py-4'
+                style={{ 
+                      WebkitTextStroke: '0.5px #d95a96'
+                    }}>Select at least one song</p>
+              )}
             {availableSongs.length === 0 && (
-              <p className="text-gray-400 text-center py-8">
-                Search songs to add to your playlist
-              </p>
-            )}
+              <p className='text-white text-center py-8'
+                style={{ 
+                      WebkitTextStroke: '0.5px #d95a96'
+                    }}>Select at least one song</p>
+              )}
           </div>
 
           <div className="flex gap-3">
             <Button
               type="submit"
               disabled={!title.trim() || selectedSongs.length === 0}
-              className="bg-green-500 hover:bg-green-600 text-black"
+              className="text-black"
+              onMouseEnter={() => setIsCreatePlaylistHovered(true)}
+              onMouseLeave={() => setIsCreatePlaylistHovered(false)}
+              style={{
+                backgroundColor: isCreatePlaylistHovered ? '#23759e' : '#33ace3',
+              }}
             >
               <Save className="w-4 h-4 mr-2" />
               {isEditing ? 'Save Changes' : 'Create Playlist'}
@@ -285,10 +327,16 @@ export function CreatePlaylistPage() {
             <Button
               type="button"
               onClick={() => navigate('/app/library')}
-              variant="outline"
-              className="border-gray-700"
+              onMouseEnter={() => setIsCancelHovered(true)}
+              onMouseLeave={() => setIsCancelHovered(false)}
+              style={{
+                backgroundColor: isCancelHovered ? '#33ace3' : 'transparent',
+                color: isCancelHovered ? 'black' : '#33ace3',
+                borderColor: '#23759e',
+                borderWidth: '1px'
+              }}
             >
-              <X className="w-4 h-4 mr-2" />
+              <X className="w-5 h-5 mr-2" />
               Cancel
             </Button>
           </div>
@@ -297,4 +345,3 @@ export function CreatePlaylistPage() {
     </div>
   );
 }
-

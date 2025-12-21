@@ -39,7 +39,10 @@ export function PlaylistCard({
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors group">
+    <div
+      className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors group"
+      style={{ outline: '3px solid #33ace3' }}
+    >
       <div className="relative mb-4">
         <div className="aspect-square rounded-lg overflow-hidden bg-gray-800">
           {playlist.coverArt ? (

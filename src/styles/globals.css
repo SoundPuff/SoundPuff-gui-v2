@@ -1,7 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 16px;
+  /* --font-size: 16px; */
   --background: #ffffff;
   --foreground: oklch(0.145 0 0);
   --card: #ffffff;
@@ -132,7 +132,7 @@
 /**
  * Base typography. This is not applied to elements which have an ancestor with a Tailwind text class.
  */
-@layer base {
+/* @layer base {
   :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) {
     h1 {
       font-size: var(--text-2xl);
@@ -182,8 +182,8 @@
       line-height: 1.5;
     }
   }
-}
+} */
 
-html {
+/* html {
   font-size: var(--font-size);
-}
+} */

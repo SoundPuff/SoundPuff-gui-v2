@@ -30,7 +30,7 @@ export function SearchPage() {
     users: User[];
   }>({ songs: [], playlists: [], users: [] });
 
-  // ✨ VERİ BİRLEŞTİRME VE DEBUG NOKTASI
+  // VERİ BİRLEŞTİRME VE DEBUG NOKTASI
   const hydratedPlaylists = useMemo(() => {
     // 1. Güvenlik Kontrolü
     if (!user || !rawResults.playlists) return rawResults.playlists;
@@ -208,9 +208,24 @@ export function SearchPage() {
   if (!user) return null;
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+    <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+    style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
       <div className="max-w-7xl mx-auto">
-        <h1 className="mb-8">Search</h1>
+        <h1 className="text-white mb-4 text-4xl font-bold"
+            style={{ 
+              color: '#d95a96', 
+              WebkitTextStroke: '0.5px #5b0425'
+            }}>
+          Search
+        </h1>
         <div className="relative mb-8">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <Input

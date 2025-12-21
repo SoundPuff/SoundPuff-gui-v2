@@ -145,10 +145,10 @@
     text-decoration: underline dotted;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  /* h1, h2, h3, h4, h5, h6 {
     font-size: inherit;
     font-weight: inherit;
-  }
+  } */
 
   a {
     color: inherit;
@@ -165,10 +165,10 @@
     font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
     font-feature-settings: var(--default-mono-font-feature-settings, normal);
     font-variation-settings: var(--default-mono-font-variation-settings, normal);
-    font-size: 1em;
+    /* font-size: 1em; */
   }
 
-  small {
+  /* small {
     font-size: 80%;
   }
 
@@ -177,7 +177,7 @@
     font-size: 75%;
     line-height: 0;
     position: relative;
-  }
+  } */
 
   sub {
     bottom: -.25em;
@@ -372,19 +372,19 @@
     color: var(--foreground);
   }
 
-  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h1 {
+  /* :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h1 {
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
-  }
+  } */
 
-  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h2 {
+  /* :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h2 {
     font-size: var(--text-xl);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
-  }
+  } */
 
-  :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h3 {
+  /* :where(:not(:has([class*=" text-"]), :not(:has([class^="text-"])))) h3 {
     font-size: var(--text-lg);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
@@ -412,7 +412,7 @@
     font-size: var(--text-base);
     font-weight: var(--font-weight-normal);
     line-height: 1.5;
-  }
+  } */
 }
 
 @layer utilities {
@@ -1240,7 +1240,7 @@
     text-align: right;
   }
 
-  .text-base {
+  /* .text-base {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
   }
@@ -1253,7 +1253,7 @@
   .text-xs {
     font-size: var(--text-xs);
     line-height: var(--tw-leading, var(--text-xs--line-height));
-  }
+  } */
 
   .leading-none {
     --tw-leading: 1;
@@ -1484,10 +1484,10 @@
     background-color: #0000;
   }
 
-  .file\:text-sm::file-selector-button {
+  /* .file\:text-sm::file-selector-button {
     font-size: var(--text-sm);
     line-height: var(--tw-leading, var(--text-sm--line-height));
-  }
+  } */
 
   .file\:font-medium::file-selector-button {
     --tw-font-weight: var(--font-weight-medium);
@@ -1764,12 +1764,12 @@
     }
   }
 
-  @media (width >= 48rem) {
+  /* @media (width >= 48rem) {
     .md\:text-sm {
       font-size: var(--text-sm);
       line-height: var(--tw-leading, var(--text-sm--line-height));
     }
-  }
+  } */
 
   @media (width >= 64rem) {
     .lg\:grid-cols-3 {
@@ -1904,7 +1904,7 @@
 }
 
 :root {
-  --font-size: 16px;
+  /* --font-size: 16px; */
   --background: #fff;
   --foreground: oklch(.145 0 0);
   --card: #fff;
@@ -1981,9 +1981,9 @@
   --sidebar-ring: oklch(.439 0 0);
 }
 
-html {
+/* html {
   font-size: var(--font-size);
-}
+} */
 
 @property --tw-translate-x {
   syntax: "*";
