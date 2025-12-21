@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
 import { useAuth } from '../contexts/AuthContext';
+import logoPng from '../data/soundpuff_logo.png';
 
 export function AuthPage() {
   const navigate = useNavigate();
@@ -23,6 +24,8 @@ export function AuthPage() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [isSignUpHovered, setIsSignUpHovered] = useState(false);
+  const [isLogInHovered, setIsLogInHovered] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,20 +71,35 @@ export function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-green-900 flex items-center justify-center p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}
+    >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Music className="w-12 h-12 text-green-500" />
-            <h1 className="text-green-500">SoundPuff</h1>
+            <img src={logoPng} alt="SoundPuff Logo"/>
           </div>
-          <p className="text-gray-400">Your social music platform</p>
+          <h3 className="text-white"
+            style={{ 
+                  WebkitTextStroke: '0.5px #d95a96'
+                }}>Your social music platform</h3>
           <Button
             onClick={() => navigate('/')}
             variant="ghost"
-            className="mt-2 text-green-400 hover:text-green-300"
           >
-            ← Browse as guest
+            <p className='text-white'
+              style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>← Browse as guest</p>
           </Button>
         </div>
 
@@ -94,15 +112,39 @@ export function AuthPage() {
 
         <Tabs defaultValue="login" className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="login">
+              <p className='text-white'
+              style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>Login</p>
+            </TabsTrigger>
+            <TabsTrigger value="signup">
+              <p className='text-white'
+              style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>Sign Up</p>
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="login">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card
+              className="bg-gray-900 border-gray-800"
+              style={{ outline: '3px solid #33ace3' }}
+            >
               <CardHeader>
-                <CardTitle className="text-white">Welcome back</CardTitle>
-                <CardDescription>Login to your SoundPuff account</CardDescription>
+                <CardTitle className="text-white">
+                  <h4 className='text-white'
+                  style={{
+                        WebkitTextStroke: '0.5px #d95a96'
+                      }}>Welcome back</h4>
+                </CardTitle>
+                <CardDescription>
+                  <p className='text-white'
+                  style={{ 
+                        color: '#d95a96', 
+                        WebkitTextStroke: '0.5px #d95a96'
+                      }}>Login to your SoundPuff Account</p>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
@@ -137,6 +179,11 @@ export function AuthPage() {
                   <Button 
                     type="submit" 
                     className="w-full bg-green-500 hover:bg-green-600 text-black"
+                    onMouseEnter={() => setIsSignUpHovered(true)}
+                    onMouseLeave={() => setIsSignUpHovered(false)}
+                    style={{
+                      backgroundColor: isSignUpHovered ? '#23759e' : '#33ace3',
+                    }}
                     disabled={loading}
                   >
                     {loading ? 'Logging in...' : 'Login'}
@@ -164,7 +211,10 @@ export function AuthPage() {
 
           
           <TabsContent value="signup">
-            <Card className="bg-gray-900 border-gray-800">
+            <Card
+              className="bg-gray-900 border-gray-800"
+              style={{ outline: '3px solid #33ace3' }}
+            >
               <CardHeader>
                 <CardTitle className="text-white">Create account</CardTitle>
                 <CardDescription>Join the SoundPuff community</CardDescription>

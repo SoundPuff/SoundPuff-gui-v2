@@ -8,12 +8,15 @@ import { LoadingSkeleton } from './LoadingSkeleton';
 import { Playlist, User } from '../types';
 import { mockPlaylists, mockUsers } from '../data/mockData';
 import { playlistService } from '../services/playlistService';
+import logoPng from '../data/soundpuff_logo.png';
 
 export function GuestLandingPage() {
   const navigate = useNavigate();
   const [publicPlaylists, setPublicPlaylists] = useState<Playlist[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSignUpHovered, setIsSignUpHovered] = useState(false);
+  const [isLogInHovered, setIsLogInHovered] = useState(false);
 
   useEffect(() => {
     const loadPublicPlaylists = async () => {
@@ -32,26 +35,47 @@ export function GuestLandingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-green-900">
+    <div
+      className="min-h-screen"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}
+    >
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-16">
         <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <Music className="w-16 h-16 text-green-500" />
-            <h1 className="text-green-500">SoundPuff</h1>
+          <div className="flex items-center justify-center gap-3 mb-10 mt-20">
+            <img src={logoPng} alt="SoundPuff Logo" width="600"/>
           </div>
-          <h2 className="text-white mb-4">
-            Share Your Music, Connect With Others
+          <h2 className="text-white mb-4 text-4xl font-bold"
+              style={{ 
+                color: '#d95a96', 
+                WebkitTextStroke: '0.5px #5b0425'
+              }}>
+            Share Your Music & Connect With Others
           </h2>
-          <p className="text-gray-300 mb-8 max-w-2xl mx-auto">
+          <h4 className="text-white mb-4 text-4xl font-bold max-w-2xl mt-20 mb-20 mx-auto"
+              style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>
             Create and share playlists, discover new music, and connect with music lovers
-            around the world. Join SoundPuff today and start your musical journey.
-          </p>
+            around the world. Join SoundPuff today to start your musical journey.
+          </h4>
           <div className="flex gap-4 justify-center">
             <Button
               onClick={() => navigate('/auth')}
               size="lg"
-              className="bg-green-500 hover:bg-green-600"
+              onMouseEnter={() => setIsSignUpHovered(true)}
+              onMouseLeave={() => setIsSignUpHovered(false)}
+              style={{
+                backgroundColor: isSignUpHovered ? '#23759e' : '#33ace3',
+              }}
             >
               <UserPlus className="w-5 h-5 mr-2" />
               Sign Up Free
@@ -59,8 +83,14 @@ export function GuestLandingPage() {
             <Button
               onClick={() => navigate('/auth')}
               size="lg"
-              variant="outline"
-              className="border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+              onMouseEnter={() => setIsLogInHovered(true)}
+              onMouseLeave={() => setIsLogInHovered(false)}
+              style={{
+                backgroundColor: isLogInHovered ? '#33ace3' : 'transparent',
+                color: isLogInHovered ? 'black' : '#33ace3',
+                borderColor: '#23759e',
+                borderWidth: '1px'
+              }}
             >
               <LogIn className="w-5 h-5 mr-2" />
               Log In
@@ -70,7 +100,11 @@ export function GuestLandingPage() {
 
         {/* Public Playlists Section */}
         <div className="mt-16">
-          <h3 className="text-white mb-6">Trending Public Playlists</h3>
+          <h3 className="text-white mb-6"
+            style={{ 
+                  WebkitTextStroke: '0.5px #d95a96'
+                }}>
+          Trending Public Playlists</h3>
           
           {loading && (
             <div className="py-12">
@@ -115,28 +149,49 @@ export function GuestLandingPage() {
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Music className="w-6 h-6 text-green-500" />
             </div>
-            <h4 className="text-white mb-2">Create Playlists</h4>
-            <p className="text-gray-400">
+            <h3 className="text-white mb-2"
+            style={{ 
+                color: '#d95a96', 
+                WebkitTextStroke: '0.5px #5b0425'
+              }}>Create Playlists</h3>
+            <h4 className="text-white"
+            style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>
               Curate your perfect playlists and share them with the world
-            </p>
+            </h4>
           </div>
           <div className="text-center p-6 bg-gray-800/50 rounded-lg">
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <UserPlus className="w-6 h-6 text-green-500" />
             </div>
-            <h4 className="text-white mb-2">Connect & Follow</h4>
-            <p className="text-gray-400">
+            <h3 className="text-white mb-2"
+            style={{ 
+                color: '#d95a96', 
+                WebkitTextStroke: '0.5px #5b0425'
+              }}>Connect & Follow</h3>
+            <h4 className="text-white"
+            style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>
               Follow users with similar taste and discover new music
-            </p>
+            </h4>
           </div>
           <div className="text-center p-6 bg-gray-800/50 rounded-lg">
             <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <LogIn className="w-6 h-6 text-green-500" />
             </div>
-            <h4 className="text-white mb-2">Social Features</h4>
-            <p className="text-gray-400">
+            <h3 className="text-white mb-2"
+            style={{ 
+                color: '#d95a96', 
+                WebkitTextStroke: '0.5px #5b0425'
+              }}>Social Features</h3>
+            <h4 className="text-white"
+            style={{ 
+                    WebkitTextStroke: '0.5px #d95a96'
+                  }}>
               Like, comment, and engage with playlists from the community
-            </p>
+            </h4>
           </div>
         </div>
       </div>

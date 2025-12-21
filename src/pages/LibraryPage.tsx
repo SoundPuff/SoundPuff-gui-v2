@@ -13,6 +13,8 @@ export function LibraryPage() {
   const { user } = useAuth();
   const [myPlaylists, setMyPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatePlaylistHovered, setIsCreatePlaylistHovered] = useState(false);
+  const [isCreateFirstPlaylistHovered, setIsCreateFirstPlaylistHovered] = useState(false);
 
   useEffect(() => {
     const fetchMyPlaylists = async () => {
@@ -87,7 +89,16 @@ export function LibraryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+      <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div className="h-8 bg-gray-800 rounded w-48 animate-pulse" />
@@ -100,15 +111,35 @@ export function LibraryPage() {
   }
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+    <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+    style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1>My Playlists</h1>
+          <h1 className="text-white mb-4 text-4xl font-bold"
+              style={{ 
+                color: '#d95a96', 
+                WebkitTextStroke: '0.5px #5b0425'
+              }}>
+            My Playlists
+          </h1>
           <Button
             onClick={() => navigate('/app/create-playlist')}
-            className="bg-green-500 hover:bg-green-600 text-black"
+            size="lg"
+            onMouseEnter={() => setIsCreatePlaylistHovered(true)}
+            onMouseLeave={() => setIsCreatePlaylistHovered(false)}
+            style={{
+              backgroundColor: isCreatePlaylistHovered ? '#23759e' : '#33ace3',
+            }}
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-5 h-5 mr-2" />
             Create Playlist
           </Button>
         </div>
@@ -132,9 +163,14 @@ export function LibraryPage() {
             </p>
             <Button
               onClick={() => navigate('/app/create-playlist')}
-              className="bg-green-500 hover:bg-green-600 text-black"
+              size="lg"
+              onMouseEnter={() => setIsCreateFirstPlaylistHovered(true)}
+              onMouseLeave={() => setIsCreateFirstPlaylistHovered(false)}
+              style={{
+                backgroundColor: isCreateFirstPlaylistHovered ? '#23759e' : '#33ace3',
+              }}
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-5 h-5 mr-2" />
               Create Your First Playlist
             </Button>
           </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Playlist } from "../types";
 import { PlaylistCard } from "../components/PlaylistCard";
+import { Button } from '../components/ui/button';
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
@@ -14,6 +15,7 @@ export function HomePage() {
   const [rawFeed, setRawFeed] = useState<Playlist[]>([]);
   const [rawDiscover, setRawDiscover] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDiscoverUsersHovered, setIsDiscoverUsersHovered] = useState(false);
 
   // ✨ VERİ BİRLEŞTİRME (HYDRATION)
   // Bu fonksiyon API'den gelen veriyi (count var, likes yok) 
@@ -115,7 +117,16 @@ export function HomePage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+      <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
         <div className="max-w-7xl mx-auto">
           <LoadingSkeleton type="playlist" count={8} />
         </div>
@@ -124,24 +135,51 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white p-8 overflow-y-auto pb-32">
+    <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
+    style={{
+      background: `
+        radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+        radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+        radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+        radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+        black
+      `,
+    }}>
       <div className="max-w-7xl mx-auto">
-        <h1 className="mb-2">Your Feed</h1>
-        <p className="text-gray-400 mb-8">
+        <h1 className="text-white mb-4 text-4xl font-bold"
+            style={{ 
+              color: '#d95a96', 
+              WebkitTextStroke: '0.5px #5b0425'
+            }}>
+          Your Feed
+        </h1>
+        <h4 className="text-white mb-8"
+            style={{ 
+                  WebkitTextStroke: '0.5px #d95a96'
+                }}>
           Latest playlists from people you follow
-        </p>
+        </h4>
 
         {feedPlaylists.length === 0 ? (
-          <div className="bg-gray-900 rounded-lg p-12 text-center mb-12">
+          <div className="bg-gray-900 rounded-lg p-12 text-center mb-12"
+          style={{ outline: '3px solid #33ace3' }}>
             <p className="text-gray-400 mb-4">
               Your feed is empty. Follow some users to see their playlists here!
             </p>
-            <button
+            <Button
               onClick={() => handleUserClick("")}
-              className="text-green-500 hover:underline"
+              variant="ghost"
+              onMouseEnter={() => setIsDiscoverUsersHovered(true)}
+              onMouseLeave={() => setIsDiscoverUsersHovered(false)}
+              style={{
+                backgroundColor: isDiscoverUsersHovered ? '#374151' : 'transparent' // gray-700
+              }}
             >
-              Discover users
-            </button>
+              <p className='text-white'
+                style={{ 
+                      WebkitTextStroke: '0.5px #d95a96'
+                    }}>Discover Users</p>
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
@@ -157,7 +195,13 @@ export function HomePage() {
         )}
 
         <div className="mt-12">
-          <h2 className="mb-6">Discover Playlists</h2>
+          <h1 className="text-white mb-4 text-4xl font-bold"
+              style={{ 
+                color: '#d95a96', 
+                WebkitTextStroke: '0.5px #5b0425'
+              }}>
+            Discover Playlists
+          </h1>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {discoverPlaylists.map((playlist) => (
               <PlaylistCard

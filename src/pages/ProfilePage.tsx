@@ -200,7 +200,16 @@ export function ProfilePage() {
 
   if (isLoading || !currentUser || !profileUser) {
     return (
-      <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
+      <div className="flex-1 text-white overflow-y-auto pb-32"
+      style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
         <LoadingSkeleton type="avatar" />
       </div>
     );

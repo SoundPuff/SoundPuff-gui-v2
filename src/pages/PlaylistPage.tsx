@@ -64,7 +64,16 @@ export function PlaylistPage() {
   if (!playlist || !playlistUser || !currentUser) {
     if (isLoading) {
       return (
-        <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
+        <div className="flex-1 text-white overflow-y-auto pb-32"
+        style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
           <div className="bg-gradient-to-b from-green-900/40 to-transparent p-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex gap-6 items-end">
@@ -177,7 +186,7 @@ export function PlaylistPage() {
   };
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
+    <div className="flex-1 text-white overflow-y-auto pb-32">
       {/* Header */}
       <div className="bg-gradient-to-b from-green-900/40 to-transparent p-8">
         <div className="max-w-7xl mx-auto">
