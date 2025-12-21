@@ -79,7 +79,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="flex flex-col min-h-screen bg-black dark:bg-gray-950">
       <Sidebar currentUser={user} />
-      <div className="flex-1 overflow-hidden">{children}</div>
+      <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
       <MusicPlayer />
       {isAuthenticated && <ChatBot />}
     </div>
