@@ -16,28 +16,23 @@ import { searchService } from "../services/searchService";
 import { userService } from "../services/userService";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
-// ✅ YENİ: Global Player Context import edildi
 import { usePlayer } from "../contexts/PlayerContext";
 
 export function SearchPage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   
-  // ✅ YENİ: Global Player State'lerini çekiyoruz
-  // playingSongId ve audioRef gibi local state'ler silindi.
   const { currentSong, isPlaying, playSong } = usePlayer();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // API'den gelen HAM veri
   const [rawResults, setRawResults] = useState<{
     songs: Song[];
     playlists: Playlist[];
     users: User[];
   }>({ songs: [], playlists: [], users: [] });
 
-  // VERİ BİRLEŞTİRME (Like senkronizasyonu)
   const hydratedPlaylists = useMemo(() => {
     if (!user || !rawResults.playlists) return rawResults.playlists;
 
@@ -69,7 +64,6 @@ export function SearchPage() {
     });
   }, [rawResults.playlists, user]);
 
-  // --- BAŞLANGIÇ VERİSİ ÇEKME ---
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
@@ -136,12 +130,13 @@ export function SearchPage() {
     navigate(`/app/playlist/${playlistId}`);
   };
 
-  const handleUserClick = (userId: string) => {
-    if (!userId) {
+  // ✅ DÜZELTME 1: Parametre ismi ve yönlendirme mantığı username'e çevrildi
+  const handleUserClick = (username: string) => {
+    if (!username) {
       navigate("/app/search");
       return;
     }
-    navigate(`/app/user/${userId}`);
+    navigate(`/app/user/${username}`);
   };
 
   const handleLike = async (playlistId: string) => {
@@ -256,12 +251,11 @@ export function SearchPage() {
                 <h2 className="mb-4">Songs</h2>
                 <div className="bg-gray-900 rounded-lg divide-y divide-gray-800">
                   {rawResults.songs.slice(0, 5).map((song) => {
-                    // ✅ GÜNCEL: Global state kontrolü
                     const isCurrentSong = currentSong?.id === song.id;
                     return (
                       <div
                         key={song.id}
-                        onClick={() => playSong(song)} // ✅ GÜNCEL: Global fonksiyon
+                        onClick={() => playSong(song)}
                         className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group cursor-pointer"
                       >
                         <div className="relative w-12 h-12">
@@ -319,7 +313,7 @@ export function SearchPage() {
               </div>
             )}
 
-            {/* USERS */}
+            {/* USERS - ALL TAB */}
             {rawResults.users.length > 0 && (
               <div>
                 <h2 className="mb-4">Users</h2>
@@ -338,12 +332,14 @@ export function SearchPage() {
                             src={searchUser.avatar}
                             alt={searchUser.username}
                             className="w-16 h-16 rounded-full object-cover cursor-pointer"
-                            onClick={() => handleUserClick(searchUser.id)}
+                            // ✅ DÜZELTME 2: searchUser.id yerine searchUser.username gönderiyoruz
+                            onClick={() => handleUserClick(searchUser.username)}
                           />
                           <div className="flex-1 min-w-0">
                             <div
                               className="text-white truncate cursor-pointer hover:underline"
-                              onClick={() => handleUserClick(searchUser.id)}
+                              // ✅ DÜZELTME 3: searchUser.id yerine searchUser.username gönderiyoruz
+                              onClick={() => handleUserClick(searchUser.username)}
                             >
                               {searchUser.username}
                             </div>
@@ -408,12 +404,11 @@ export function SearchPage() {
              {rawResults.songs.length > 0 ? (
               <div className="bg-gray-900 rounded-lg divide-y divide-gray-800">
                 {rawResults.songs.map((song) => {
-                  // ✅ GÜNCEL: Global state kontrolü
                   const isCurrentSong = currentSong?.id === song.id;
                   return (
                     <div 
                         key={song.id} 
-                        onClick={() => playSong(song)} // ✅ GÜNCEL: Global fonksiyon
+                        onClick={() => playSong(song)}
                         className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group cursor-pointer"
                     >
                          <div className="relative w-10 h-10">
@@ -439,6 +434,7 @@ export function SearchPage() {
             ) : null}
           </TabsContent>
           
+          {/* USERS TAB */}
           <TabsContent value="users" className="mt-6">
              {rawResults.users.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -448,9 +444,17 @@ export function SearchPage() {
                     return (
                       <div key={searchUser.id} className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors">
                         <div className="flex items-center gap-4">
-                          <img src={searchUser.avatar} alt={searchUser.username} className="w-16 h-16 rounded-full object-cover cursor-pointer" onClick={() => handleUserClick(searchUser.id)}/>
+                          <img src={searchUser.avatar} alt={searchUser.username} className="w-16 h-16 rounded-full object-cover cursor-pointer" 
+                            // ✅ DÜZELTME 4: searchUser.id yerine searchUser.username
+                            onClick={() => handleUserClick(searchUser.username)}
+                          />
                           <div className="flex-1 min-w-0">
-                            <div className="text-white truncate cursor-pointer hover:underline" onClick={() => handleUserClick(searchUser.id)}>{searchUser.username}</div>
+                            <div className="text-white truncate cursor-pointer hover:underline" 
+                                // ✅ DÜZELTME 5: searchUser.id yerine searchUser.username
+                                onClick={() => handleUserClick(searchUser.username)}
+                            >
+                                {searchUser.username}
+                            </div>
                             <div className="text-sm text-gray-400 truncate">{searchUser.bio}</div>
                           </div>
                         </div>
