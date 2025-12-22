@@ -1,13 +1,13 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Playlist, User, Comment, Song } from '../types';
-import { Heart, Play, MessageCircle, Clock, Send, Trash2, Edit } from 'lucide-react';
+import { Playlist, Comment } from '../types';
+import { Heart, Play, Pause, MessageCircle, Clock, Send, Trash2, Edit } from 'lucide-react'; // Pause eklendi
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { playlistService } from '../services/playlistService';
 import { useAuth } from '../contexts/AuthContext';
+// Global Player Context
 import { usePlayer } from '../contexts/PlayerContext';
 
 interface PlaylistUser {
@@ -21,7 +21,10 @@ export function PlaylistPage() {
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const { setCurrentSong } = usePlayer();
+  
+  // ✅ GÜNCELLEME: Global player fonksiyonları çekildi
+  const { playSong, currentSong, isPlaying } = usePlayer();
+  
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [playlistUser, setPlaylistUser] = useState<PlaylistUser | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -43,8 +46,6 @@ export function PlaylistPage() {
         setPlaylist(playlistData);
         setComments(commentsData);
 
-        // For now, create a placeholder user from playlist data
-        // In a real app, you'd fetch user details by ID
         setPlaylistUser({
           id: playlistData.owner?.id || '',
           username: playlistData.owner?.username || '',
@@ -223,10 +224,11 @@ export function PlaylistPage() {
           </div>
 
           <div className="flex items-center gap-4 mt-6">
+            {/* Büyük Play Butonu */}
             <Button
               size="lg"
-              className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0"
-              onClick={() => playlist.songs.length > 0 && setCurrentSong(playlist.songs[0])}
+              className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
+              onClick={() => playlist.songs.length > 0 && playSong(playlist.songs[0])}
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
             </Button>
@@ -271,29 +273,47 @@ export function PlaylistPage() {
                 <Clock className="w-4 h-4 inline" />
               </div>
             </div>
-            {playlist.songs.map((song, index) => (
-              <div
-                key={song.id}
-                className="grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-3 hover:bg-white/5 rounded transition-colors group cursor-pointer"
-                onClick={() => setCurrentSong(song)}
-              >
-                <div className="w-8 text-gray-400 flex items-center">
-                  <span className="group-hover:hidden">{index + 1}</span>
-                  <Play className="w-4 h-4 hidden group-hover:block" />
-                </div>
-                <div className="flex items-center gap-3 min-w-0">
-                  <img src={song.coverArt} alt={song.album} className="w-10 h-10 rounded object-cover" />
-                  <div className="min-w-0">
-                    <div className="text-white truncate">{song.title}</div>
-                    <div className="text-sm text-gray-400 truncate">{song.artist}</div>
+            {playlist.songs.map((song, index) => {
+              // ✅ Çalan şarkı kontrolü
+              const isCurrentSong = currentSong?.id === song.id;
+
+              return (
+                <div
+                  key={song.id}
+                  className="grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-3 hover:bg-white/5 rounded transition-colors group cursor-pointer"
+                  onClick={() => playSong(song)} // ✅ Global playSong fonksiyonu
+                >
+                  <div className="w-8 text-gray-400 flex items-center justify-center">
+                    {/* ✅ İkon Mantığı: Çalıyorsa Pause, değilse numara veya hover ile Play */}
+                    {isCurrentSong && isPlaying ? (
+                      <Pause className="w-4 h-4 text-pink fill-pink" />
+                    ) : isCurrentSong ? (
+                      <Play className="w-4 h-4 text-pink fill-pink" />
+                    ) : (
+                      <>
+                        <span className="group-hover:hidden">{index + 1}</span>
+                        <Play className="w-4 h-4 hidden group-hover:block text-white fill-white" />
+                      </>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3 min-w-0">
+                    <img src={song.coverArt} alt={song.album} className="w-10 h-10 rounded object-cover" />
+                    <div className="min-w-0">
+                      {/* ✅ Çalan şarkının rengini pembe yap */}
+                      <div className={`truncate ${isCurrentSong ? 'text-pink font-semibold' : 'text-white'}`}>
+                        {song.title}
+                      </div>
+                      <div className="text-sm text-gray-400 truncate">{song.artist}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center text-gray-400 truncate">{song.album}</div>
+                  <div className="flex items-center justify-end text-gray-400">
+                    {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
                   </div>
                 </div>
-                <div className="flex items-center text-gray-400 truncate">{song.album}</div>
-                <div className="flex items-center justify-end text-gray-400">
-                  {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, '0')}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Comments Section */}
@@ -345,4 +365,3 @@ export function PlaylistPage() {
     </div>
   );
 }
-

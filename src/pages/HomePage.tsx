@@ -5,10 +5,8 @@ import { PlaylistCard } from "../components/PlaylistCard";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
-// ✅ YENİ: Pause ikonu eklendi
-import { X, Play, Pause, TrendingUp, User as UserIcon } from "lucide-react"; 
+import { X, Play, Pause, TrendingUp } from "lucide-react"; 
 import { Button } from "../components/ui/button";
-// ✅ YENİ: Player Context
 import { usePlayer } from "../contexts/PlayerContext";
 
 const categories = ['All', 'Recently Added', 'Popular', 'Rock', 'Pop', 'Jazz', 'Hip-Hop', 'Electronic', 'Classical'];
@@ -17,7 +15,7 @@ export function HomePage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   
-  // ✅ YENİ: Global Player State
+  // Global Player State
   const { playSong, currentSong, isPlaying } = usePlayer();
 
   const [rawFeed, setRawFeed] = useState<Playlist[]>([]);
@@ -77,7 +75,7 @@ export function HomePage() {
     fetchData();
   }, [user?.id]);
 
-  // --- DESIGN LOGIC ENTEGRASYONU ---
+  // --- DESIGN LOGIC ---
   const filterByCategory = (playlistList: Playlist[]) => {
     if (selectedCategory === 'All') return playlistList;
     
@@ -134,10 +132,9 @@ export function HomePage() {
     navigate(`/app/playlist/${playlistId}`);
   };
 
-  const handleUserClick = (username: string) => {
-    navigate(`/app/user/${username}`);
+  const handleUserClick = (userId: string) => {
+    navigate(`/app/user/${userId}`);
   };
-
 
   const handleLike = async (playlistId: string) => {
     if (!user?.id) return;
@@ -251,7 +248,7 @@ export function HomePage() {
                     <button
                         onClick={(e) => {
                         e.stopPropagation();
-                        handleUserClick(heroPlaylist.owner.username);
+                        handleUserClick(heroPlaylist.owner.id);
                         }}
                         className="flex items-center gap-3 hover:text-white text-gray-200 transition-colors group/user"
                     >
@@ -279,7 +276,6 @@ export function HomePage() {
                   className="bg-pink hover:bg-green-400 text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Hero banner olduğu için burada tüm playlisti açması daha mantıklı
                     handlePlaylistClick(heroPlaylist.id.toString());
                   }}
                 >
@@ -299,7 +295,7 @@ export function HomePage() {
               {featuredArtists.map((artist) => (
                 <button
                   key={artist.id}
-                  onClick={() => handleUserClick(artist.username)}
+                  onClick={() => handleUserClick(artist.id)}
                   className="flex-shrink-0 text-center group"
                 >
                   <div className="relative mb-3">
@@ -320,7 +316,6 @@ export function HomePage() {
           </div>
         )}
 
-
         {/* TRENDING SONGS */}
         {trendingSongs.length > 0 && selectedCategory === 'All' && (
           <div className="mb-10">
@@ -328,77 +323,67 @@ export function HomePage() {
               <TrendingUp className="w-6 h-6 text-pink" />
               <h2 className="text-xl font-bold">Trending Songs</h2>
             </div>
+            
+            {/* PlaylistPage Style Layout */}
             <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
               {trendingSongs.map((song, index) => {
-                // ✅ GÜNCELLEME: Çalan şarkı kontrolü
                 const isCurrentSong = currentSong?.id === song.id;
 
-return (
-  <div
-    key={`${song.playlistId}-${song.id}`}
-    className="group p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-all cursor-pointer"
-    onClick={() => playSong(song)}
-  >
-    {/* Rank - ONLY number */}
-    <div className="w-8 flex items-center justify-center text-gray-500">
-      <span className={`text-2xl transition-colors duration-200 ${isCurrentSong ? 'opacity-50' : 'opacity-100 group-hover:text-pink-500'}`}>
-        {index + 1}
-      </span>
-    </div>
+                return (
+                  <div
+                    key={`${song.playlistId}-${song.id}`}
+                    className="group p-4 grid grid-cols-[auto_1fr_1fr_auto] gap-4 items-center hover:bg-gray-800/30 transition-all cursor-pointer"
+                    onClick={() => playSong(song)}
+                  >
+                    {/* Rank / Play Button Column */}
+                    <div className="w-8 flex items-center justify-center">
+                       {isCurrentSong && isPlaying ? (
+                          <Pause className="w-4 h-4 text-pink fill-pink" />
+                        ) : isCurrentSong ? (
+                          <Play className="w-4 h-4 text-pink fill-pink" />
+                        ) : (
+                          <>
+                            <span className="text-gray-500 font-medium group-hover:hidden">{index + 1}</span>
+                            <Play className="w-4 h-4 hidden group-hover:block text-white fill-white" />
+                          </>
+                        )}
+                    </div>
 
-    {/* Song Info */}
-    <div className="flex-1 min-w-0">
-      <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-green-400'}`}>
-        {song.title}
-      </p>
-      <p className="text-sm text-gray-400 truncate">{song.artist}</p>
-    </div>
+                    {/* Image & Title Column */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      {/* Resim */}
+                      <img
+                        src={song.coverArt}
+                        alt={song.title}
+                        className="w-12 h-12 rounded object-cover shadow-lg"
+                      />
+                      
+                      {/* Yazı Bilgileri */}
+                      <div className="min-w-0">
+                        <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'text-white group-hover:text-green-400'}`}>
+                          {song.title}
+                        </p>
+                        <p className="text-sm text-gray-400 truncate">{song.artist}</p>
+                      </div>
+                    </div>
 
-    {/* Playlist Info */}
-    <div 
-      className="hidden md:block text-sm text-gray-400 truncate max-w-xs w-1/4 hover:text-white hover:underline z-10"
-      onClick={(e) => {
-        e.stopPropagation();
-        handlePlaylistClick(song.playlistId.toString());
-      }}
-    >
-      {song.playlistTitle}
-    </div>
+                    {/* Playlist Info */}
+                    <div 
+                        className="hidden md:block text-sm text-gray-400 truncate hover:text-white hover:underline z-10"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaylistClick(song.playlistId.toString());
+                        }}
+                    >
+                      {song.playlistTitle}
+                    </div>
 
-    {/* User */}
-    {song.playlistUser && (
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          handleUserClick(song.playlistUser.id);
-        }}
-        className="hidden lg:flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors z-10"
-      >
-        <img
-          src={song.playlistUser.avatar_url || "https://github.com/shadcn.png"}
-          alt={song.playlistUser.username}
-          className="w-6 h-6 rounded-full object-cover"
-        />
-        <span className="truncate max-w-24">{song.playlistUser.username}</span>
-      </button>
-    )}
-
-    {/* Duration with less right padding */}
-    <div className="text-sm text-gray-400 tabular-nums pr-2">
-      {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
-    </div>
-
-    {/* Play/Pause Icon on the right side of duration */}
-    <div className="w-8 flex items-center justify-center text-white">
-      {isCurrentSong && isPlaying ? (
-        <Pause className="w-5 h-5 fill-white" />
-      ) : (
-        <Play className="w-5 h-5 fill-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-      )}
-    </div>
-  </div>
-);
-
+                    {/* Duration */}
+                    <div className="text-sm text-gray-400 tabular-nums text-right pr-2">
+                      {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
+                    </div>
+                  </div>
+                );
               })}
             </div>
           </div>
@@ -443,7 +428,6 @@ return (
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {filteredDiscoverPlaylists.map((playlist) => (
-                // Hero playlist'i tekrar gösterme
                 (selectedCategory === 'All' && heroPlaylist && playlist.id === heroPlaylist.id) ? null : (
                   <div key={`discover-${playlist.id}`} className="min-w-0">
                     <PlaylistCard
