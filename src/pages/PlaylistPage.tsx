@@ -74,7 +74,7 @@ export function PlaylistPage() {
           black
         `,
       }}>
-          <div className="bg-gradient-to-b from-green-900/40 to-transparent p-8">
+          <div className="bg-gradient-to-b from-pink to-transparent p-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex gap-6 items-end">
                 <div className="w-64 h-64 bg-gray-800 rounded-lg animate-pulse" />
@@ -188,7 +188,7 @@ export function PlaylistPage() {
   return (
     <div className="flex-1 text-white overflow-y-auto pb-32">
       {/* Header */}
-      <div className="bg-gradient-to-b from-green-900/40 to-transparent p-8">
+      <div className="bg-gradient-to-b from-pink to-transparent p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex gap-6 items-end">
             <div className="w-64 h-64 bg-gray-800 rounded-lg shadow-2xl overflow-hidden flex-shrink-0">
