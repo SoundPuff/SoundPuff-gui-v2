@@ -10,10 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Alert, AlertDescription } from './ui/alert';
 import { useAuth } from '../contexts/AuthContext';
 import logoPng from '../data/soundpuff_logo.png';
+import { authService } from '../services/authService';
 
 export function AuthPage() {
   const navigate = useNavigate();
-  const { login, register } = useAuth();
+  const { login, register, requestResetPassword } = useAuth();
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupUsername, setSignupUsername] = useState('');
@@ -61,7 +62,7 @@ export function AuthPage() {
     setLoading(true);
     try {
       // TODO: Implement password reset service
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await requestResetPassword(resetEmail);
       setResetSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Reset failed');
@@ -72,7 +73,7 @@ export function AuthPage() {
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center p-4"
+      className="flex items-center justify-center p-4 min-h-screen"
       style={{
         background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
@@ -278,9 +279,32 @@ export function AuthPage() {
 
       
         {showResetDialog && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div 
+            className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              backdropFilter: 'blur(4px)',
+            }}
+          >
             {/* Modal Kutusu */}
-            <div className="relative w-full max-w-md bg-gray-900 border border-gray-800 rounded-lg shadow-2xl p-6">
+            <div 
+              className="relative w-full max-w-md bg-gray-900 border border-gray-800 rounded-lg shadow-2xl p-6"
+              style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: '28rem',
+                margin: '0 auto',
+                transform: 'translateY(0)',
+              }}
+            >
               
               {/* Kapatma Butonu (X) */}
               <button
@@ -291,7 +315,7 @@ export function AuthPage() {
               </button>
 
               {/* Başlık ve Açıklama */}
-              <div className="mb-6 text-center sm:text-left">
+              <div className="mb-6 text-center">
                 <h2 className="text-lg font-semibold text-white">Forgot password</h2>
                 <p className="text-sm text-gray-400 mt-2">
                   Enter your email below and we'll send you a password reset link.
@@ -299,8 +323,8 @@ export function AuthPage() {
               </div>
 
               {/* Form */}
-              <form onSubmit={handleResetPassword}>
-                <div className="space-y-4">
+              <form onSubmit={handleResetPassword} className="flex flex-col items-center justify-center">
+                <div className="space-y-4 w-full">
                   <div className="space-y-2">
                     <Label htmlFor="reset-email" className="text-white">Email</Label>
                     <Input

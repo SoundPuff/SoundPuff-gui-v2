@@ -8,6 +8,7 @@ import { GuestRoute } from './components/GuestRoute';
 import { Layout } from './components/Layout';
 import { GuestLandingPage } from './components/GuestLandingPage';
 import { AuthPage } from './components/AuthPage';
+import { ResetPasswordPage } from './components/ResetPasswordPage';
 import { HomePage } from './pages/HomePage';
 import { SearchPage } from './pages/SearchPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -31,6 +32,11 @@ function App() {
               <Route path="/auth" element={
                 <GuestRoute>
                   <AuthPage />
+                </GuestRoute>
+              } />
+              <Route path="/reset-password" element={
+                <GuestRoute>
+                  <ResetPasswordPage />
                 </GuestRoute>
               } />
 
