@@ -333,78 +333,72 @@ export function HomePage() {
                 // ✅ GÜNCELLEME: Çalan şarkı kontrolü
                 const isCurrentSong = currentSong?.id === song.id;
 
-                return (
-                  <div
-                    key={`${song.playlistId}-${song.id}`}
-                    // ✅ GÜNCELLEME: Satıra tıklayınca şarkıyı çal
-                    className="p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-all cursor-pointer group"
-                    onClick={() => playSong(song)}
-                  >
-                    {/* Rank */}
-                    <div className="w-8 text-center text-2xl text-gray-500 group-hover:text-pink transition-colors">
-                      {index + 1}
-                    </div>
+return (
+  <div
+    key={`${song.playlistId}-${song.id}`}
+    className="group p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-all cursor-pointer"
+    onClick={() => playSong(song)}
+  >
+    {/* Rank - ONLY number */}
+    <div className="w-8 flex items-center justify-center text-gray-500">
+      <span className={`text-2xl transition-colors duration-200 ${isCurrentSong ? 'opacity-50' : 'opacity-100 group-hover:text-pink-500'}`}>
+        {index + 1}
+      </span>
+    </div>
 
-                    {/* Album Art ve Play/Pause İkonu */}
-                    <div className="relative">
-                      <img
-                        src={song.coverArt}
-                        alt={song.title}
-                        className={`w-14 h-14 rounded object-cover transition-opacity ${isCurrentSong ? 'opacity-50' : ''}`}
-                      />
-                      {/* Play/Pause Overlay */}
-                      <div className={`absolute inset-0 bg-black/50 rounded flex items-center justify-center transition-all ${isCurrentSong ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                         {isCurrentSong && isPlaying ? (
-                            <Pause className="w-6 h-6 text-white fill-white" />
-                         ) : (
-                            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                         )}
-                      </div>
-                    </div>
+    {/* Song Info */}
+    <div className="flex-1 min-w-0">
+      <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-green-400'}`}>
+        {song.title}
+      </p>
+      <p className="text-sm text-gray-400 truncate">{song.artist}</p>
+    </div>
 
-                    {/* Song Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-green-400'}`}>
-                        {song.title}
-                      </p>
-                      <p className="text-sm text-gray-400 truncate">{song.artist}</p>
-                    </div>
+    {/* Playlist Info */}
+    <div 
+      className="hidden md:block text-sm text-gray-400 truncate max-w-xs w-1/4 hover:text-white hover:underline z-10"
+      onClick={(e) => {
+        e.stopPropagation();
+        handlePlaylistClick(song.playlistId.toString());
+      }}
+    >
+      {song.playlistTitle}
+    </div>
 
-                    {/* Playlist Info - Tıklayınca Playlist'e git (Navigasyon) */}
-                    <div 
-                        className="hidden md:block text-sm text-gray-400 truncate max-w-xs w-1/4 hover:text-white hover:underline z-10"
-                        onClick={(e) => {
-                            e.stopPropagation(); // Satırın playSong olayını engelle
-                            handlePlaylistClick(song.playlistId.toString());
-                        }}
-                    >
-                      {song.playlistTitle}
-                    </div>
+    {/* User */}
+    {song.playlistUser && (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          handleUserClick(song.playlistUser.id);
+        }}
+        className="hidden lg:flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors z-10"
+      >
+        <img
+          src={song.playlistUser.avatar_url || "https://github.com/shadcn.png"}
+          alt={song.playlistUser.username}
+          className="w-6 h-6 rounded-full object-cover"
+        />
+        <span className="truncate max-w-24">{song.playlistUser.username}</span>
+      </button>
+    )}
 
-                    {/* User */}
-                    {song.playlistUser && (
-                      <button
-                          onClick={(e) => {
-                          e.stopPropagation();
-                          handleUserClick(song.playlistUser.id);
-                          }}
-                          className="hidden lg:flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors z-10"
-                      >
-                          <img
-                          src={song.playlistUser.avatar_url || "https://github.com/shadcn.png"}
-                          alt={song.playlistUser.username}
-                          className="w-6 h-6 rounded-full object-cover"
-                          />
-                          <span className="truncate max-w-24">{song.playlistUser.username}</span>
-                      </button>
-                    )}
+    {/* Duration with less right padding */}
+    <div className="text-sm text-gray-400 tabular-nums pr-2">
+      {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
+    </div>
 
-                    {/* Duration */}
-                    <div className="text-sm text-gray-400 tabular-nums pr-4">
-                      {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
-                    </div>
-                  </div>
-                );
+    {/* Play/Pause Icon on the right side of duration */}
+    <div className="w-8 flex items-center justify-center text-white">
+      {isCurrentSong && isPlaying ? (
+        <Pause className="w-5 h-5 fill-white" />
+      ) : (
+        <Play className="w-5 h-5 fill-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+      )}
+    </div>
+  </div>
+);
+
               })}
             </div>
           </div>
