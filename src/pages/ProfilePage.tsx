@@ -25,6 +25,10 @@ import { playlistService } from "../services/playlistService";
 import { userService } from "../services/userService";
 import { useAuth } from "../contexts/AuthContext";
 
+//profil fotoğrafları buraya kaydolup buradan çekilecek
+const CLOUD_NAME = "ddknfnvis"; 
+const UPLOAD_PRESET = "soundpuff_preset";
+
 export function ProfilePage() {
   const { username } = useParams<{ username?: string }>();
   const navigate = useNavigate();
@@ -107,14 +111,48 @@ export function ProfilePage() {
     }
   };
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
+    // 1. Dosya kontrolü
     if (!file.type.startsWith("image/")) {
       alert("Lütfen geçerli bir resim dosyası seçin.");
       return;
     }
-    const objectUrl = URL.createObjectURL(file);
-    setEditAvatar(objectUrl);
+
+    // Yükleniyor efekti için loading state'i açabilirsin istersen
+    // setIsUploading(true); 
+
+    // 2. Form verisi oluşturma
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      // 3. Cloudinary'ye istek atma
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.secure_url) {
+        setEditAvatar(data.secure_url);
+        console.log("Yüklenen resim linki:", data.secure_url);
+      } else {
+        throw new Error("Resim yüklenemedi");
+      }
+
+    } catch (error) {
+      console.error("Upload hatası:", error);
+      alert("Resim yüklenirken bir hata oluştu.");
+    } finally {
+      // setIsUploading(false);
+    }
   };
+
 
   // Gizli input'a tıklatmayı tetikleyen yardımcı fonksiyon
   const triggerFileInput = () => {
