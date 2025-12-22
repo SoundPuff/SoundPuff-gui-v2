@@ -112,7 +112,7 @@ export function PlaylistCard({
              <button
                 onClick={onLikeClick}
                 disabled={isGuestMode}
-                className={`flex items-center gap-1 group/like hover:text-white transition-colors ${isLiked ? 'text-green-500 hover:text-green-400' : ''}`}
+                className={`flex items-center gap-1 group/like hover:text-white transition-colors ${isLiked ? 'text-pink hover:text-green-400' : ''}`}
              >
                 <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                 <span>{playlist.likes_count || 0}</span>

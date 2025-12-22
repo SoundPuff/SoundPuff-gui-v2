@@ -136,7 +136,7 @@ export function LibraryPage() {
             onMouseEnter={() => setIsCreatePlaylistHovered(true)}
             onMouseLeave={() => setIsCreatePlaylistHovered(false)}
             style={{
-              backgroundColor: isCreatePlaylistHovered ? '#23759e' : '#33ace3',
+              backgroundColor: isCreatePlaylistHovered ? '#D95A96' : '#DB77A6',
             }}
           >
             <Plus className="w-5 h-5 mr-2" />
@@ -167,7 +167,7 @@ export function LibraryPage() {
               onMouseEnter={() => setIsCreateFirstPlaylistHovered(true)}
               onMouseLeave={() => setIsCreateFirstPlaylistHovered(false)}
               style={{
-                backgroundColor: isCreateFirstPlaylistHovered ? '#23759e' : '#33ace3',
+                backgroundColor: isCreateFirstPlaylistHovered ? '#D95A96' : '#DB77A6',
               }}
             >
               <Plus className="w-5 h-5 mr-2" />

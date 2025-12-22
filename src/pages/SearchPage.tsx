@@ -344,7 +344,7 @@ export function SearchPage() {
                             className={`w-full mt-3 ${
                               isFollowing
                                 ? "border-gray-700 text-white hover:bg-gray-800"
-                                : "bg-green-500 hover:bg-green-600 text-black"
+                                : "bg-pink hover:bg-green-600 text-black"
                             }`}
                           >
                             {isFollowing ? "Unfollow" : "Follow"}
@@ -423,7 +423,7 @@ export function SearchPage() {
                           <Button
                             onClick={() => handleFollow(searchUser.id, searchUser.username)}
                             variant={isFollowing ? "outline" : "default"}
-                            className={`w-full mt-3 ${isFollowing ? "border-gray-700 text-white hover:bg-gray-800" : "bg-green-500 hover:bg-green-600 text-black"}`}
+                            className={`w-full mt-3 ${isFollowing ? "border-gray-700 text-white hover:bg-gray-800" : "bg-pink hover:bg-green-600 text-black"}`}
                           >
                             {isFollowing ? "Unfollow" : "Follow"}
                           </Button>

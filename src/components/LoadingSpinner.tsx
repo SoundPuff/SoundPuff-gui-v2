@@ -28,14 +28,14 @@ export function LoadingSpinner({
         <div className="relative">
           {/* Outer rotating ring */}
           <div
-            className={`${sizeClasses[size]} border-4 border-gray-800 border-t-green-500 rounded-full animate-spin`}
+            className={`${sizeClasses[size]} border-4 border-gray-800 border-t-pink rounded-full animate-spin`}
           />
           {/* Inner pulsing icon */}
           <div className="absolute inset-0 flex items-center justify-center">
             <Music
               className={`${
                 size === 'sm' ? 'w-4 h-4' : size === 'md' ? 'w-6 h-6' : 'w-8 h-8'
-              } text-green-500 animate-pulse`}
+              } text-pink animate-pulse`}
             />
           </div>
         </div>

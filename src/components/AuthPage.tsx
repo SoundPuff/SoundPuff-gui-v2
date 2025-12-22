@@ -130,7 +130,7 @@ export function AuthPage() {
           <TabsContent value="login">
             <Card
               className="bg-gray-900 border-gray-800"
-              style={{ outline: '3px solid #33ace3' }}
+              style={{ outline: '3px solid #DB77A6' }}
             >
               <CardHeader>
                 <CardTitle className="text-white">
@@ -179,11 +179,11 @@ export function AuthPage() {
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-green-500 hover:bg-green-600 text-black"
+                    className="w-full bg-pink hover:bg-green-600 text-black"
                     onMouseEnter={() => setIsSignUpHovered(true)}
                     onMouseLeave={() => setIsSignUpHovered(false)}
                     style={{
-                      backgroundColor: isSignUpHovered ? '#23759e' : '#33ace3',
+                      backgroundColor: isSignUpHovered ? '#D95A96' : '#DB77A6',
                     }}
                     disabled={loading}
                   >
@@ -214,7 +214,7 @@ export function AuthPage() {
           <TabsContent value="signup">
             <Card
               className="bg-gray-900 border-gray-800"
-              style={{ outline: '3px solid #33ace3' }}
+              style={{ outline: '3px solid #DB77A6' }}
             >
               <CardHeader>
                 <CardTitle className="text-white">Create account</CardTitle>
@@ -266,7 +266,7 @@ export function AuthPage() {
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-green-500 hover:bg-green-600 text-black"
+                    className="w-full bg-pink hover:bg-green-600 text-black"
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Sign Up'}
@@ -334,13 +334,13 @@ export function AuthPage() {
                       onChange={(e) => setResetEmail(e.target.value)}
                       placeholder="Enter your email"
                       required
-                      className="bg-gray-800 border-gray-700 text-white focus:ring-green-500 focus:border-green-500"
+                      className="bg-gray-800 border-gray-700 text-white focus:ring-pink focus:border-pink"
                     />
                   </div>
                   
                   <Button
                     type="submit"
-                    className="w-full bg-green-500 hover:bg-green-600 text-black font-medium"
+                    className="w-full bg-pink hover:bg-green-600 text-black font-medium"
                     disabled={loading}
                   >
                     {loading ? 'Sending...' : 'Send password reset link'}
@@ -350,7 +350,7 @@ export function AuthPage() {
 
               {/* Başarı Mesajı */}
               {resetSuccess && (
-                <div className="mt-4 p-3 bg-green-900/30 border border-green-500/50 rounded flex items-center gap-2 text-green-400">
+                <div className="mt-4 p-3 bg-green-900/30 border border-pink/50 rounded flex items-center gap-2 text-green-400">
                   <AlertCircle className="h-4 w-4" />
                   <span className="text-sm">Reset link sent to your email!</span>
                 </div>

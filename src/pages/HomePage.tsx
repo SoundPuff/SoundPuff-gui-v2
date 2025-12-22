@@ -239,7 +239,7 @@ export function HomePage() {
             {/* Content */}
             <div className="relative h-full flex items-end p-8 md:p-12 z-10">
               <div className="flex-1 max-w-4xl">
-                <span className="inline-block px-4 py-1.5 bg-green-500 text-black text-xs font-bold rounded-full mb-4 tracking-wide uppercase shadow-lg shadow-green-500/20">
+                <span className="inline-block px-4 py-1.5 bg-pink text-black text-xs font-bold rounded-full mb-4 tracking-wide uppercase shadow-lg shadow-pink/20">
                   Featured Playlist
                 </span>
                 
@@ -263,25 +263,25 @@ export function HomePage() {
                         <img
                         src={heroPlaylist.owner.avatar_url || "https://github.com/shadcn.png"}
                         alt={heroPlaylist.owner.username}
-                        className="w-12 h-12 rounded-full object-cover ring-2 ring-white/20 group-hover/user:ring-green-500 transition-all shadow-md"
+                        className="w-12 h-12 rounded-full object-cover ring-2 ring-white/20 group-hover/user:ring-pink transition-all shadow-md"
                         />
                         <span className="font-bold text-lg shadow-black drop-shadow-md">{heroPlaylist.owner.username}</span>
                     </button>
                   )}
                   <div className="hidden sm:flex items-center gap-6 text-sm text-gray-300 font-medium">
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
+                        <span className="w-2 h-2 bg-pink rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
                         <span>{heroPlaylist.likes_count || 0} likes</span>
                     </div>
                     <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
+                        <span className="w-2 h-2 bg-pink rounded-full shadow-[0_0_10px_rgba(34,197,94,0.8)]"></span>
                         <span>{heroPlaylist.songs?.length || 0} songs</span>
                     </div>
                   </div>
                 </div>
 
                 <Button
-                  className="bg-green-500 hover:bg-green-400 text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-green-500/20"
+                  className="bg-pink hover:bg-green-400 text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlaylistClick(heroPlaylist.id.toString());
@@ -310,7 +310,7 @@ export function HomePage() {
                     <img
                       src={artist.avatar_url || "https://github.com/shadcn.png"}
                       alt={artist.username}
-                      className="w-32 h-32 rounded-full object-cover ring-4 ring-gray-800 group-hover:ring-green-500 transition-all"
+                      className="w-32 h-32 rounded-full object-cover ring-4 ring-gray-800 group-hover:ring-pink transition-all"
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-full transition-all" />
                   </div>
@@ -328,7 +328,7 @@ export function HomePage() {
         {trendingSongs.length > 0 && selectedCategory === 'All' && (
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-5">
-              <TrendingUp className="w-6 h-6 text-green-500" />
+              <TrendingUp className="w-6 h-6 text-pink" />
               <h2 className="text-xl font-bold">Trending Songs</h2>
             </div>
             <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
@@ -339,7 +339,7 @@ export function HomePage() {
                   onClick={() => handlePlaylistClick(song.playlistId.toString())}
                 >
                   {/* Rank */}
-                  <div className="w-8 text-center text-2xl text-gray-500 group-hover:text-green-500 transition-colors">
+                  <div className="w-8 text-center text-2xl text-gray-500 group-hover:text-pink transition-colors">
                     {index + 1}
                   </div>
 
@@ -427,7 +427,7 @@ export function HomePage() {
               </p>
               <button
                 onClick={() => setSelectedCategory('All')}
-                className="text-green-500 hover:underline"
+                className="text-pink hover:underline"
               >
                 View all playlists
               </button>

@@ -161,7 +161,7 @@ export function CreatePlaylistPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-gray-900 rounded-lg p-6 space-y-6"
-          style={{ outline: '3px solid #33ace3' }}>
+          style={{ outline: '3px solid #DB77A6' }}>
             <div className="space-y-2">
               <Label htmlFor="title" className="text-white">
                 Playlist Title
@@ -173,7 +173,7 @@ export function CreatePlaylistPage() {
                 placeholder="Enter playlist title"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: '1px solid #33ace3' }}
+                style={{ outline: '1px solid #DB77A6' }}
               />
             </div>
 
@@ -187,7 +187,7 @@ export function CreatePlaylistPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your playlist..."
                 className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: '1px solid #33ace3' }}
+                style={{ outline: '1px solid #DB77A6' }}
                 rows={3}
               />
             </div>
@@ -202,7 +202,7 @@ export function CreatePlaylistPage() {
                 onChange={(e) => setCoverArt(e.target.value)}
                 placeholder="https://example.com/image.jpg"
                 className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: '1px solid #33ace3' }}
+                style={{ outline: '1px solid #DB77A6' }}
               />
               {coverArt && (
                 <div className="mt-2">
@@ -217,7 +217,7 @@ export function CreatePlaylistPage() {
           </div>
 
           <div className="bg-gray-900 rounded-lg p-6"
-          style={{ outline: '3px solid #33ace3' }}>
+          style={{ outline: '3px solid #DB77A6' }}>
             <div className="flex items-center justify-between mb-4">
               <h2>Select Songs</h2>
               <span className="text-gray-400 text-sm">
@@ -233,7 +233,7 @@ export function CreatePlaylistPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search songs..."
-                  style={{ outline: '1px solid #33ace3', paddingLeft: '32px' }}
+                  style={{ outline: '1px solid #DB77A6', paddingLeft: '32px' }}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>
@@ -318,7 +318,7 @@ export function CreatePlaylistPage() {
               onMouseEnter={() => setIsCreatePlaylistHovered(true)}
               onMouseLeave={() => setIsCreatePlaylistHovered(false)}
               style={{
-                backgroundColor: isCreatePlaylistHovered ? '#23759e' : '#33ace3',
+                backgroundColor: isCreatePlaylistHovered ? '#D95A96' : '#DB77A6',
               }}
             >
               <Save className="w-4 h-4 mr-2" />
@@ -330,9 +330,9 @@ export function CreatePlaylistPage() {
               onMouseEnter={() => setIsCancelHovered(true)}
               onMouseLeave={() => setIsCancelHovered(false)}
               style={{
-                backgroundColor: isCancelHovered ? '#33ace3' : 'transparent',
-                color: isCancelHovered ? 'black' : '#33ace3',
-                borderColor: '#23759e',
+                backgroundColor: isCancelHovered ? '#DB77A6' : 'transparent',
+                color: isCancelHovered ? 'black' : '#DB77A6',
+                borderColor: '#D95A96',
                 borderWidth: '1px'
               }}
             >

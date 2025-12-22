@@ -225,7 +225,7 @@ export function PlaylistPage() {
           <div className="flex items-center gap-4 mt-6">
             <Button
               size="lg"
-              className="bg-green-500 hover:bg-green-600 text-black rounded-full w-14 h-14 p-0"
+              className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0"
               onClick={() => playlist.songs.length > 0 && setCurrentSong(playlist.songs[0])}
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
@@ -236,7 +236,7 @@ export function PlaylistPage() {
               onClick={handleLike}
               className="text-gray-400 hover:text-white"
             >
-              <Heart className={`w-8 h-8 ${isLiked ? 'fill-green-500 text-green-500' : ''}`} />
+              <Heart className={`w-8 h-8 ${isLiked ? 'fill-pink text-pink' : ''}`} />
             </Button>
             <span className="text-gray-400">{playlist.likes_count || 0} likes</span>
             {isOwner && (
@@ -311,7 +311,7 @@ export function PlaylistPage() {
                   placeholder="Add a comment..."
                   className="bg-gray-900 border-gray-800 text-white"
                 />
-                <Button type="submit" className="bg-green-500 hover:bg-green-600 text-black">
+                <Button type="submit" className="bg-pink hover:bg-green-600 text-black">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>

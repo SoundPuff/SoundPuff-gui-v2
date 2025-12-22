@@ -321,7 +321,7 @@ export function ProfilePage() {
                     <button 
                         type="button"
                         onClick={triggerFileInput}
-                        className="text-green-500 font-bold text-sm hover:text-green-400 transition-colors cursor-pointer"
+                        className="text-pink font-bold text-sm hover:text-green-400 transition-colors cursor-pointer"
                     >
                         Change Profile Photo
                     </button>
@@ -386,7 +386,7 @@ export function ProfilePage() {
                 <>
                   <Button
                     onClick={handleSaveProfile}
-                    className="bg-green-500 hover:bg-green-600 text-black"
+                    className="bg-pink hover:bg-green-600 text-black"
                   >
                     <Check className="w-4 h-4 mr-2" />
                     Save Changes
@@ -417,7 +417,7 @@ export function ProfilePage() {
                 className={
                   isFollowing
                     ? "border border-gray-700 bg-transparent hover:bg-gray-800 text-white"
-                    : "bg-green-500 hover:bg-green-600 text-black"
+                    : "bg-pink hover:bg-green-600 text-black"
                 }
               >
                 {isFollowing ? "Unfollow" : "Follow"}
@@ -434,25 +434,25 @@ export function ProfilePage() {
               <TabsList className="mb-6 bg-transparent border-b border-gray-800 rounded-none w-full justify-start h-auto p-0">
                 <TabsTrigger 
                   value="playlists"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Playlists
                 </TabsTrigger>
                 <TabsTrigger 
                   value="followers"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Followers
                 </TabsTrigger>
                 <TabsTrigger 
                   value="following"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Following
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-green-500 data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Settings
                 </TabsTrigger>
@@ -485,7 +485,7 @@ export function ProfilePage() {
                       value={followersSearch}
                       onChange={(e) => setFollowersSearch(e.target.value)}
                       placeholder="Search followers..."
-                      className="pl-10 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-green-500 h-10"
+                      className="pl-10 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-pink h-10"
                     />
                   </div>
                   {filteredFollowers.length > 0 ? (
@@ -522,7 +522,7 @@ export function ProfilePage() {
                                 className={`ml-4 h-8 px-5 text-xs font-semibold ${
                                     isFollowingBack 
                                     ? "bg-gray-800 text-white hover:bg-gray-700" 
-                                    : "bg-green-500 hover:bg-green-600 text-black"
+                                    : "bg-pink hover:bg-green-600 text-black"
                                 }`}
                             >
                                 {isFollowingBack ? "Following" : "Follow"}
@@ -549,7 +549,7 @@ export function ProfilePage() {
                       value={followingSearch}
                       onChange={(e) => setFollowingSearch(e.target.value)}
                       placeholder="Search following..."
-                      className="pl-10 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-green-500 h-10"
+                      className="pl-10 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-pink h-10"
                     />
                   </div>
                   {filteredFollowing.length > 0 ? (
@@ -640,7 +640,7 @@ export function ProfilePage() {
             <div className="mt-4 space-y-4">
               {isDialogLoading ? (
                 <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500" />
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink" />
                 </div>
               ) : dialogUsers.length > 0 ? (
                 dialogUsers.map((u) => (

@@ -42,7 +42,7 @@ export function MusicPlayer() {
             onClick={() => setIsLiked(!isLiked)}
             className="text-gray-400 hover:text-white"
           >
-            <Heart className={`w-5 h-5 ${isLiked ? 'fill-green-500 text-green-500' : ''}`} />
+            <Heart className={`w-5 h-5 ${isLiked ? 'fill-pink text-pink' : ''}`} />
           </Button>
         </div>
 

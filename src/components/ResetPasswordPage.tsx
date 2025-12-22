@@ -93,7 +93,7 @@ export function ResetPasswordPage() {
         )}
 
         {success && (
-          <Alert className="mb-4 bg-green-900/30 border-green-500/50">
+          <Alert className="mb-4 bg-green-900/30 border-pink/50">
             <AlertCircle className="h-4 w-4 text-green-400" />
             <AlertDescription className="text-green-400">
               Password reset successful! Redirecting...
@@ -103,7 +103,7 @@ export function ResetPasswordPage() {
 
         <Card
           className="bg-gray-900 border-gray-800"
-          style={{ outline: '3px solid #33ace3' }}
+          style={{ outline: '3px solid #DB77A6' }}
         >
           <CardHeader>
             <CardTitle className="text-white">
@@ -139,9 +139,9 @@ export function ResetPasswordPage() {
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-green-500 hover:bg-green-600 text-black"
+                className="w-full bg-pink hover:bg-green-600 text-black"
                 style={{
-                  backgroundColor: '#33ace3',
+                  backgroundColor: '#DB77A6',
                 }}
                 disabled={loading || success || !token}
               >

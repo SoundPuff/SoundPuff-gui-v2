@@ -63,6 +63,8 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
     --color-red-500: oklch(.637 .237 25.331);
     --color-green-500: oklch(.723 .219 149.579);
+    --color-pink: rgb(219, 119, 166);
+    /* --color-green-500: rgb(219, 119, 166); */
     --color-green-600: oklch(.627 .194 149.214);
     --color-green-700: oklch(.527 .154 150.069);
     --color-green-900: oklch(.393 .095 152.535);
@@ -970,6 +972,10 @@
     border-color: color-mix(in srgb, oklch(.723 .219 149.579) 30%, transparent);
   }
 
+  .border-pink {
+    border-color: var(--color-pink);
+  }
+
   @supports (color: color-mix(in lab, red, red)) {
     .border-green-500\/30 {
       border-color: color-mix(in oklab, var(--color-green-500) 30%, transparent);
@@ -1024,6 +1030,10 @@
 
   .bg-green-500 {
     background-color: var(--color-green-500);
+  }
+
+  .bg-pink {
+    background-color: var(--color-pink);
   }
 
   .bg-green-900\/20 {
@@ -1134,6 +1144,10 @@
 
   .fill-green-500 {
     fill: var(--color-green-500);
+  }
+
+  .fill-pink {
+    fill: var(--color-pink);
   }
 
   .object-cover {
@@ -1308,6 +1322,10 @@
 
   .text-green-500 {
     color: var(--color-green-500);
+  }
+
+  .text-pink {
+    color: var(--color-pink);
   }
 
   .text-muted-foreground {

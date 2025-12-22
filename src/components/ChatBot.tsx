@@ -112,7 +112,7 @@ export function ChatBot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg z-50"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-pink hover:bg-green-600 shadow-lg z-50"
           size="icon"
           style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem'}}
         >
@@ -128,7 +128,7 @@ export function ChatBot() {
           >
           
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-green-500">
+          <div className="flex items-center justify-between p-4 border-b border-gray-700 bg-pink">
             <div className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-white" />
               <h3 className="text-white">Music Assistant</h3>
@@ -154,7 +154,7 @@ export function ChatBot() {
                   <div
                     className={`max-w-[80%] rounded-lg p-3 ${
                       message.sender === 'user'
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-pink text-white'
                         : 'bg-gray-700 text-gray-100'
                     }`}
                   >
@@ -184,7 +184,7 @@ export function ChatBot() {
               <Button
                 onClick={handleSend}
                 size="icon"
-                className="bg-green-500 hover:bg-green-600"
+                className="bg-pink hover:bg-green-600"
               >
                 <Send className="h-4 w-4" />
               </Button>

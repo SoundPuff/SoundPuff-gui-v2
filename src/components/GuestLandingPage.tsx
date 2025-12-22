@@ -74,7 +74,7 @@ export function GuestLandingPage() {
               onMouseEnter={() => setIsSignUpHovered(true)}
               onMouseLeave={() => setIsSignUpHovered(false)}
               style={{
-                backgroundColor: isSignUpHovered ? '#23759e' : '#33ace3',
+                backgroundColor: isSignUpHovered ? '#D95A96' : '#DB77A6',
               }}
             >
               <UserPlus className="w-5 h-5 mr-2" />
@@ -86,9 +86,9 @@ export function GuestLandingPage() {
               onMouseEnter={() => setIsLogInHovered(true)}
               onMouseLeave={() => setIsLogInHovered(false)}
               style={{
-                backgroundColor: isLogInHovered ? '#33ace3' : 'transparent',
-                color: isLogInHovered ? 'black' : '#33ace3',
-                borderColor: '#23759e',
+                backgroundColor: isLogInHovered ? '#DB77A6' : 'transparent',
+                color: isLogInHovered ? 'black' : '#DB77A6',
+                borderColor: '#D95A96',
                 borderWidth: '1px'
               }}
             >
@@ -146,8 +146,8 @@ export function GuestLandingPage() {
         {/* Features Section */}
         <div className="mt-24 grid md:grid-cols-3 gap-8">
           <div className="text-center p-6 bg-gray-800/50 rounded-lg">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Music className="w-6 h-6 text-green-500" />
+            <div className="w-12 h-12 bg-pink/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Music className="w-6 h-6 text-pink" />
             </div>
             <h3 className="text-white mb-2"
             style={{ 
@@ -162,8 +162,8 @@ export function GuestLandingPage() {
             </h4>
           </div>
           <div className="text-center p-6 bg-gray-800/50 rounded-lg">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <UserPlus className="w-6 h-6 text-green-500" />
+            <div className="w-12 h-12 bg-pink/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <UserPlus className="w-6 h-6 text-pink" />
             </div>
             <h3 className="text-white mb-2"
             style={{ 
@@ -178,8 +178,8 @@ export function GuestLandingPage() {
             </h4>
           </div>
           <div className="text-center p-6 bg-gray-800/50 rounded-lg">
-            <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <LogIn className="w-6 h-6 text-green-500" />
+            <div className="w-12 h-12 bg-pink/20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogIn className="w-6 h-6 text-pink" />
             </div>
             <h3 className="text-white mb-2"
             style={{ 
