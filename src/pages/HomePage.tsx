@@ -5,8 +5,11 @@ import { PlaylistCard } from "../components/PlaylistCard";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
-import { X, Play, TrendingUp, User as UserIcon } from "lucide-react"; 
+// ✅ YENİ: Pause ikonu eklendi
+import { X, Play, Pause, TrendingUp, User as UserIcon } from "lucide-react"; 
 import { Button } from "../components/ui/button";
+// ✅ YENİ: Player Context
+import { usePlayer } from "../contexts/PlayerContext";
 
 const categories = ['All', 'Recently Added', 'Popular', 'Rock', 'Pop', 'Jazz', 'Hip-Hop', 'Electronic', 'Classical'];
 
@@ -14,13 +17,16 @@ export function HomePage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
   
+  // ✅ YENİ: Global Player State
+  const { playSong, currentSong, isPlaying } = usePlayer();
+
   const [rawFeed, setRawFeed] = useState<Playlist[]>([]);
   const [rawDiscover, setRawDiscover] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // ✨ VERİ BİRLEŞTİRME (HYDRATION) - MEVCUT MANTIK KORUNDU
+  // ✨ VERİ BİRLEŞTİRME (HYDRATION)
   const hydrateList = (list: Playlist[]) => {
     if (!user) return list;
     return list.map(playlist => {
@@ -72,8 +78,6 @@ export function HomePage() {
   }, [user?.id]);
 
   // --- DESIGN LOGIC ENTEGRASYONU ---
-
-  // 1. Kategori Filtreleme
   const filterByCategory = (playlistList: Playlist[]) => {
     if (selectedCategory === 'All') return playlistList;
     
@@ -89,33 +93,27 @@ export function HomePage() {
       return [...playlistList].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
     }
     
-    // Basit text araması
     return playlistList.filter(p => p.title.toLowerCase().includes(selectedCategory.toLowerCase()));
   };
 
   const filteredFeedPlaylists = filterByCategory(feedPlaylists);
   const filteredDiscoverPlaylists = filterByCategory(discoverPlaylists);
 
-  // 2. HERO BANNER (En popüler playlist)
   const heroPlaylist = useMemo(() => {
     if (discoverPlaylists.length === 0) return null;
     return [...discoverPlaylists].sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))[0];
   }, [discoverPlaylists]);
 
-  // 3. FEATURED ARTISTS (Playlist sahiplerinden çıkarıyoruz)
   const featuredArtists = useMemo(() => {
     const artistsMap = new Map();
-    // Hem feed hem discover listelerinden kullanıcıları topla
     [...discoverPlaylists, ...feedPlaylists].forEach(p => {
         if (p.owner && p.owner.id !== user?.id) {
-            // Map kullanarak benzersiz sanatçıları al
             artistsMap.set(p.owner.id, p.owner);
         }
     });
     return Array.from(artistsMap.values()).slice(0, 8);
   }, [discoverPlaylists, feedPlaylists, user?.id]);
 
-  // 4. TRENDING SONGS (Tüm şarkıları toplayıp sıralıyoruz)
   const trendingSongs = useMemo(() => {
     return discoverPlaylists.flatMap((playlist) =>
         (playlist.songs || []).map((song) => ({
@@ -126,13 +124,12 @@ export function HomePage() {
           playlistUser: playlist.owner,
         }))
       )
-      .sort((a, b) => b.playlistLikes - a.playlistLikes) // Playlist popülerliğine göre sırala
+      .sort((a, b) => b.playlistLikes - a.playlistLikes)
       .slice(0, 5);
   }, [discoverPlaylists]);
 
 
   // --- AKSİYONLAR ---
-
   const handlePlaylistClick = (playlistId: string) => {
     navigate(`/app/playlist/${playlistId}`);
   };
@@ -181,7 +178,7 @@ export function HomePage() {
   return (
     <div className="flex-1 bg-gray-950 text-white overflow-y-auto pb-32">
       
-      {/* Category Chips (Design Kodu) */}
+      {/* Category Chips */}
       <div className="sticky top-0 z-20 bg-gray-950 border-b border-gray-800/50 backdrop-blur-sm">
         <div className="px-6 py-3">
           <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
@@ -213,13 +210,12 @@ export function HomePage() {
 
       <div className="px-6 py-6">
         
-       {/* HERO BANNER (Düzeltilmiş Geniş Görünüm) */}
+       {/* HERO BANNER */}
        {heroPlaylist && selectedCategory === 'All' && (
           <div 
             className="mb-12 relative w-full h-[500px] rounded-2xl overflow-hidden group cursor-pointer border border-gray-800 shadow-2xl" 
             onClick={() => handlePlaylistClick(heroPlaylist.id.toString())}
           >
-            {/* Background Image Area */}
             <div className="absolute inset-0 w-full h-full">
               {heroPlaylist.coverArt ? (
                 <img
@@ -231,12 +227,10 @@ export function HomePage() {
                 <div className="w-full h-full bg-gradient-to-br from-green-900 to-black" />
               )}
               
-              {/* Gradient Overlays (Yazıların okunabilirliği için çift katman) */}
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
               <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
             </div>
 
-            {/* Content */}
             <div className="relative h-full flex items-end p-8 md:p-12 z-10">
               <div className="flex-1 max-w-4xl">
                 <span className="inline-block px-4 py-1.5 bg-pink text-black text-xs font-bold rounded-full mb-4 tracking-wide uppercase shadow-lg shadow-pink/20">
@@ -284,6 +278,7 @@ export function HomePage() {
                   className="bg-pink hover:bg-green-400 text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Hero banner olduğu için burada tüm playlisti açması daha mantıklı
                     handlePlaylistClick(heroPlaylist.id.toString());
                   }}
                 >
@@ -295,7 +290,7 @@ export function HomePage() {
           </div>
         )}
         
-        {/* FEATURED ARTISTS (Design Kodu) */}
+        {/* FEATURED ARTISTS */}
         {featuredArtists.length > 0 && selectedCategory === 'All' && (
           <div className="mb-10">
             <h2 className="mb-5 text-xl font-bold">Featured Artists</h2>
@@ -324,7 +319,7 @@ export function HomePage() {
           </div>
         )}
 
-        {/* TRENDING SONGS (Design Kodu) */}
+        {/* TRENDING SONGS */}
         {trendingSongs.length > 0 && selectedCategory === 'All' && (
           <div className="mb-10">
             <div className="flex items-center gap-2 mb-5">
@@ -332,66 +327,83 @@ export function HomePage() {
               <h2 className="text-xl font-bold">Trending Songs</h2>
             </div>
             <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
-              {trendingSongs.map((song, index) => (
-                <div
-                  key={`${song.playlistId}-${song.id}`}
-                  className="p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-all cursor-pointer group"
-                  onClick={() => handlePlaylistClick(song.playlistId.toString())}
-                >
-                  {/* Rank */}
-                  <div className="w-8 text-center text-2xl text-gray-500 group-hover:text-pink transition-colors">
-                    {index + 1}
-                  </div>
+              {trendingSongs.map((song, index) => {
+                // ✅ GÜNCELLEME: Çalan şarkı kontrolü
+                const isCurrentSong = currentSong?.id === song.id;
 
-                  {/* Album Art */}
-                  <div className="relative">
-                    <img
-                      src={song.coverArt}
-                      alt={song.title}
-                      className="w-14 h-14 rounded object-cover"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 rounded flex items-center justify-center transition-all">
-                      <Play className="w-6 h-6 opacity-0 group-hover:opacity-100 text-white fill-white transition-opacity" />
+                return (
+                  <div
+                    key={`${song.playlistId}-${song.id}`}
+                    // ✅ GÜNCELLEME: Satıra tıklayınca şarkıyı çal
+                    className="p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-all cursor-pointer group"
+                    onClick={() => playSong(song)}
+                  >
+                    {/* Rank */}
+                    <div className="w-8 text-center text-2xl text-gray-500 group-hover:text-pink transition-colors">
+                      {index + 1}
+                    </div>
+
+                    {/* Album Art ve Play/Pause İkonu */}
+                    <div className="relative">
+                      <img
+                        src={song.coverArt}
+                        alt={song.title}
+                        className={`w-14 h-14 rounded object-cover transition-opacity ${isCurrentSong ? 'opacity-50' : ''}`}
+                      />
+                      {/* Play/Pause Overlay */}
+                      <div className={`absolute inset-0 bg-black/50 rounded flex items-center justify-center transition-all ${isCurrentSong ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                         {isCurrentSong && isPlaying ? (
+                            <Pause className="w-6 h-6 text-white fill-white" />
+                         ) : (
+                            <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                         )}
+                      </div>
+                    </div>
+
+                    {/* Song Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-green-400'}`}>
+                        {song.title}
+                      </p>
+                      <p className="text-sm text-gray-400 truncate">{song.artist}</p>
+                    </div>
+
+                    {/* Playlist Info - Tıklayınca Playlist'e git (Navigasyon) */}
+                    <div 
+                        className="hidden md:block text-sm text-gray-400 truncate max-w-xs w-1/4 hover:text-white hover:underline z-10"
+                        onClick={(e) => {
+                            e.stopPropagation(); // Satırın playSong olayını engelle
+                            handlePlaylistClick(song.playlistId.toString());
+                        }}
+                    >
+                      {song.playlistTitle}
+                    </div>
+
+                    {/* User */}
+                    {song.playlistUser && (
+                      <button
+                          onClick={(e) => {
+                          e.stopPropagation();
+                          handleUserClick(song.playlistUser.id);
+                          }}
+                          className="hidden lg:flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors z-10"
+                      >
+                          <img
+                          src={song.playlistUser.avatar_url || "https://github.com/shadcn.png"}
+                          alt={song.playlistUser.username}
+                          className="w-6 h-6 rounded-full object-cover"
+                          />
+                          <span className="truncate max-w-24">{song.playlistUser.username}</span>
+                      </button>
+                    )}
+
+                    {/* Duration */}
+                    <div className="text-sm text-gray-400 tabular-nums pr-4">
+                      {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
                     </div>
                   </div>
-
-                  {/* Song Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate group-hover:text-green-400 transition-colors">
-                      {song.title}
-                    </p>
-                    <p className="text-sm text-gray-400 truncate">{song.artist}</p>
-                  </div>
-
-                  {/* Playlist Info */}
-                  <div className="hidden md:block text-sm text-gray-400 truncate max-w-xs w-1/4">
-                    {song.playlistTitle}
-                  </div>
-
-                  {/* User */}
-                  {song.playlistUser && (
-                    <button
-                        onClick={(e) => {
-                        e.stopPropagation();
-                        handleUserClick(song.playlistUser.id);
-                        }}
-                        className="hidden lg:flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-                    >
-                        <img
-                        src={song.playlistUser.avatar_url || "https://github.com/shadcn.png"}
-                        alt={song.playlistUser.username}
-                        className="w-6 h-6 rounded-full object-cover"
-                        />
-                        <span className="truncate max-w-24">{song.playlistUser.username}</span>
-                    </button>
-                  )}
-
-                  {/* Duration */}
-                  <div className="text-sm text-gray-400 tabular-nums pr-4">
-                    {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

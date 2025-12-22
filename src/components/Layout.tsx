@@ -25,24 +25,18 @@ export function Layout({ children }: LayoutProps) {
       try {
         // 2. API'den verileri çek
         const [followingUsers, likedPlaylists] = await Promise.all([
-          userService.getUserFollowing(user.username), // Takip edilenler username ile çalışıyorsa kalsın
-          userService.getUserLikedPlaylists(user.id)   // user.id olarak değişti
+          userService.getUserFollowing(user.username),
+          userService.getUserLikedPlaylists(user.id)
         ]);
         
-        // LOG EKLE: API ne döndürdü?
-        // Eğer burada likedPlaylists boş geliyorsa, sorun userService.ts veya Backend'dedir.
         console.log("📡 [Layout] API Cevabı - Beğenilen Playlist Sayısı:", likedPlaylists.length);
-        console.log("📡 [Layout] API Cevabı - Beğenilen Playlistler:", likedPlaylists);
 
-        // ID listelerini çıkar
         const followingIds = followingUsers.map(u => u.id);
         const likedPlaylistIds = likedPlaylists.map(p => p.id.toString()); 
 
-        // Mevcut Context verisi
         const currentFollowing = user.following || [];
         const currentLikes = user.likedPlaylists || [];
 
-        // Farklılık kontrolü
         const isFollowingDifferent = 
           followingIds.length !== currentFollowing.length || 
           !followingIds.every(id => currentFollowing.includes(id));
@@ -51,7 +45,6 @@ export function Layout({ children }: LayoutProps) {
           likedPlaylistIds.length !== currentLikes.length || 
           !likedPlaylistIds.every(id => currentLikes.includes(id));
 
-        // Eğer fark varsa güncelle
         if (isFollowingDifferent || isLikesDifferent) {
           console.log("⚡ [Layout] User Context güncelleniyor!", {
             eskiLikeSayisi: currentLikes.length,
@@ -73,14 +66,24 @@ export function Layout({ children }: LayoutProps) {
     };
 
     syncUserData();
-    // Dependency array: isAuthenticated veya username değişirse tekrar çalış
   }, [isAuthenticated, user?.username]); 
 
   return (
+    // Yapı aynen korundu: flex-col
     <div className="flex flex-col min-h-screen bg-black dark:bg-gray-950">
       <Sidebar currentUser={user} />
-      <div className="flex flex-1 flex-col overflow-hidden">{children}</div>
+      
+      {/* ✅ GÜNCELLEME: 
+         İçerik alanına 'pb-24' eklendi.
+         Böylece sayfa içeriği MusicPlayer'ın arkasında kalmaz.
+      */}
+      <div className="flex flex-1 flex-col overflow-hidden pb-24">
+        {children}
+      </div>
+
+      {/* MusicPlayer en altta ve sabit (fixed) */}
       <MusicPlayer />
+      
       {isAuthenticated && <ChatBot />}
     </div>
   );

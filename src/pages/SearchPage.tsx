@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, Play, Pause } from "lucide-react";
 import { Input } from "../components/ui/input";
 import {
   Tabs,
@@ -16,10 +16,17 @@ import { searchService } from "../services/searchService";
 import { userService } from "../services/userService";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
+// ✅ YENİ: Global Player Context import edildi
+import { usePlayer } from "../contexts/PlayerContext";
 
 export function SearchPage() {
   const navigate = useNavigate();
   const { user, updateUser } = useAuth();
+  
+  // ✅ YENİ: Global Player State'lerini çekiyoruz
+  // playingSongId ve audioRef gibi local state'ler silindi.
+  const { currentSong, isPlaying, playSong } = usePlayer();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,19 +37,16 @@ export function SearchPage() {
     users: User[];
   }>({ songs: [], playlists: [], users: [] });
 
-  // VERİ BİRLEŞTİRME VE DEBUG NOKTASI
+  // VERİ BİRLEŞTİRME (Like senkronizasyonu)
   const hydratedPlaylists = useMemo(() => {
-    // 1. Güvenlik Kontrolü
     if (!user || !rawResults.playlists) return rawResults.playlists;
 
     return rawResults.playlists.map((playlist) => {
-      // 2. ID Eşleştirme
       const playlistIdStr = playlist.id.toString();
       const userLikedList = user.likedPlaylists || []; 
       
       const isLiked = userLikedList.includes(playlistIdStr);
 
-      // 3. 'likes' Arrayini Doldurma
       let updatedLikes = [...(playlist.likes || [])];
 
       if (isLiked && user.id && !updatedLikes.includes(user.id)) {
@@ -52,7 +56,6 @@ export function SearchPage() {
         updatedLikes = updatedLikes.filter(id => id !== user.id);
       }
 
-      // 4. Sayı Düzeltme
       let updatedCount = playlist.likes_count || 0;
       if (isLiked && updatedCount === 0) {
         updatedCount = 1;
@@ -66,26 +69,22 @@ export function SearchPage() {
     });
   }, [rawResults.playlists, user]);
 
-  // --- BAŞLANGIÇ VERİSİ ÇEKME (Random/Recent Content) ---
+  // --- BAŞLANGIÇ VERİSİ ÇEKME ---
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      // Endpointleri bozmadan, mevcut playlist listesini çekiyoruz
       const playlists = await playlistService.getPlaylists(0, 20);
       
-      // 1. Şarkıları playlistlerin içinden çıkarıp karıştırıyoruz
       const allSongs = playlists.flatMap(p => p.songs || []);
       const shuffledSongs = allSongs.sort(() => 0.5 - Math.random()).slice(0, 10);
 
-      // 2. Kullanıcıları playlist sahiplerinden çıkarıyoruz
       const uniqueUsersMap = new Map();
       playlists.forEach(p => {
         if (p.owner && !uniqueUsersMap.has(p.owner.id)) {
-           // BackendUser formatını Frontend User formatına çeviriyoruz
            uniqueUsersMap.set(p.owner.id, {
              id: p.owner.id,
              username: p.owner.username,
-             avatar: p.owner.avatar_url || "https://github.com/shadcn.png", // avatar_url -> avatar mapping
+             avatar: p.owner.avatar_url || "https://github.com/shadcn.png",
              bio: p.owner.bio || "",
              followers: [], 
              following: [],
@@ -109,7 +108,6 @@ export function SearchPage() {
   };
 
   useEffect(() => {
-    // Arama kutusu boşsa başlangıç verilerini çek
     if (!searchQuery.trim()) {
       fetchInitialData();
       return;
@@ -257,33 +255,52 @@ export function SearchPage() {
               <div>
                 <h2 className="mb-4">Songs</h2>
                 <div className="bg-gray-900 rounded-lg divide-y divide-gray-800">
-                  {rawResults.songs.slice(0, 5).map((song) => (
-                    <div
-                      key={song.id}
-                      className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group"
-                    >
-                      <img
-                        src={song.coverArt}
-                        alt={song.title}
-                        className="w-12 h-12 rounded object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-white truncate">{song.title}</div>
-                        <div className="text-sm text-gray-400 truncate">
-                          {song.artist}
+                  {rawResults.songs.slice(0, 5).map((song) => {
+                    // ✅ GÜNCEL: Global state kontrolü
+                    const isCurrentSong = currentSong?.id === song.id;
+                    return (
+                      <div
+                        key={song.id}
+                        onClick={() => playSong(song)} // ✅ GÜNCEL: Global fonksiyon
+                        className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group cursor-pointer"
+                      >
+                        <div className="relative w-12 h-12">
+                            <img
+                              src={song.coverArt}
+                              alt={song.title}
+                              className={`w-full h-full rounded object-cover transition-opacity ${isCurrentSong ? 'opacity-50' : 'group-hover:opacity-50'}`}
+                            />
+                            {(isCurrentSong || true) && (
+                              <div className={`absolute inset-0 flex items-center justify-center ${isCurrentSong ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                {isCurrentSong && isPlaying ? (
+                                    <Pause className="w-6 h-6 text-white" />
+                                ) : (
+                                    <Play className="w-6 h-6 text-white ml-1" />
+                                )}
+                              </div>
+                            )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className={`truncate ${isCurrentSong ? 'text-pink font-semibold' : 'text-white'}`}>
+                            {song.title}
+                          </div>
+                          <div className="text-sm text-gray-400 truncate">
+                            {song.artist}
+                          </div>
+                        </div>
+                        <div className="text-gray-400 text-sm">
+                          {Math.floor(song.duration / 60)}:
+                          {(song.duration % 60).toString().padStart(2, "0")}
                         </div>
                       </div>
-                      <div className="text-gray-400 text-sm">
-                        {Math.floor(song.duration / 60)}:
-                        {(song.duration % 60).toString().padStart(2, "0")}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* PLAYLISTS - Hydrated Data Kullanılıyor */}
+            {/* PLAYLISTS */}
             {hydratedPlaylists.length > 0 && (
               <div>
                 <h2 className="mb-4">Playlists</h2>
@@ -357,7 +374,6 @@ export function SearchPage() {
               </div>
             )}
             
-            {/* Empty State: Sadece hem arama yapılıp hem de sonuç bulunamazsa göster */}
             {!isLoading &&
               searchQuery &&
               rawResults.songs.length === 0 &&
@@ -391,15 +407,34 @@ export function SearchPage() {
           <TabsContent value="songs" className="mt-6">
              {rawResults.songs.length > 0 ? (
               <div className="bg-gray-900 rounded-lg divide-y divide-gray-800">
-                {rawResults.songs.map((song) => (
-                  <div key={song.id} className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4">
-                     <img src={song.coverArt} className="w-10 h-10 rounded" />
-                     <div className="flex-1">
-                        <div className="text-white">{song.title}</div>
-                        <div className="text-sm text-gray-400">{song.artist}</div>
-                     </div>
-                  </div>
-                ))}
+                {rawResults.songs.map((song) => {
+                  // ✅ GÜNCEL: Global state kontrolü
+                  const isCurrentSong = currentSong?.id === song.id;
+                  return (
+                    <div 
+                        key={song.id} 
+                        onClick={() => playSong(song)} // ✅ GÜNCEL: Global fonksiyon
+                        className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group cursor-pointer"
+                    >
+                         <div className="relative w-10 h-10">
+                            <img src={song.coverArt} className={`w-full h-full rounded object-cover ${isCurrentSong ? 'opacity-50' : 'group-hover:opacity-50'}`} />
+                            {(isCurrentSong || true) && (
+                              <div className={`absolute inset-0 flex items-center justify-center ${isCurrentSong ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                {isCurrentSong && isPlaying ? (
+                                    <Pause className="w-5 h-5 text-white" />
+                                ) : (
+                                    <Play className="w-5 h-5 text-white ml-0.5" />
+                                )}
+                              </div>
+                            )}
+                         </div>
+                         <div className="flex-1">
+                            <div className={`text-white ${isCurrentSong ? 'text-pink font-semibold' : ''}`}>{song.title}</div>
+                            <div className="text-sm text-gray-400">{song.artist}</div>
+                         </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : null}
           </TabsContent>

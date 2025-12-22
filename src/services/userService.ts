@@ -41,6 +41,18 @@ export const userService = {
     }
   },
 
+
+  deleteCurrentUser: async (): Promise<void> => {
+    try {
+      // 204 döneceği için bir data return etmemize gerek yok
+      await api.delete('/users/me');
+    } catch (error: any) {
+      const statusCode = error.response?.status;
+      const errorMessage = error.response?.data?.detail || error.message || 'Failed to delete account';
+      throw new UserServiceError(`Failed to delete account: ${errorMessage}`, statusCode, error.response?.data);
+    }
+  },
+
   // İsim değişikliği: ProfilePage ile uyumlu olması için updateMe -> updateCurrentUser
   updateCurrentUser: async (userData: { bio?: string | null; avatar_url?: string | null }): Promise<User> => {
     try {
