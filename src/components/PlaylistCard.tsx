@@ -41,21 +41,29 @@ export function PlaylistCard({
     if (!isGuestMode) onLike(playlist.id.toString());
   };
 
-  // Tarih formatlama (Örn: 2 weeks ago gibi yapılabilir ama şimdilik standart tarih)
   const formatDate = (dateString?: string) => {
     if (!dateString) return "";
     return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   return (
-    <div className="group flex flex-col gap-3 cursor-pointer" onClick={onPlaylistClick}>
+    <div 
+      className="group flex flex-col gap-3 cursor-pointer w-full bg-gray-900 rounded-lg p-3 hover:bg-gray-800 transition-colors" 
+      onClick={onPlaylistClick}
+      // İSTENİLEN OUTLINE STİLİ BURAYA EKLENDİ
+      style={{ outline: '3px solid #33ace3' }}
+    >
+      
       {/* --- THUMBNAIL KISMI --- */}
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-gray-900 border border-gray-800/50">
+      <div 
+        className="relative w-full rounded-lg overflow-hidden bg-gray-950"
+        style={{ aspectRatio: '16/9' }}
+      >
         {playlist.coverArt ? (
           <img
             src={playlist.coverArt}
             alt={playlist.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 ease-out"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -63,56 +71,53 @@ export function PlaylistCard({
           </div>
         )}
 
-        {/* Hover Overlay & Play Button (ORTADA) */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
-           <div className="opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-300">
-              <div className="bg-black/60 backdrop-blur-sm rounded-full p-4 border border-white/10">
+        {/* Hover Overlay & Play Button */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center z-10">
+           <div className="opacity-0 group-hover:opacity-100 transform scale-90 group-hover:scale-100 transition-all duration-300 shadow-xl">
+              <div className="bg-black/60 backdrop-blur-md rounded-full p-3 border border-white/10 shadow-xl">
                  <Play className="w-8 h-8 text-white fill-white ml-1" />
               </div>
            </div>
         </div>
 
-        {/* Song Count Badge (SAĞ ALT - Çakışmayı önlemek için Play butonu ortaya alındı) */}
-        <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs font-medium px-1.5 py-0.5 rounded">
+        {/* Song Count Badge */}
+        <div className="absolute bottom-2 right-2 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md z-20 pointer-events-none">
           {playlist.songs?.length || 0} songs
         </div>
       </div>
 
-      {/* --- INFO KISMI (YouTube Style) --- */}
-      <div className="flex gap-3 items-start pr-4">
+      {/* --- INFO KISMI --- */}
+      <div className="flex gap-3 items-start pr-1">
         {/* Avatar */}
         <div 
           onClick={onUserClick}
-          className="flex-shrink-0 mt-0.5"
+          className="flex-shrink-0 mt-0.5 z-20"
         >
           <img
             src={playlist.owner?.avatar_url || "https://github.com/shadcn.png"}
             alt={playlist.owner?.username}
-            className="w-9 h-9 rounded-full object-cover hover:opacity-80 transition-opacity"
+            className="w-9 h-9 rounded-full object-cover hover:opacity-80 transition-opacity bg-gray-800 border border-gray-700"
           />
         </div>
 
         {/* Metinler */}
         <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          {/* Başlık */}
-          <h3 className="text-white font-semibold text-base line-clamp-2 leading-tight group-hover:text-green-400 transition-colors">
+          <h3 className="text-white font-semibold text-sm leading-tight line-clamp-2 mb-1 group-hover:text-[#33ace3] transition-colors" title={playlist.title}>
             {playlist.title}
           </h3>
           
-          {/* Kullanıcı Adı */}
           <div 
             onClick={onUserClick}
-            className="text-gray-400 text-sm hover:text-white transition-colors truncate"
+            className="text-gray-400 text-xs hover:text-white transition-colors truncate w-fit mb-0.5"
           >
             {playlist.owner?.username || "Unknown"}
           </div>
 
-          {/* Metadata (Like & Date) */}
           <div className="flex items-center text-xs text-gray-500 mt-0.5">
              <button
                 onClick={onLikeClick}
                 disabled={isGuestMode}
-                className={`flex items-center gap-1 group/like hover:text-white transition-colors ${isLiked ? 'text-pink hover:text-green-400' : ''}`}
+                className={`flex items-center gap-1 group/like hover:text-white transition-colors z-20 ${isLiked ? 'text-green-500 hover:text-green-400' : ''}`}
              >
                 <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
                 <span>{playlist.likes_count || 0}</span>
