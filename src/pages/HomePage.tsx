@@ -134,9 +134,10 @@ export function HomePage() {
     navigate(`/app/playlist/${playlistId}`);
   };
 
-  const handleUserClick = (userId: string) => {
-    navigate(`/app/user/${userId}`);
+  const handleUserClick = (username: string) => {
+    navigate(`/app/user/${username}`);
   };
+
 
   const handleLike = async (playlistId: string) => {
     if (!user?.id) return;
@@ -250,7 +251,7 @@ export function HomePage() {
                     <button
                         onClick={(e) => {
                         e.stopPropagation();
-                        handleUserClick(heroPlaylist.owner.id);
+                        handleUserClick(heroPlaylist.owner.username);
                         }}
                         className="flex items-center gap-3 hover:text-white text-gray-200 transition-colors group/user"
                     >
@@ -298,7 +299,7 @@ export function HomePage() {
               {featuredArtists.map((artist) => (
                 <button
                   key={artist.id}
-                  onClick={() => handleUserClick(artist.id)}
+                  onClick={() => handleUserClick(artist.username)}
                   className="flex-shrink-0 text-center group"
                 >
                   <div className="relative mb-3">
@@ -318,6 +319,7 @@ export function HomePage() {
             </div>
           </div>
         )}
+
 
         {/* TRENDING SONGS */}
         {trendingSongs.length > 0 && selectedCategory === 'All' && (
