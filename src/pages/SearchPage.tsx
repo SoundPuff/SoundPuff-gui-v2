@@ -130,7 +130,6 @@ export function SearchPage() {
     navigate(`/app/playlist/${playlistId}`);
   };
 
-  // ✅ DÜZELTME 1: Parametre ismi ve yönlendirme mantığı username'e çevrildi
   const handleUserClick = (username: string) => {
     if (!username) {
       navigate("/app/search");
@@ -198,6 +197,73 @@ export function SearchPage() {
     }
   };
 
+  // --- RENDER HELPER FUNCTION (HomePage Trending Songs yapısının birebir aynısı) ---
+  const renderSongList = (songs: Song[]) => {
+    return (
+      // Ana Container: HomePage ile aynı stiller (bg-gray-900/30, border, divide-y)
+      <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
+        {songs.map((song, index) => {
+          const isCurrentSong = currentSong?.id === song.id;
+
+          return (
+            <div
+              key={song.id}
+              onClick={() => playSong(song)}
+              // Satır Container: HomePage ile birebir aynı grid yapısı
+              className="group p-4 grid grid-cols-[auto_1fr_1fr_auto] gap-4 items-center hover:bg-gray-800/30 transition-all cursor-pointer"
+            >
+              {/* 1. Sütun: Sıra Numarası / Play Butonu (Aynısı) */}
+              <div className="w-8 flex items-center justify-center">
+                {isCurrentSong && isPlaying ? (
+                  <Pause className="w-4 h-4 text-pink fill-pink" />
+                ) : isCurrentSong ? (
+                  <Play className="w-4 h-4 text-pink fill-pink" />
+                ) : (
+                  <>
+                    <span className="text-gray-500 font-medium group-hover:hidden">
+                      {index + 1}
+                    </span>
+                    <Play className="w-4 h-4 hidden group-hover:block text-white fill-white" />
+                  </>
+                )}
+              </div>
+
+              {/* 2. Sütun: Resim, Başlık ve Sanatçı (Aynısı) */}
+              <div className="flex items-center gap-4 min-w-0">
+                <img
+                  src={song.coverArt}
+                  alt={song.title}
+                  className="w-12 h-12 rounded object-cover shadow-lg"
+                />
+                <div className="min-w-0">
+                  <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'text-white group-hover:text-green-400'}`}>
+                    {song.title}
+                  </p>
+                  {/* Sanatçı adı burada her zaman görünür */}
+                  <p className="text-sm text-gray-400 truncate">
+                    {song.artist}
+                  </p>
+                </div>
+              </div>
+
+              {/* 3. Sütun: Masaüstü Ekstra Bilgi (HomePage'de Playlist Adı idi) */}
+              {/* Search sonucunda playlist bilgisi olmadığı için, görsel dengeyi korumak adına burada tekrar Sanatçı adını gösteriyoruz (sadece masaüstünde) */}
+              <div className="hidden md:block text-sm text-gray-400 truncate hover:text-white hover:underline z-10">
+                {song.artist}
+              </div>
+
+              {/* 4. Sütun: Süre (Aynısı) */}
+              <div className="text-sm text-gray-400 tabular-nums text-right pr-2">
+                {Math.floor(song.duration / 60)}:
+                {(song.duration % 60).toString().padStart(2, "0")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   if (!user) return null;
 
   return (
@@ -249,48 +315,8 @@ export function SearchPage() {
             {rawResults.songs.length > 0 && (
               <div>
                 <h2 className="mb-4">Songs</h2>
-                <div className="bg-gray-900 rounded-lg divide-y divide-gray-800">
-                  {rawResults.songs.slice(0, 5).map((song) => {
-                    const isCurrentSong = currentSong?.id === song.id;
-                    return (
-                      <div
-                        key={song.id}
-                        onClick={() => playSong(song)}
-                        className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group cursor-pointer"
-                      >
-                        <div className="relative w-12 h-12">
-                            <img
-                              src={song.coverArt}
-                              alt={song.title}
-                              className={`w-full h-full rounded object-cover transition-opacity ${isCurrentSong ? 'opacity-50' : 'group-hover:opacity-50'}`}
-                            />
-                            {(isCurrentSong || true) && (
-                              <div className={`absolute inset-0 flex items-center justify-center ${isCurrentSong ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                {isCurrentSong && isPlaying ? (
-                                    <Pause className="w-6 h-6 text-white" />
-                                ) : (
-                                    <Play className="w-6 h-6 text-white ml-1" />
-                                )}
-                              </div>
-                            )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className={`truncate ${isCurrentSong ? 'text-pink font-semibold' : 'text-white'}`}>
-                            {song.title}
-                          </div>
-                          <div className="text-sm text-gray-400 truncate">
-                            {song.artist}
-                          </div>
-                        </div>
-                        <div className="text-gray-400 text-sm">
-                          {Math.floor(song.duration / 60)}:
-                          {(song.duration % 60).toString().padStart(2, "0")}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                {/* YENİ GÖRÜNÜM İÇİN HELPER FONKSİYONU ÇAĞIRIYORUZ */}
+                {renderSongList(rawResults.songs.slice(0, 5))}
               </div>
             )}
 
@@ -332,13 +358,11 @@ export function SearchPage() {
                             src={searchUser.avatar}
                             alt={searchUser.username}
                             className="w-16 h-16 rounded-full object-cover cursor-pointer"
-                            // ✅ DÜZELTME 2: searchUser.id yerine searchUser.username gönderiyoruz
                             onClick={() => handleUserClick(searchUser.username)}
                           />
                           <div className="flex-1 min-w-0">
                             <div
                               className="text-white truncate cursor-pointer hover:underline"
-                              // ✅ DÜZELTME 3: searchUser.id yerine searchUser.username gönderiyoruz
                               onClick={() => handleUserClick(searchUser.username)}
                             >
                               {searchUser.username}
@@ -402,35 +426,8 @@ export function SearchPage() {
           
           <TabsContent value="songs" className="mt-6">
              {rawResults.songs.length > 0 ? (
-              <div className="bg-gray-900 rounded-lg divide-y divide-gray-800">
-                {rawResults.songs.map((song) => {
-                  const isCurrentSong = currentSong?.id === song.id;
-                  return (
-                    <div 
-                        key={song.id} 
-                        onClick={() => playSong(song)}
-                        className="p-4 hover:bg-gray-800 transition-colors flex items-center gap-4 group cursor-pointer"
-                    >
-                         <div className="relative w-10 h-10">
-                            <img src={song.coverArt} className={`w-full h-full rounded object-cover ${isCurrentSong ? 'opacity-50' : 'group-hover:opacity-50'}`} />
-                            {(isCurrentSong || true) && (
-                              <div className={`absolute inset-0 flex items-center justify-center ${isCurrentSong ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                                {isCurrentSong && isPlaying ? (
-                                    <Pause className="w-5 h-5 text-white" />
-                                ) : (
-                                    <Play className="w-5 h-5 text-white ml-0.5" />
-                                )}
-                              </div>
-                            )}
-                         </div>
-                         <div className="flex-1">
-                            <div className={`text-white ${isCurrentSong ? 'text-pink font-semibold' : ''}`}>{song.title}</div>
-                            <div className="text-sm text-gray-400">{song.artist}</div>
-                         </div>
-                    </div>
-                  );
-                })}
-              </div>
+               // YENİ GÖRÜNÜM (Tüm liste)
+               renderSongList(rawResults.songs)
             ) : null}
           </TabsContent>
           
@@ -445,12 +442,10 @@ export function SearchPage() {
                       <div key={searchUser.id} className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors">
                         <div className="flex items-center gap-4">
                           <img src={searchUser.avatar} alt={searchUser.username} className="w-16 h-16 rounded-full object-cover cursor-pointer" 
-                            // ✅ DÜZELTME 4: searchUser.id yerine searchUser.username
                             onClick={() => handleUserClick(searchUser.username)}
                           />
                           <div className="flex-1 min-w-0">
                             <div className="text-white truncate cursor-pointer hover:underline" 
-                                // ✅ DÜZELTME 5: searchUser.id yerine searchUser.username
                                 onClick={() => handleUserClick(searchUser.username)}
                             >
                                 {searchUser.username}
