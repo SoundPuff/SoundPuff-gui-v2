@@ -15,14 +15,16 @@ export function MusicPlayer() {
     playPrevious,
     currentTime,
     duration,
-    seekTo
+    seekTo,
+    volume,      // ✅ add
+    setVolume,   // ✅ add
   } = usePlayer();
+
   
   // Progress ve Volume şimdilik görsel kalabilir (Context'e time update eklenirse burası da bağlanır)
   const progress =
   duration > 0 ? (currentTime / duration) * 100 : 0;
 
-  const [volume, setVolume] = useState(70);
   const [isLiked, setIsLiked] = useState(false);
 
   // Şarkı yoksa player'ı gösterme
@@ -124,13 +126,13 @@ export function MusicPlayer() {
         {/* Volume Control */}
         <div className="flex items-center gap-2 min-w-[200px] flex-1 justify-end">
           <Volume2 className="w-5 h-5 text-gray-400" />
-          <Slider
-            value={[volume]}
-            onValueChange={(value) => setVolume(value[0])}
-            max={100}
-            step={1}
-            className="w-24"
-          />
+            <Slider
+              value={[volume * 100]}              // convert 0-1 to 0-100
+              onValueChange={(value) => setVolume(value[0] / 100)} // convert 0-100 to 0-1
+              max={100}
+              step={1}
+              className="w-24"
+            />
         </div>
       </div>
     </div>

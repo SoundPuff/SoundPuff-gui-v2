@@ -21,6 +21,8 @@ interface PlayerContextType {
   isPlaying: boolean;
   currentTime: number;
   duration: number;
+  volume: number;               // ✅ add
+  setVolume: (vol: number) => void; // ✅ add
 
   playSong: (song: Song, options?: PlayOptions) => void;
   playNext: () => void;
@@ -30,6 +32,7 @@ interface PlayerContextType {
   pauseSong: () => void;
   seekTo: (time: number) => void;
 }
+
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
@@ -44,7 +47,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(30); // preview fixed
 
-  // 🔹 init audio once
+  const [volume, setVolume] = useState(0.7); // 0-1 for audio element
+
   useEffect(() => {
     const audio = new Audio();
     audioRef.current = audio;
@@ -61,7 +65,15 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audio.pause();
       audioRef.current = null;
     };
-  }, []);
+  }, []); // <-- only once
+
+  // 🔹 update audio volume when volume changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume; // 0-1
+    }
+  }, [volume]);
+
 
   // 🔹 play a song
   const playSong = (song: Song, options?: PlayOptions) => {
@@ -218,6 +230,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         isPlaying,
         currentTime,
         duration,
+        volume,         // ✅ expose
+        setVolume,      // ✅ expose
         playSong,
         playNext,
         playPrevious,
