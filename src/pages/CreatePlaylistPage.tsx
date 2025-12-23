@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Song, Playlist } from "../types";
 import { Button } from "../components/ui/button";
@@ -6,13 +6,19 @@ import { Input } from "../components/ui/input";
 import { Textarea } from "../components/ui/textarea";
 import { Label } from "../components/ui/label";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
-import { Plus, X, Save, Search } from "lucide-react";
+import { Plus, X, Save, Search, Upload } from "lucide-react";
 import { Checkbox } from "../components/ui/checkbox";
 import { songService } from "../services/songService";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
 
+const CLOUD_NAME = "ddknfnvis";
+const UPLOAD_PRESET = "soundpuff_preset";
+
 export function CreatePlaylistPage() {
+  const [coverImage, setCoverImage] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { playlistId } = useParams<{ playlistId?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -67,6 +73,65 @@ export function CreatePlaylistPage() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
+  // --- File upload handlers (Cloudinary) ---
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFile(e.target.files[0]);
+    }
+  };
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.secure_url) {
+        setCoverImage(data.secure_url);
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (err) {
+      console.error("Cover upload failed:", err);
+      alert("Image upload failed");
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
+  };
+
   const handleToggleSong = (song: Song) => {
     if (!song || !song.id) return;
     setSelectedSongs((prev) => {
@@ -92,7 +157,8 @@ export function CreatePlaylistPage() {
           description,
           privacy: "public",
           // song_ids: selectedSongs.map((song) => parseInt(song.id)),
-        });
+          coverArt: coverImage,
+        } as any);
       } else {
         // Create new playlist
         await playlistService.createPlaylist({
@@ -100,7 +166,8 @@ export function CreatePlaylistPage() {
           description,
           privacy: "public",
           song_ids: selectedSongs.map((song) => parseInt(song.id)),
-        });
+          coverArt: coverImage,
+        } as any);
       }
       navigate("/app/library");
     } catch (error) {
@@ -203,26 +270,40 @@ export function CreatePlaylistPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="coverArt" className="text-white">
-                Cover Image URL
-              </Label>
-              <Input
-                id="coverArt"
-                value={coverArt}
-                onChange={(e) => setCoverArt(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-                className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: "1px solid #DB77A6" }}
-              />
-              {coverArt && (
-                <div className="mt-2">
+              <Label className="text-white">Playlist Cover</Label>
+
+              <div
+                className={`relative w-40 h-40 rounded-lg overflow-hidden border-2 border-dashed ${isDragging ? 'border-pink scale-105' : 'border-gray-600'} transition-all cursor-pointer`}
+                onClick={triggerFileInput}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                {coverImage ? (
                   <img
-                    src={coverArt}
-                    alt="Cover preview"
-                    className="w-32 h-32 rounded object-cover"
+                    src={coverImage}
+                    alt="Playlist cover"
+                    className="w-full h-full object-cover"
                   />
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <Upload className="w-8 h-8 mb-2" />
+                    <span className="text-sm">Upload cover</span>
+                  </div>
+                )}
+
+                <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">Change Image</span>
                 </div>
-              )}
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileInput}
+              />
             </div>
           </div>
 

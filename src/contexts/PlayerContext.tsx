@@ -5,24 +5,59 @@ import { Song } from '../types/index';
 interface PlayerContextType {
   currentSong: Song | null;
   isPlaying: boolean;
+  currentTime: number;
+  duration: number;
   playSong: (song: Song) => void;
   togglePlay: () => void;
   pauseSong: () => void;
+  seekTo: (time: number) => void;
 }
+
+
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
   const [currentSong, setCurrentSong] = useState<Song | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const seekTo = (time: number) => {
+    if (!audioRef.current) return;
+
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
+
   
   // Audio nesnesi component yeniden render olsa bile sabit kalır
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // İlk yüklemede Audio objesini oluştur
-  if (!audioRef.current) {
-    audioRef.current = new Audio();
-  }
+  useEffect(() => {
+    const audio = new Audio();
+    audioRef.current = audio;
+
+    audio.ontimeupdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    audio.onloadedmetadata = () => {
+      setDuration(audio.duration || 0);
+    };
+
+    audio.onended = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    return () => {
+      audio.pause();
+      audioRef.current = null;
+    };
+  }, []);
+
 
   const playSong = (song: Song) => {
     if (!audioRef.current) return;
@@ -41,7 +76,9 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         .catch(e => console.error("Playback error:", e));
       
       setCurrentSong(song);
-      
+      setCurrentTime(0);
+      setDuration(0);
+
       // Şarkı bittiğinde state'i güncelle
       audioRef.current.onended = () => {
         setIsPlaying(false);
@@ -70,7 +107,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PlayerContext.Provider value={{ currentSong, isPlaying, playSong, togglePlay, pauseSong }}>
+    <PlayerContext.Provider
+      value={{
+        currentSong,
+        isPlaying,
+        currentTime,
+        duration,
+        playSong,
+        togglePlay,
+        pauseSong,
+        seekTo
+      }}
+    >
       {children}
     </PlayerContext.Provider>
   );
