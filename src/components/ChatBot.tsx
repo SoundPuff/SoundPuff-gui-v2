@@ -13,9 +13,8 @@ import { playlistService } from '../services/playlistService';
 // Import Player Context
 import { usePlayer } from '../contexts/PlayerContext';
 
-// ✅ GÜVENLİK VE TYPE FIX: 
-// TypeScript hatasını önlemek için (import.meta as any) kullanıldı.
-const OPENROUTER_API_KEY = (import.meta as any).env.VITE_OPENROUTER_API_KEY; 
+//şimdilik buraya koydum, env alınca çalışmadı
+const OPENROUTER_API_KEY = "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"; 
 
 interface Message {
   id: string;
@@ -26,7 +25,7 @@ interface Message {
   data?: any;
 }
 
-// Playlist Taslak Tipi
+// ✅ YENİ: Playlist Taslak Tipi
 interface PlaylistDraft {
   isActive: boolean;
   title: string;
@@ -43,7 +42,7 @@ export function ChatBot() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
-  // Playlist Taslak State'i
+  // ✅ YENİ: Playlist Taslak State'i
   const [playlistDraft, setPlaylistDraft] = useState<PlaylistDraft>({
     isActive: false,
     title: "",
@@ -54,7 +53,7 @@ export function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm SoundPuff AI. I can help you search songs and popular playlists, find users and create playlists interactively. Try saying 'Create a playlist named Road Trip'. How can I help you?",
+      text: "Hi! I'm SoundPuff AI. I can help you create playlists interactively. Try saying 'Create a playlist named Road Trip'.",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -68,7 +67,7 @@ export function ChatBot() {
     }
   }, [messages, isTyping]);
 
-  // SİSTEM KOMUTLARI
+  // ✅ SİSTEM KOMUTLARI GÜNCELLENDİ
   const SYSTEM_PROMPT = `
     You are SoundPuff's intelligent music assistant.
     
@@ -92,13 +91,6 @@ export function ChatBot() {
   `;
 
   const processAIResponse = async (userText: string) => {
-    // API Key kontrolü
-    if (!OPENROUTER_API_KEY) {
-      //addBotMessage("Configuration Error: API Key is missing in .env file.");
-      //console.error("Lütfen .env dosyanızda VITE_OPENROUTER_API_KEY tanımlı olduğundan emin olun.");
-      return;
-    }
-
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -171,7 +163,7 @@ export function ChatBot() {
         }
       } 
       
-      // 2. START PLAYLIST DRAFT
+      // ✅ 2. START PLAYLIST DRAFT (YENİ)
       else if (cmd.action === 'start_playlist_draft') {
         if (!user) {
           addBotMessage("You need to be logged in to create playlists.");
@@ -224,7 +216,7 @@ export function ChatBot() {
     }
   };
 
-  // Şarkı Seç/Kaldır Fonksiyonu
+  // ✅ Şarkı Seç/Kaldır Fonksiyonu
   const toggleSongSelection = (songId: string) => {
     setPlaylistDraft(prev => {
       const isSelected = prev.selectedSongIds.includes(songId);
@@ -236,7 +228,7 @@ export function ChatBot() {
     });
   };
 
-  // Playlisti Kaydet
+  // ✅ Playlisti Kaydet
   const savePlaylist = async () => {
     if (playlistDraft.selectedSongIds.length === 0) {
       addBotMessage("Please select at least one song first.");
@@ -265,7 +257,7 @@ export function ChatBot() {
     }
   };
 
-  // Draft İptal
+  // ✅ Draft İptal
   const cancelDraft = () => {
     setPlaylistDraft({ isActive: false, title: "", description: "", selectedSongIds: [] });
     addBotMessage("Playlist creation cancelled.");
@@ -307,7 +299,7 @@ export function ChatBot() {
       {/* SONGS */}
       {data.songs?.length > 0 && <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">Songs</p>}
       {data.songs?.slice(0, 3).map((song: any) => {
-        // DRAFT KONTROLÜ
+        // ✅ DRAFT KONTROLÜ
         const isDraftActive = playlistDraft.isActive;
         const isSelected = playlistDraft.selectedSongIds.includes(song.id);
 
@@ -440,7 +432,7 @@ export function ChatBot() {
             </Button>
           </div>
 
-          {/* DRAFT MODU BİLGİ ÇUBUĞU */}
+          {/* ✅ YENİ: DRAFT MODU BİLGİ ÇUBUĞU (Eğer draft aktifse görünür) */}
           {playlistDraft.isActive && (
             <div className="flex-none bg-gray-800 p-2 px-4 flex items-center justify-between border-b border-gray-700 animate-in slide-in-from-top-2">
                 <div className="flex flex-col min-w-0">
