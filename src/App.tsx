@@ -15,6 +15,7 @@ import { LibraryPage } from './pages/LibraryPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { PlaylistPage } from './pages/PlaylistPage';
 import { CreatePlaylistPage } from './pages/CreatePlaylistPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
 function App() {
   return (
@@ -56,6 +57,7 @@ function App() {
                         <Route path="create-playlist" element={<CreatePlaylistPage />} />
                         <Route path="edit-playlist/:playlistId" element={<CreatePlaylistPage />} />
                         <Route index element={<Navigate to="home" replace />} />
+                        <Route path="*" element={<NotFoundPage />} />
                       </Routes>
                     </Layout>
                   </ProtectedRoute>
@@ -63,7 +65,7 @@ function App() {
               />
 
               {/* Redirect authenticated users to app */}
-              <Route path="*" element={<Navigate to="/app/home" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
         </PlayerProvider>

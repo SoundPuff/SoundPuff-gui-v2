@@ -150,7 +150,6 @@ export function LibraryPage() {
               <PlaylistCard
                 key={playlist.id}
                 playlist={playlist}
-                user={user}
                 currentUserId={user.id}
                 onLike={handleLike}
               />

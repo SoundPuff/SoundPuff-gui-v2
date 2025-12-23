@@ -1,27 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Song, Playlist } from '../types';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Textarea } from '../components/ui/textarea';
-import { Label } from '../components/ui/label';
-import { LoadingSkeleton } from '../components/LoadingSkeleton';
-import { Plus, X, Save, Search } from 'lucide-react';
-import { Checkbox } from '../components/ui/checkbox';
-import { songService } from '../services/songService';
-import { playlistService } from '../services/playlistService';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Song, Playlist } from "../types";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Textarea } from "../components/ui/textarea";
+import { Label } from "../components/ui/label";
+import { LoadingSkeleton } from "../components/LoadingSkeleton";
+import { Plus, X, Save, Search } from "lucide-react";
+import { Checkbox } from "../components/ui/checkbox";
+import { songService } from "../services/songService";
+import { playlistService } from "../services/playlistService";
+import { useAuth } from "../contexts/AuthContext";
 
 export function CreatePlaylistPage() {
   const { playlistId } = useParams<{ playlistId?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [coverArt, setCoverArt] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [coverArt, setCoverArt] = useState("");
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
   const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreatePlaylistHovered, setIsCreatePlaylistHovered] = useState(false);
@@ -36,11 +36,11 @@ export function CreatePlaylistPage() {
           const playlistIdNum = parseInt(playlistId);
           const playlist = await playlistService.getPlaylist(playlistIdNum);
           setTitle(playlist.title);
-          setDescription(playlist.description);
-          setCoverArt(playlist.coverArt || '');
+          setDescription(playlist.description || "");
+          setCoverArt(playlist.coverArt || "");
           setSelectedSongs(playlist.songs);
         } catch (error) {
-          console.error('Failed to fetch playlist:', error);
+          console.error("Failed to fetch playlist:", error);
         } finally {
           setIsLoading(false);
         }
@@ -57,7 +57,7 @@ export function CreatePlaylistPage() {
           const { songs } = await songService.searchSongs(searchQuery);
           setAvailableSongs(songs);
         } catch (error) {
-          console.error('Failed to search songs:', error);
+          console.error("Failed to search songs:", error);
         }
       } else {
         setAvailableSongs([]);
@@ -90,19 +90,21 @@ export function CreatePlaylistPage() {
         await playlistService.updatePlaylist(playlistIdNum, {
           title,
           description,
-          privacy: 'public',
+          privacy: "public",
+          // song_ids: selectedSongs.map((song) => parseInt(song.id)),
         });
       } else {
         // Create new playlist
         await playlistService.createPlaylist({
           title,
           description,
-          privacy: 'public',
+          privacy: "public",
+          song_ids: selectedSongs.map((song) => parseInt(song.id)),
         });
       }
-      navigate('/app/library');
+      navigate("/app/library");
     } catch (error) {
-      console.error('Failed to save playlist:', error);
+      console.error("Failed to save playlist:", error);
     }
   };
 
@@ -112,16 +114,18 @@ export function CreatePlaylistPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
-      style={{
-        background: `
+      <div
+        className="flex-1 text-white p-8 overflow-y-auto pb-32"
+        style={{
+          background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           black
         `,
-      }}>
+        }}
+      >
         <div className="max-w-4xl mx-auto">
           <div className="h-8 bg-gray-800 rounded w-48 mb-8 animate-pulse" />
           <div className="bg-gray-900 rounded-lg p-6 space-y-6">
@@ -140,8 +144,9 @@ export function CreatePlaylistPage() {
   }
 
   return (
-    <div className="flex-1 text-white p-8 overflow-y-auto pb-32"
-    style={{
+    <div
+      className="flex-1 text-white p-8 overflow-y-auto pb-32"
+      style={{
         background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
@@ -149,19 +154,24 @@ export function CreatePlaylistPage() {
           radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           black
         `,
-      }}>
+      }}
+    >
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-white mb-4 text-4xl font-bold"
-            style={{ 
-              color: '#d95a96', 
-              WebkitTextStroke: '0.5px #5b0425'
-            }}>
-          {isEditing ? 'Edit Playlist' : 'Create New Playlist'}
+        <h1
+          className="text-white mb-4 text-4xl font-bold"
+          style={{
+            color: "#d95a96",
+            WebkitTextStroke: "0.5px #5b0425",
+          }}
+        >
+          {isEditing ? "Edit Playlist" : "Create New Playlist"}
         </h1>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-gray-900 rounded-lg p-6 space-y-6"
-          style={{ outline: '3px solid #DB77A6' }}>
+          <div
+            className="bg-gray-900 rounded-lg p-6 space-y-6"
+            style={{ outline: "3px solid #DB77A6" }}
+          >
             <div className="space-y-2">
               <Label htmlFor="title" className="text-white">
                 Playlist Title
@@ -173,7 +183,7 @@ export function CreatePlaylistPage() {
                 placeholder="Enter playlist title"
                 required
                 className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: '1px solid #DB77A6' }}
+                style={{ outline: "1px solid #DB77A6" }}
               />
             </div>
 
@@ -187,7 +197,7 @@ export function CreatePlaylistPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your playlist..."
                 className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: '1px solid #DB77A6' }}
+                style={{ outline: "1px solid #DB77A6" }}
                 rows={3}
               />
             </div>
@@ -202,7 +212,7 @@ export function CreatePlaylistPage() {
                 onChange={(e) => setCoverArt(e.target.value)}
                 placeholder="https://example.com/image.jpg"
                 className="bg-gray-800 border-gray-700 text-white"
-                style={{ outline: '1px solid #DB77A6' }}
+                style={{ outline: "1px solid #DB77A6" }}
               />
               {coverArt && (
                 <div className="mt-2">
@@ -216,8 +226,10 @@ export function CreatePlaylistPage() {
             </div>
           </div>
 
-          <div className="bg-gray-900 rounded-lg p-6"
-          style={{ outline: '3px solid #DB77A6' }}>
+          <div
+            className="bg-gray-900 rounded-lg p-6"
+            style={{ outline: "3px solid #DB77A6" }}
+          >
             <div className="flex items-center justify-between mb-4">
               <h2>Select Songs</h2>
               <span className="text-gray-400 text-sm">
@@ -227,13 +239,16 @@ export function CreatePlaylistPage() {
 
             <div className="mb-4">
               <div className="relative">
-                <Search className="absolute top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" style={{ left: '8px' }} />
+                <Search
+                  className="absolute top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"
+                  style={{ left: "8px" }}
+                />
                 <Input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search songs..."
-                  style={{ outline: '1px solid #DB77A6', paddingLeft: '32px' }}
+                  style={{ outline: "1px solid #DB77A6", paddingLeft: "32px" }}
                   className="bg-gray-800 border-gray-700 text-white"
                 />
               </div>
@@ -246,14 +261,14 @@ export function CreatePlaylistPage() {
                   <div
                     key={song.id}
                     className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
-                      !isSelected ? 'hover:bg-gray-800' : ''
+                      !isSelected ? "hover:bg-gray-800" : ""
                     }`}
                     onClick={() => handleToggleSong(song)}
                     style={
                       isSelected
                         ? {
-                            backgroundColor: 'rgba(51, 172, 227, 0.2)',
-                            border: '1px solid rgba(51, 172, 227, 0.3)',
+                            backgroundColor: "rgba(51, 172, 227, 0.2)",
+                            border: "1px solid rgba(51, 172, 227, 0.3)",
                           }
                         : undefined
                     }
@@ -289,7 +304,7 @@ export function CreatePlaylistPage() {
                     </div>
                     <div className="text-gray-400 text-sm">
                       {Math.floor(song.duration / 60)}:
-                      {(song.duration % 60).toString().padStart(2, '0')}
+                      {(song.duration % 60).toString().padStart(2, "0")}
                     </div>
                   </div>
                 );
@@ -297,17 +312,25 @@ export function CreatePlaylistPage() {
             </div>
 
             {selectedSongs.length === 0 && availableSongs.length !== 0 && (
-              <p className='text-white text-center py-4'
-                style={{ 
-                      WebkitTextStroke: '0.5px #d95a96'
-                    }}>Select at least one song</p>
-              )}
+              <p
+                className="text-white text-center py-4"
+                style={{
+                  WebkitTextStroke: "0.5px #d95a96",
+                }}
+              >
+                Select at least one song
+              </p>
+            )}
             {availableSongs.length === 0 && (
-              <p className='text-white text-center py-8'
-                style={{ 
-                      WebkitTextStroke: '0.5px #d95a96'
-                    }}>Select at least one song</p>
-              )}
+              <p
+                className="text-white text-center py-8"
+                style={{
+                  WebkitTextStroke: "0.5px #d95a96",
+                }}
+              >
+                Select at least one song
+              </p>
+            )}
           </div>
 
           <div className="flex gap-3">
@@ -318,22 +341,24 @@ export function CreatePlaylistPage() {
               onMouseEnter={() => setIsCreatePlaylistHovered(true)}
               onMouseLeave={() => setIsCreatePlaylistHovered(false)}
               style={{
-                backgroundColor: isCreatePlaylistHovered ? '#D95A96' : '#DB77A6',
+                backgroundColor: isCreatePlaylistHovered
+                  ? "#D95A96"
+                  : "#DB77A6",
               }}
             >
               <Save className="w-4 h-4 mr-2" />
-              {isEditing ? 'Save Changes' : 'Create Playlist'}
+              {isEditing ? "Save Changes" : "Create Playlist"}
             </Button>
             <Button
               type="button"
-              onClick={() => navigate('/app/library')}
+              onClick={() => navigate("/app/library")}
               onMouseEnter={() => setIsCancelHovered(true)}
               onMouseLeave={() => setIsCancelHovered(false)}
               style={{
-                backgroundColor: isCancelHovered ? '#DB77A6' : 'transparent',
-                color: isCancelHovered ? 'black' : '#DB77A6',
-                borderColor: '#D95A96',
-                borderWidth: '1px'
+                backgroundColor: isCancelHovered ? "#DB77A6" : "transparent",
+                color: isCancelHovered ? "black" : "#DB77A6",
+                borderColor: "#D95A96",
+                borderWidth: "1px",
               }}
             >
               <X className="w-5 h-5 mr-2" />

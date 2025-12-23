@@ -164,6 +164,7 @@ export interface PlaylistCreateRequest {
   title: string; // required
   description?: string | null;
   privacy?: "public" | "private"; // default: "public"
+  song_ids: number[];
 }
 
 // Matches API schema "PlaylistUpdate"
@@ -171,6 +172,7 @@ export interface PlaylistUpdateRequest {
   title?: string | null;
   description?: string | null;
   privacy?: "public" | "private" | null;
+  song_ids?: number[];
 }
 
 // --- COMMENT REQUEST TYPES ---
