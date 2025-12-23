@@ -1,25 +1,14 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
-import { Playlist, Comment } from "../types";
-import {
-  Heart,
-  Play,
-  Pause,
-  MessageCircle,
-  Clock,
-  Send,
-  Trash2,
-  Edit,
-} from "lucide-react"; // Pause eklendi
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { LoadingSkeleton } from "../components/LoadingSkeleton";
-import { playlistService } from "../services/playlistService";
-import { useAuth } from "../contexts/AuthContext";
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Playlist, Comment } from '../types';
+import { Heart, Play, Pause, MessageCircle, Clock, Send, Trash2, Edit } from 'lucide-react'; // Pause eklendi
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { LoadingSkeleton } from '../components/LoadingSkeleton';
+import { playlistService } from '../services/playlistService';
+import { useAuth } from '../contexts/AuthContext';
 // Global Player Context
-import { usePlayer } from "../contexts/PlayerContext";
-import { NotFoundPage } from "./NotFoundPage";
+import { usePlayer } from '../contexts/PlayerContext';
 
 interface PlaylistUser {
   id: string;
@@ -32,16 +21,15 @@ export function PlaylistPage() {
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-
+  
   // ✅ GÜNCELLEME: Global player fonksiyonları çekildi
   const { playSong, currentSong, isPlaying } = usePlayer();
-
+  
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [playlistUser, setPlaylistUser] = useState<PlaylistUser | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
-  const [commentText, setCommentText] = useState("");
+  const [commentText, setCommentText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     const fetchPlaylistData = async () => {
@@ -51,26 +39,21 @@ export function PlaylistPage() {
       try {
         const playlistIdNum = parseInt(playlistId);
         const [playlistData, commentsData] = await Promise.all([
-          await playlistService.getPlaylist(playlistIdNum),
-          await playlistService.getPlaylistComments(playlistIdNum),
+          playlistService.getPlaylist(playlistIdNum),
+          playlistService.getPlaylistComments(playlistIdNum),
         ]);
 
         setPlaylist(playlistData);
         setComments(commentsData);
 
         setPlaylistUser({
-          id: playlistData.owner?.id || "",
-          username: playlistData.owner?.username || "",
-          avatar:
-            playlistData.owner?.avatar_url || "https://github.com/shadcn.png",
-          bio: playlistData.owner?.bio || "",
+          id: playlistData.owner?.id || '',
+          username: playlistData.owner?.username || '',
+          avatar: playlistData.owner?.avatar_url || 'https://github.com/shadcn.png',
+          bio: playlistData.owner?.bio || '',
         });
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 404) {
-          setNotFound(true);
-        } else {
-          console.error("Failed to fetch playlist details:", error);
-        }
+        console.error('Failed to fetch playlist details:', error);
       } finally {
         setIsLoading(false);
       }
@@ -79,25 +62,19 @@ export function PlaylistPage() {
     fetchPlaylistData();
   }, [playlistId, currentUser?.id]);
 
-  if (notFound) {
-    return <NotFoundPage />;
-  }
-
   if (!playlist || !playlistUser || !currentUser) {
     if (isLoading) {
       return (
-        <div
-          className="flex-1 text-white overflow-y-auto pb-32"
-          style={{
-            background: `
+        <div className="flex-1 text-white overflow-y-auto pb-32"
+        style={{
+        background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           black
         `,
-          }}
-        >
+      }}>
           <div className="bg-gradient-to-b from-pink to-transparent p-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex gap-6 items-end">
@@ -133,42 +110,56 @@ export function PlaylistPage() {
     if (!commentText.trim() || !playlistId || !currentUser?.id) return;
 
     try {
-      const newComment = await playlistService.createComment(playlist.id, {
+      const playlistIdNum = parseInt(playlistId);
+      const newComment = await playlistService.createComment(playlistIdNum, {
         body: commentText,
-        playlist_id: playlist.id,
+        playlist_id: playlistIdNum,
       });
       setComments((prev) => [...prev, newComment]);
-      setCommentText("");
+      setCommentText('');
     } catch (error) {
-      console.error("Failed to create comment:", error);
+      console.error('Failed to create comment:', error);
     }
   };
 
   const handleLike = async () => {
+    if (!playlistId || !currentUser?.id) return;
+
     try {
+      const playlistIdNum = parseInt(playlistId);
       if (isLiked) {
-        await playlistService.unlikePlaylist(playlist.id);
-        // refetch updated playlist so likes_count and likes list are accurate
-        setPlaylist({ ...playlist, likes_count: playlist.likes_count - 1 });
+        await playlistService.unlikePlaylist(playlistIdNum);
+        setPlaylist((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            likes: prev.likes?.filter((id) => id !== currentUser.id),
+          };
+        });
       } else {
-        await playlistService.likePlaylist(playlist.id);
-        // refetch updated playlist so likes_count and likes list are accurate
-        setPlaylist({ ...playlist, likes_count: playlist.likes_count + 1 });
+        await playlistService.likePlaylist(playlistIdNum);
+        setPlaylist((prev) => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            likes: [...(prev.likes || []), currentUser.id],
+          };
+        });
       }
     } catch (error) {
-      console.error("Failed to like/unlike playlist:", error);
+      console.error('Failed to like/unlike playlist:', error);
     }
   };
 
   const handleDeletePlaylist = async () => {
     if (!playlistId) return;
-    if (confirm("Are you sure you want to delete this playlist?")) {
+    if (confirm('Are you sure you want to delete this playlist?')) {
       try {
         const playlistIdNum = parseInt(playlistId);
         await playlistService.deletePlaylist(playlistIdNum);
-        navigate("/app/library");
+        navigate('/app/library');
       } catch (error) {
-        console.error("Failed to delete playlist:", error);
+        console.error('Failed to delete playlist:', error);
       }
     }
   };
@@ -179,24 +170,32 @@ export function PlaylistPage() {
 
   const handleUserClick = (userId: string) => {
     if (!userId) {
-      navigate("/app/search");
+      navigate('/app/search');
       return;
     }
     navigate(`/app/user/${userId}`);
   };
 
-  const totalDuration = playlist.songs.reduce(
-    (acc, song) => acc + song.duration,
-    0
-  );
+  const PLAYABLE_SONG_DURATION = 30; // seconds
+
+  const totalDuration = playlist.songs.reduce((acc, song) => {
+    if (song.url && song.url !== "no") {
+      return acc + PLAYABLE_SONG_DURATION;
+    }
+    return acc;
+  }, 0);
+
   const formatTotalDuration = () => {
     const hours = Math.floor(totalDuration / 3600);
     const minutes = Math.floor((totalDuration % 3600) / 60);
+
     if (hours > 0) {
       return `${hours} hr ${minutes} min`;
     }
+
     return `${minutes} min`;
   };
+
 
   return (
     <div className="flex-1 text-white overflow-y-auto pb-32">
@@ -206,11 +205,7 @@ export function PlaylistPage() {
           <div className="flex gap-6 items-end">
             <div className="w-64 h-64 bg-gray-800 rounded-lg shadow-2xl overflow-hidden flex-shrink-0">
               {playlist.coverArt ? (
-                <img
-                  src={playlist.coverArt}
-                  alt={playlist.title}
-                  className="w-full h-full object-cover"
-                />
+                <img src={playlist.coverArt} alt={playlist.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-900 to-green-700">
                   <Play className="w-24 h-24 text-white" />
@@ -228,16 +223,11 @@ export function PlaylistPage() {
                   className="w-6 h-6 rounded-full object-cover cursor-pointer"
                   onClick={() => handleUserClick(playlistUser.id)}
                 />
-                <button
-                  onClick={() => handleUserClick(playlistUser.id)}
-                  className="hover:underline"
-                >
+                <button onClick={() => handleUserClick(playlistUser.id)} className="hover:underline">
                   {playlistUser.username}
                 </button>
                 <span className="text-gray-400">•</span>
-                <span className="text-gray-400">
-                  {playlist.songs.length} songs
-                </span>
+                <span className="text-gray-400">{playlist.songs.length} songs</span>
                 <span className="text-gray-400">•</span>
                 <span className="text-gray-400">{formatTotalDuration()}</span>
               </div>
@@ -248,10 +238,11 @@ export function PlaylistPage() {
             {/* Büyük Play Butonu */}
             <Button
               size="lg"
-              className="bg-pink hover:bg-[#5b0426] text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
-              onClick={() =>
-                playlist.songs.length > 0 && playSong(playlist.songs[0])
-              }
+              className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
+              onClick={() => playlist.songs.length > 0 && playSong(playlist.songs[0], {
+                queue: playlist.songs,
+                startIndex: 0
+              })}
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
             </Button>
@@ -261,19 +252,11 @@ export function PlaylistPage() {
               onClick={handleLike}
               className="text-gray-400 hover:text-white"
             >
-              <Heart
-                className={`w-8 h-8 ${isLiked ? "fill-pink text-pink" : ""}`}
-              />
+              <Heart className={`w-8 h-8 ${isLiked ? 'fill-pink text-pink' : ''}`} />
             </Button>
-            <span className="text-gray-400">
-              {playlist.likes_count || 0} likes
-            </span>
+            <span className="text-gray-400">{playlist.likes_count || 0} likes</span>
             {isOwner && (
-              <Button
-                variant="ghost"
-                onClick={handleEditPlaylist}
-                className="text-gray-400 hover:text-white"
-              >
+              <Button variant="ghost" onClick={handleEditPlaylist} className="text-gray-400 hover:text-white">
                 <Edit className="w-5 h-5 mr-2" />
                 Edit
               </Button>
@@ -329,33 +312,18 @@ export function PlaylistPage() {
                   </div>
 
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={song.coverArt}
-                      alt={song.album}
-                      className="w-10 h-10 rounded object-cover"
-                    />
+                    <img src={song.coverArt} alt={song.album} className="w-10 h-10 rounded object-cover" />
                     <div className="min-w-0">
                       {/* ✅ Çalan şarkının rengini pembe yap */}
-                      <div
-                        className={`truncate ${
-                          isCurrentSong
-                            ? "text-pink font-semibold"
-                            : "text-white"
-                        }`}
-                      >
+                      <div className={`truncate ${isCurrentSong ? 'text-pink font-semibold' : 'text-white'}`}>
                         {song.title}
                       </div>
-                      <div className="text-sm text-gray-400 truncate">
-                        {song.artist}
-                      </div>
+                      <div className="text-sm text-gray-400 truncate">{song.artist}</div>
                     </div>
                   </div>
-                  <div className="flex items-center text-gray-400 truncate">
-                    {song.album}
-                  </div>
+                  <div className="flex items-center text-gray-400 truncate">{song.album}</div>
                   <div className="flex items-center justify-end text-gray-400">
-                    {Math.floor(song.duration / 60)}:
-                    {(song.duration % 60).toString().padStart(2, "0")}
+                    {song.url && song.url !== "no" ? "0:30" : "--:--"}
                   </div>
                 </div>
               );
@@ -377,10 +345,7 @@ export function PlaylistPage() {
                   placeholder="Add a comment..."
                   className="bg-gray-900 border-gray-800 text-white"
                 />
-                <Button
-                  type="submit"
-                  className="bg-pink hover:bg-[#5b0426] text-black"
-                >
+                <Button type="submit" className="bg-pink hover:bg-green-600 text-black">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
