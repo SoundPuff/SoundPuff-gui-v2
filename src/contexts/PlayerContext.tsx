@@ -1,40 +1,50 @@
 // src/contexts/PlayerContext.tsx
-import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
-import { Song } from '../types/index';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  useEffect,
+  ReactNode
+} from 'react';
+import { Song } from '../types';
+  
+import { searchService } from '../services/searchService';
+
+interface PlayOptions {
+  queue?: Song[];
+  startIndex?: number;
+}
 
 interface PlayerContextType {
   currentSong: Song | null;
   isPlaying: boolean;
   currentTime: number;
   duration: number;
-  playSong: (song: Song) => void;
+
+  playSong: (song: Song, options?: PlayOptions) => void;
+  playNext: () => void;
+  playPrevious: () => void;
+
   togglePlay: () => void;
   pauseSong: () => void;
   seekTo: (time: number) => void;
 }
 
-
-
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
 
 export function PlayerProvider({ children }: { children: ReactNode }) {
-  const [currentSong, setCurrentSong] = useState<Song | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-
-  const seekTo = (time: number) => {
-    if (!audioRef.current) return;
-
-    audioRef.current.currentTime = time;
-    setCurrentTime(time);
-  };
-
-  
-  // Audio nesnesi component yeniden render olsa bile sabit kalır
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // İlk yüklemede Audio objesini oluştur
+  const [currentSong, setCurrentSong] = useState<Song | null>(null);
+  const [queue, setQueue] = useState<Song[]>([]);
+  const [currentIndex, setCurrentIndex] = useState<number>(-1);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(30); // preview fixed
+
+  // 🔹 init audio once
   useEffect(() => {
     const audio = new Audio();
     audioRef.current = audio;
@@ -43,13 +53,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       setCurrentTime(audio.currentTime);
     };
 
-    audio.onloadedmetadata = () => {
-      setDuration(audio.duration || 0);
-    };
-
     audio.onended = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
+      playNext();
     };
 
     return () => {
@@ -58,33 +63,129 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-
-  const playSong = (song: Song) => {
+  // 🔹 play a song
+  const playSong = (song: Song, options?: PlayOptions) => {
     if (!audioRef.current) return;
+    if (!song.url || song.url === 'no') return;
 
-    // Eğer aynı şarkıya tıklandıysa durdur/başlat
+    // Same song → toggle
     if (currentSong?.id === song.id) {
       togglePlay();
       return;
     }
 
-    // Farklı şarkıysa kaynağı değiştir ve çal
-    if (song.url) {
-      audioRef.current.src = song.url;
-      audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch(e => console.error("Playback error:", e));
-      
-      setCurrentSong(song);
-      setCurrentTime(0);
-      setDuration(0);
+    // Queue handling
+    if (options?.queue) {
+      setQueue(options.queue);
+      setCurrentIndex(options.startIndex ?? 0);
+    }
 
-      // Şarkı bittiğinde state'i güncelle
-      audioRef.current.onended = () => {
-        setIsPlaying(false);
-      };
+    audioRef.current.src = song.url;
+    audioRef.current.currentTime = 0;
+
+    audioRef.current
+      .play()
+      .then(() => setIsPlaying(true))
+      .catch(console.error);
+
+    setCurrentSong(song);
+    setCurrentTime(0);
+    setDuration(30);
+  };
+
+  // 🔹 next logic
+  const playNext = async () => {
+    console.log('[Player] playNext called');
+
+    // ✅ playlist exists & has next
+    if (queue.length && currentIndex + 1 < queue.length) {
+      const nextIndex = currentIndex + 1;
+      console.log('[Player] Playing next from playlist:', queue[nextIndex]);
+
+      setCurrentIndex(nextIndex);
+      playSong(queue[nextIndex]);
+      return;
+    }
+
+    // 🚨 playlist ended OR no playlist
+    console.log('[Player] Playlist finished or no queue → fetching random song');
+    fetchRandomSongAndPlay();
+  };
+
+
+  // 🔹 previous logic
+  const playPrevious = () => {
+    if (!queue.length) return;
+
+    if (currentIndex <= 0) {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
+      return;
+    }
+
+    const prevIndex = currentIndex - 1;
+    setCurrentIndex(prevIndex);
+    playSong(queue[prevIndex]);
+  };
+
+
+  // 🔹 random fallback (with retry)
+
+  const fetchRandomSongAndPlay = async (attempt = 0, lastSong: Song | null = null) => {
+    const MAX_ATTEMPTS = 5;
+
+    if (attempt >= MAX_ATTEMPTS) {
+      if (lastSong) {
+        console.warn('[Random] ⚠️ Max attempts reached. Playing last fetched song even if not playable:', lastSong);
+        setQueue([]);
+        setCurrentIndex(-1);
+
+        // Bypass url check for last song
+        if (audioRef.current) {
+          audioRef.current.src = lastSong.url || ''; // even 'no'
+          audioRef.current.currentTime = 0;
+          audioRef.current.play().catch(console.error);
+        }
+        setCurrentSong(lastSong);
+        setCurrentTime(0);
+        setDuration(30);
+      } else {
+        console.error('[Random] ❌ Max attempts reached. No song to play.');
+      }
+      return;
+    }
+
+    try {
+      const searchQuery = 'a';
+      const songs = await searchService.searchSongs(searchQuery);
+
+      if (!songs || songs.length === 0) {
+        fetchRandomSongAndPlay(attempt + 1, lastSong);
+        return;
+      }
+
+      const song = songs[Math.floor(Math.random() * songs.length)];
+
+      console.log(`[Random] 🔄 Attempt ${attempt + 1} | Fetched song:`, song);
+
+      if (song.url && song.url !== 'no') {
+        setQueue([]);
+        setCurrentIndex(-1);
+        playSong(song);
+        return;
+      }
+
+      // Retry, keep last fetched song
+      fetchRandomSongAndPlay(attempt + 1, song);
+
+    } catch (err: any) {
+      if (err.response?.status === 401) return;
+      fetchRandomSongAndPlay(attempt + 1, lastSong);
     }
   };
+
+
 
   const togglePlay = () => {
     if (!audioRef.current || !currentSong) return;
@@ -93,17 +194,21 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
       audioRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioRef.current.play()
-        .catch(e => console.error("Resume error:", e));
+      audioRef.current.play().catch(console.error);
       setIsPlaying(true);
     }
   };
 
   const pauseSong = () => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    }
+    if (!audioRef.current) return;
+    audioRef.current.pause();
+    setIsPlaying(false);
+  };
+
+  const seekTo = (time: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
   };
 
   return (
@@ -114,9 +219,11 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         currentTime,
         duration,
         playSong,
+        playNext,
+        playPrevious,
         togglePlay,
         pauseSong,
-        seekTo
+        seekTo,
       }}
     >
       {children}
@@ -125,9 +232,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
 }
 
 export function usePlayer() {
-  const context = useContext(PlayerContext);
-  if (context === undefined) {
-    throw new Error('usePlayer must be used within a PlayerProvider');
-  }
-  return context;
+  const ctx = useContext(PlayerContext);
+  if (!ctx) throw new Error('usePlayer must be used within PlayerProvider');
+  return ctx;
 }

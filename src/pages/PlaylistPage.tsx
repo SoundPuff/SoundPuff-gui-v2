@@ -239,10 +239,14 @@ export function PlaylistPage() {
             <Button
               size="lg"
               className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
-              onClick={() => playlist.songs.length > 0 && playSong(playlist.songs[0], {
-                queue: playlist.songs,
-                startIndex: 0
-              })}
+              onClick={() =>
+                playlist.songs.length > 0 &&
+                playSong(playlist.songs[0], {
+                  queue: playlist.songs,
+                  startIndex: 0,
+                })
+              }
+
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
             </Button>
@@ -295,7 +299,12 @@ export function PlaylistPage() {
                 <div
                   key={song.id}
                   className="grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-3 hover:bg-white/5 rounded transition-colors group cursor-pointer"
-                  onClick={() => playSong(song)} // ✅ Global playSong fonksiyonu
+                  onClick={() =>
+                    playSong(song, {
+                      queue: playlist.songs,
+                      startIndex: index,
+                    })
+                  }
                 >
                   <div className="w-8 text-gray-400 flex items-center justify-center">
                     {/* ✅ İkon Mantığı: Çalıyorsa Pause, değilse numara veya hover ile Play */}

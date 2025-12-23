@@ -11,12 +11,12 @@ export function MusicPlayer() {
     currentSong,
     isPlaying,
     togglePlay,
+    playNext,
+    playPrevious,
     currentTime,
     duration,
     seekTo
   } = usePlayer();
-
-
   
   // Progress ve Volume şimdilik görsel kalabilir (Context'e time update eklenirse burası da bağlanır)
   const progress =
@@ -73,10 +73,15 @@ export function MusicPlayer() {
         {/* Player Controls */}
         <div className="flex flex-col items-center gap-2 flex-1 max-w-2xl">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={playPrevious}
+              className="text-gray-400 hover:text-white"
+            >
               <SkipBack className="w-5 h-5" />
             </Button>
-            
+
             {/* PLAY/PAUSE BUTONU - ARTIK GLOBAL ÇALIŞIYOR */}
             <Button
               onClick={togglePlay} // <-- Context'teki fonksiyonu çağırıyoruz
@@ -86,9 +91,15 @@ export function MusicPlayer() {
               {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
             </Button>
             
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={playNext}
+              className="text-gray-400 hover:text-white"
+            >
               <SkipForward className="w-5 h-5" />
             </Button>
+
           </div>
           
           <div className="flex items-center gap-2 w-full">
