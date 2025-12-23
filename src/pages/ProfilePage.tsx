@@ -356,11 +356,11 @@ export function ProfilePage() {
                   {/* --- INSTAGRAM TARZI DEĞİŞTİRME BUTONU --- */}
                   <div className="flex flex-col items-start">
                     {/* Bu yazıya tıklanınca da dosya seçici açılır */}
-                    <button 
-                        type="button"
-                        onClick={triggerFileInput}
-                        className="text-pink font-bold text-sm hover:text-green-400 transition-colors cursor-pointer"
-                    >
+          <button 
+            type="button"
+            onClick={triggerFileInput}
+            className="text-pink font-bold text-sm hover:text-[#5b0426] transition-colors cursor-pointer"
+          >
                         Change Profile Photo
                     </button>
                     
@@ -400,14 +400,14 @@ export function ProfilePage() {
                     <>
                         <button 
                         onClick={() => handleOpenListModal("followers")}
-                        className="hover:text-green-400 hover:underline transition-colors focus:outline-none"
+                        className="hover:text-[#5b0426] hover:underline transition-colors focus:outline-none"
                         >
                         <span className="font-bold">{profileUser.followers.length}</span> followers
                         </button>
 
                         <button 
                         onClick={() => handleOpenListModal("following")}
-                        className="hover:text-green-400 hover:underline transition-colors focus:outline-none"
+                        className="hover:text-[#5b0426] hover:underline transition-colors focus:outline-none"
                         >
                         <span className="font-bold">{profileUser.following.length}</span> following
                         </button>
@@ -424,7 +424,7 @@ export function ProfilePage() {
                 <>
                   <Button
                     onClick={handleSaveProfile}
-                    className="bg-pink hover:bg-green-600 text-black"
+                    className="bg-pink hover:bg-[#5b0426] text-black"
                   >
                     <Check className="w-4 h-4 mr-2" />
                     Save Changes
@@ -449,15 +449,15 @@ export function ProfilePage() {
                 </Button>
               )
             ) : (
-              <Button
-                onClick={() => handleFollow(profileUser.id, profileUser.username)}
-                variant={isFollowing ? "outline" : "default"}
-                className={
-                  isFollowing
-                    ? "border border-gray-700 bg-transparent hover:bg-gray-800 text-white"
-                    : "bg-pink hover:bg-green-600 text-black"
-                }
-              >
+                <Button
+                  onClick={() => handleFollow(profileUser.id, profileUser.username)}
+                  variant={isFollowing ? "outline" : "default"}
+                  className={
+                    isFollowing
+                      ? "border border-gray-700 bg-transparent hover:bg-gray-800 text-white"
+                      : "bg-pink hover:bg-[#5b0426] text-black"
+                  }
+                >
                 {isFollowing ? "Unfollow" : "Follow"}
               </Button>
             )}
@@ -560,7 +560,7 @@ export function ProfilePage() {
                                 className={`ml-4 h-8 px-5 text-xs font-semibold ${
                                     isFollowingBack 
                                     ? "bg-gray-800 text-white hover:bg-gray-700" 
-                                    : "bg-pink hover:bg-green-600 text-black"
+                  : "bg-pink hover:bg-[#5b0426] text-black"
                                 }`}
                             >
                                 {isFollowingBack ? "Following" : "Follow"}

@@ -236,7 +236,7 @@ export function SearchPage() {
                   className="w-12 h-12 rounded object-cover shadow-lg"
                 />
                 <div className="min-w-0">
-                  <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'text-white group-hover:text-green-400'}`}>
+                  <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'text-white group-hover:text-[#5b0426]'}`}>
                     {song.title}
                   </p>
                   {/* Sanatçı adı burada her zaman görünür */}
@@ -381,7 +381,7 @@ export function SearchPage() {
                             className={`w-full mt-3 ${
                               isFollowing
                                 ? "border-gray-700 text-white hover:bg-gray-800"
-                                : "bg-pink hover:bg-green-600 text-black"
+                                : "bg-pink hover:bg-[#5b0426] text-black"
                             }`}
                           >
                             {isFollowing ? "Unfollow" : "Follow"}
@@ -457,7 +457,7 @@ export function SearchPage() {
                           <Button
                             onClick={() => handleFollow(searchUser.id, searchUser.username)}
                             variant={isFollowing ? "outline" : "default"}
-                            className={`w-full mt-3 ${isFollowing ? "border-gray-700 text-white hover:bg-gray-800" : "bg-pink hover:bg-green-600 text-black"}`}
+                            className={`w-full mt-3 ${isFollowing ? "border-gray-700 text-white hover:bg-gray-800" : "bg-pink hover:bg-[#5b0426] text-black"}`}
                           >
                             {isFollowing ? "Unfollow" : "Follow"}
                           </Button>

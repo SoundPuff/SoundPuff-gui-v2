@@ -200,7 +200,7 @@ export function AuthPage() {
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-pink hover:bg-green-600 text-black"
+                    className="w-full bg-pink hover:bg-[#5b0426] text-black"
                     onMouseEnter={() => setIsSignUpHovered(true)}
                     onMouseLeave={() => setIsSignUpHovered(false)}
                     style={{
@@ -214,14 +214,14 @@ export function AuthPage() {
 
                 {/* Butonu formun DIŞINA aldık ve z-index/cursor ekledik */}
                 <div className="text-center mt-4 relative z-50">
-                    <button
+            <button
                       type="button"
                       onClick={(e) => {
                         e.preventDefault();
                         console.log("Forgot password clicked"); // Tıklamayı test etmek için
                         setShowResetDialog(true);
                       }}
-                      className="text-sm text-green-400 hover:text-green-300 underline cursor-pointer transition-colors"
+                      className="text-sm text-green-400 hover:text-[#5b0426] underline cursor-pointer transition-colors"
                     >
                       Forgot password?
                     </button>
@@ -287,7 +287,7 @@ export function AuthPage() {
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-pink hover:bg-green-600 text-black"
+                    className="w-full bg-pink hover:bg-[#5b0426] text-black"
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Sign Up'}

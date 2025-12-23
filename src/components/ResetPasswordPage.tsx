@@ -139,7 +139,7 @@ export function ResetPasswordPage() {
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-pink hover:bg-green-600 text-black"
+                className="w-full bg-pink hover:bg-[#5b0426] text-black"
                 style={{
                   backgroundColor: '#DB77A6',
                 }}

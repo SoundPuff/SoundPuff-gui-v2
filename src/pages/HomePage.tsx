@@ -273,7 +273,7 @@ export function HomePage() {
                 </div>
 
                 <Button
-                  className="bg-pink hover:bg-green-400 text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
+                  className="bg-pink hover:bg-[#5b0426] text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlaylistClick(heroPlaylist.id.toString());
@@ -306,7 +306,7 @@ export function HomePage() {
                     />
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 rounded-full transition-all" />
                   </div>
-                  <p className="text-sm font-semibold group-hover:text-green-400 transition-colors truncate w-32">
+                  <p className="text-sm font-semibold group-hover:text-[#5b0426] transition-colors truncate w-32">
                     {artist.username}
                   </p>
                   <p className="text-xs text-gray-400 truncate">Artist</p>
@@ -359,7 +359,7 @@ export function HomePage() {
 
                     {/* Song Info */}
                     <div className="flex-1 min-w-0">
-                      <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-green-400'}`}>
+                      <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-[#5b0426]'}`}>
                         {song.title}
                       </p>
                       <p className="text-sm text-gray-400 truncate">{song.artist}</p>

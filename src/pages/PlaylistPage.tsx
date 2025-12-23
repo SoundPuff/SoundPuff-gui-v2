@@ -129,22 +129,14 @@ export function PlaylistPage() {
       const playlistIdNum = parseInt(playlistId);
       if (isLiked) {
         await playlistService.unlikePlaylist(playlistIdNum);
-        setPlaylist((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            likes: prev.likes?.filter((id) => id !== currentUser.id),
-          };
-        });
+        // refetch updated playlist so likes_count and likes list are accurate
+        const updated = await playlistService.getPlaylist(playlistIdNum);
+        setPlaylist(updated);
       } else {
         await playlistService.likePlaylist(playlistIdNum);
-        setPlaylist((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            likes: [...(prev.likes || []), currentUser.id],
-          };
-        });
+        // refetch updated playlist so likes_count and likes list are accurate
+        const updated = await playlistService.getPlaylist(playlistIdNum);
+        setPlaylist(updated);
       }
     } catch (error) {
       console.error('Failed to like/unlike playlist:', error);
@@ -227,7 +219,7 @@ export function PlaylistPage() {
             {/* Büyük Play Butonu */}
             <Button
               size="lg"
-              className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
+              className="bg-pink hover:bg-[#5b0426] text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
               onClick={() => playlist.songs.length > 0 && playSong(playlist.songs[0])}
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
@@ -331,7 +323,7 @@ export function PlaylistPage() {
                   placeholder="Add a comment..."
                   className="bg-gray-900 border-gray-800 text-white"
                 />
-                <Button type="submit" className="bg-pink hover:bg-green-600 text-black">
+                <Button type="submit" className="bg-pink hover:bg-[#5b0426] text-black">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
