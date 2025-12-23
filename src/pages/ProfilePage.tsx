@@ -43,6 +43,7 @@ export function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
   const [editAvatar, setEditAvatar] = useState("");
+  const [isDragging, setIsDragging] = useState(false);
 
   // --- DOSYA SEÇİMİ İÇİN REF ---
   // Bu ref, gizli input elementini tetiklemek için kullanılır
@@ -314,6 +315,27 @@ export function ProfilePage() {
 
   const userPlaylists = playlists;
   const isFollowing = currentUser.following?.includes(profileUser.id);
+  const handleDragOver = (e: React.DragEvent) => {
+  e.preventDefault();
+  if (!isEditing) return;
+  setIsDragging(true);
+};
+
+const handleDragLeave = () => {
+  setIsDragging(false);
+};
+
+const handleDrop = (e: React.DragEvent) => {
+  e.preventDefault();
+  setIsDragging(false);
+  if (!isEditing) return;
+
+  const file = e.dataTransfer.files?.[0];
+  if (file) {
+    handleFile(file);
+  }
+};
+
 
   return (
     <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
@@ -322,26 +344,38 @@ export function ProfilePage() {
           <div className="flex items-end gap-6">
             
             {/* --- AVATAR GÖRÜNTÜLEME --- */}
-            <div className="relative group">
-                <img
-                  src={isEditing ? (editAvatar || profileUser.avatar) : profileUser.avatar}
-                  alt={profileUser.username}
-                  // Edit modundaysa, resme tıklanınca dosya seçici açılır
-                  onClick={() => isEditing && triggerFileInput()}
-                  className={`w-48 h-48 rounded-full object-cover shadow-2xl bg-gray-800 ${
-                    isEditing ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+            <div
+              className={`relative group ${
+                isEditing ? "border-2 border-dashed rounded-full" : ""
+              } ${
+                isDragging ? "border-pink scale-105" : "border-transparent"
+              } transition-all`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+
+              <img
+                src={isEditing ? (editAvatar || profileUser.avatar) : profileUser.avatar}
+                alt={profileUser.username}
+                // Edit modundaysa, resme tıklanınca dosya seçici açılır
+                onClick={() => isEditing && triggerFileInput()}
+                className={`w-48 h-48 rounded-full object-cover shadow-2xl bg-gray-800 ${
+                  isEditing ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+                }`}
+              />
+              
+              {/* Overlay: Resmin üzerine gelince "Upload" ikonu çıkar */}
+              {isEditing && (
+                <div
+                  className={`absolute inset-0 rounded-full flex flex-col items-center justify-center text-white transition-opacity ${
+                    isDragging ? "opacity-100 bg-black/60" : "opacity-0 group-hover:opacity-100 bg-black/40"
                   }`}
-                />
-                
-                {/* Overlay: Resmin üzerine gelince "Upload" ikonu çıkar */}
-                {isEditing && (
-                    <div 
-                        className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                        onClick={triggerFileInput}
-                    >
-                        <Upload className="w-8 h-8 text-white" />
-                    </div>
-                )}
+                  onClick={triggerFileInput}
+                >
+                </div>
+              )}
+
             </div>
 
             <div className="flex-1 pb-4">
