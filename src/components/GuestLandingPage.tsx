@@ -9,6 +9,7 @@ import { Playlist, User } from '../types';
 import { mockPlaylists, mockUsers } from '../data/mockData';
 import { playlistService } from '../services/playlistService';
 import logoPng from '../data/soundpuff_logo.png';
+import { GuestNavbar } from './GuestNavbar';
 
 export function GuestLandingPage() {
   const navigate = useNavigate();
@@ -47,8 +48,10 @@ export function GuestLandingPage() {
         `,
       }}
     >
-      {/* Hero Section */}
-      <div className="container mx-auto px-6 py-16">
+  <GuestNavbar />
+
+  {/* Hero Section */}
+  <div className="container mx-auto px-6 pt-24 pb-16">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-3 mb-10 mt-20">
             <img src={logoPng} alt="SoundPuff Logo" width="600"/>
