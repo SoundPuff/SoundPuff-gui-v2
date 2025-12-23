@@ -10,7 +10,9 @@ interface PlayerContextType {
   playSong: (song: Song) => void;
   togglePlay: () => void;
   pauseSong: () => void;
+  seekTo: (time: number) => void;
 }
+
 
 
 const PlayerContext = createContext<PlayerContextType | undefined>(undefined);
@@ -20,6 +22,13 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+
+  const seekTo = (time: number) => {
+    if (!audioRef.current) return;
+
+    audioRef.current.currentTime = time;
+    setCurrentTime(time);
+  };
 
   
   // Audio nesnesi component yeniden render olsa bile sabit kalır
@@ -98,15 +107,18 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PlayerContext.Provider value={{     
+    <PlayerContext.Provider
+      value={{
         currentSong,
         isPlaying,
         currentTime,
         duration,
         playSong,
         togglePlay,
-        pauseSong 
-      }}>
+        pauseSong,
+        seekTo
+      }}
+    >
       {children}
     </PlayerContext.Provider>
   );
