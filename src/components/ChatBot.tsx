@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { MessageCircle, X, Send, Music2, Sparkles, Loader2, ListMusic, User as UserIcon, Play } from 'lucide-react';
+import { MessageCircle, X, Send, Music2, Sparkles, Loader2, ListMusic, User as UserIcon, Play, Plus, Check, Save } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useAuth } from '../contexts/AuthContext';
@@ -13,8 +13,9 @@ import { playlistService } from '../services/playlistService';
 // Import Player Context
 import { usePlayer } from '../contexts/PlayerContext';
 
-// ⚠️ PRODUCTION'DA .ENV DOSYASINA TAŞIYIN
-const OPENROUTER_API_KEY = "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"; 
+// ✅ GÜVENLİK VE TYPE FIX: 
+// TypeScript hatasını önlemek için (import.meta as any) kullanıldı.
+const OPENROUTER_API_KEY = (import.meta as any).env.VITE_OPENROUTER_API_KEY; 
 
 interface Message {
   id: string;
@@ -23,6 +24,14 @@ interface Message {
   timestamp: Date;
   type?: 'text' | 'card';
   data?: any;
+}
+
+// Playlist Taslak Tipi
+interface PlaylistDraft {
+  isActive: boolean;
+  title: string;
+  description: string;
+  selectedSongIds: string[];
 }
 
 export function ChatBot() {
@@ -34,10 +43,18 @@ export function ChatBot() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
+  // Playlist Taslak State'i
+  const [playlistDraft, setPlaylistDraft] = useState<PlaylistDraft>({
+    isActive: false,
+    title: "",
+    description: "",
+    selectedSongIds: []
+  });
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm SoundPuff AI. I can create playlists, search for songs, or find users for you. How can I help?",
+      text: "Hi! I'm SoundPuff AI. I can help you search songs and popular playlists, find users and create playlists interactively. Try saying 'Create a playlist named Road Trip'. How can I help you?",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -51,31 +68,37 @@ export function ChatBot() {
     }
   }, [messages, isTyping]);
 
-  // ✅ SİSTEM KOMUTLARI GÜNCELLENDİ: "Get Popular Playlists" eklendi
+  // SİSTEM KOMUTLARI
   const SYSTEM_PROMPT = `
-    You are SoundPuff's intelligent music assistant. You have access to the app's functions.
+    You are SoundPuff's intelligent music assistant.
     
-    IMPORTANT: If the user wants to perform an action, you MUST reply with a JSON object ONLY. Do not wrap it in markdown.
+    IMPORTANT: Reply with a JSON object ONLY. Do not wrap it in markdown.
     
     Available Actions:
-    1. Search Music (Songs/Playlists/Users): 
+    1. Search Music: 
        Reply: {"action": "search", "query": "search term"}
        
-    2. Create Playlist: 
-       Reply: {"action": "create_playlist", "title": "Playlist Name", "description": "Optional description"}
+    2. Start Playlist Creation (User wants to build a playlist): 
+       Reply: {"action": "start_playlist_draft", "title": "Playlist Name", "description": "Optional description"}
+       Example: "Make a rock playlist" -> {"action": "start_playlist_draft", "title": "Rock Playlist", "description": "Created by AI"}
        
-    3. Navigate/Go to pages: 
-       Reply: {"action": "navigate", "path": "/app/..."}
-       
-    4. Get Popular Playlists:
+    3. Get Popular Playlists:
        Reply: {"action": "get_popular_playlists", "limit": 5}
-       Example: User says "Show me top 5 popular playlists" -> You reply: {"action": "get_popular_playlists", "limit": 5}
+       
+    4. Navigate: 
+       Reply: {"action": "navigate", "path": "/app/..."}
 
-    If no action is needed, reply casually as a helpful music assistant in plain text.
-    Always communicate in English.
+    If the user is currently selecting songs for a playlist (you will know from context), just help them search for songs using action #1.
   `;
 
   const processAIResponse = async (userText: string) => {
+    // API Key kontrolü
+    if (!OPENROUTER_API_KEY) {
+      //addBotMessage("Configuration Error: API Key is missing in .env file.");
+      //console.error("Lütfen .env dosyanızda VITE_OPENROUTER_API_KEY tanımlı olduğundan emin olun.");
+      return;
+    }
+
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -115,7 +138,7 @@ export function ChatBot() {
 
     } catch (error) {
       console.error("AI Error:", error);
-      addBotMessage("I'm having trouble connecting right now. Please try again later.");
+      addBotMessage("I'm having trouble connecting right now.");
     }
   };
 
@@ -127,7 +150,12 @@ export function ChatBot() {
         const results = await searchService.searchAll(cmd.query);
         
         if (results.songs.length > 0 || results.playlists.length > 0 || results.users.length > 0) {
-          addBotMessage(`Here is what I found for "${cmd.query}".\n\n💡 Tip: Click on a song to play it, or tap a user/playlist to visit their page.`);
+          // Mesaj draft moduna göre değişir
+          const msgText = playlistDraft.isActive 
+            ? `Here are songs for "${cmd.query}". Click on them to add to "${playlistDraft.title}":`
+            : `Here is what I found for "${cmd.query}".\n\n💡 Tip: Click on a song to play it.`;
+
+          addBotMessage(msgText);
           
           const resultMessage: Message = {
             id: Date.now().toString(),
@@ -143,26 +171,38 @@ export function ChatBot() {
         }
       } 
       
-      // ✅ YENİ: POPULAR PLAYLISTS ACTION
-      else if (cmd.action === 'get_popular_playlists') {
-        // En son 50 playlisti çek, like sayısına göre sırala
-        const allPlaylists = await playlistService.getPlaylists(0, 50);
-        const limit = cmd.limit || 5;
+      // 2. START PLAYLIST DRAFT
+      else if (cmd.action === 'start_playlist_draft') {
+        if (!user) {
+          addBotMessage("You need to be logged in to create playlists.");
+          return;
+        }
         
+        setPlaylistDraft({
+          isActive: true,
+          title: cmd.title || "New Playlist",
+          description: cmd.description || "Created with AI",
+          selectedSongIds: []
+        });
+
+        addBotMessage(`started creating "${cmd.title}". Now search for songs (e.g. "Tarkan songs") and select them using the list below.`);
+      }
+
+      // 3. POPULAR PLAYLISTS
+      else if (cmd.action === 'get_popular_playlists') {
+        const allPlaylists = await playlistService.getPlaylists(0, 50);
         const popularPlaylists = allPlaylists
             .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
-            .slice(0, limit);
+            .slice(0, cmd.limit || 5);
 
         if (popularPlaylists.length > 0) {
-            addBotMessage(`Here are the top ${popularPlaylists.length} most popular playlists based on likes:`);
-            
+            addBotMessage(`Here are the top ${popularPlaylists.length} most popular playlists:`);
             const resultMessage: Message = {
                 id: Date.now().toString(),
                 text: 'Popular Playlists',
                 sender: 'bot',
                 timestamp: new Date(),
                 type: 'card',
-                // renderSearchResults fonksiyonu playlist array bekliyor
                 data: { playlists: popularPlaylists, songs: [], users: [] }
             };
             setMessages(prev => [...prev, resultMessage]);
@@ -171,32 +211,64 @@ export function ChatBot() {
         }
       }
 
-      // 3. CREATE PLAYLIST ACTION
-      else if (cmd.action === 'create_playlist') {
-        if (!user) {
-          addBotMessage("You need to be logged in to create playlists.");
-          return;
-        }
-        await playlistService.createPlaylist({
-          title: cmd.title,
-          description: cmd.description || "Created by SoundPuff AI",
-          privacy: 'public'
-        });
-        addBotMessage(`✅ Playlist "${cmd.title}" created successfully! Check your library.`);
-        navigate('/app/library');
-      } 
-      
-      // 4. NAVIGATE ACTION
+      // 4. NAVIGATE
       else if (cmd.action === 'navigate') {
         navigate(cmd.path);
         addBotMessage(`Navigating to ${cmd.path}...`);
       }
     } catch (error) {
-      console.error("Command execution error:", error);
+      console.error("Exec Error:", error);
       addBotMessage("I tried to perform that action but something went wrong.");
     } finally {
       setIsTyping(false);
     }
+  };
+
+  // Şarkı Seç/Kaldır Fonksiyonu
+  const toggleSongSelection = (songId: string) => {
+    setPlaylistDraft(prev => {
+      const isSelected = prev.selectedSongIds.includes(songId);
+      const newIds = isSelected 
+        ? prev.selectedSongIds.filter(id => id !== songId)
+        : [...prev.selectedSongIds, songId];
+      
+      return { ...prev, selectedSongIds: newIds };
+    });
+  };
+
+  // Playlisti Kaydet
+  const savePlaylist = async () => {
+    if (playlistDraft.selectedSongIds.length === 0) {
+      addBotMessage("Please select at least one song first.");
+      return;
+    }
+
+    try {
+      setIsTyping(true);
+      await playlistService.createPlaylist({
+        title: playlistDraft.title,
+        description: playlistDraft.description,
+        privacy: 'public',
+        song_ids: playlistDraft.selectedSongIds.map(id => parseInt(id)) 
+      });
+
+      addBotMessage(`✅ Playlist "${playlistDraft.title}" created successfully with ${playlistDraft.selectedSongIds.length} songs!`);
+      
+      setPlaylistDraft({ isActive: false, title: "", description: "", selectedSongIds: [] });
+      navigate('/app/library');
+
+    } catch (error) {
+      console.error("Save Playlist Error:", error);
+      addBotMessage("Failed to create playlist. Please try again.");
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  // Draft İptal
+  const cancelDraft = () => {
+    setPlaylistDraft({ isActive: false, title: "", description: "", selectedSongIds: [] });
+    addBotMessage("Playlist creation cancelled.");
   };
 
   const addBotMessage = (text: string) => {
@@ -234,34 +306,59 @@ export function ChatBot() {
     <div className="flex flex-col gap-2 mt-2 w-full">
       {/* SONGS */}
       {data.songs?.length > 0 && <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">Songs</p>}
-      {data.songs?.slice(0, 3).map((song: any) => (
-        <div 
-          key={song.id} 
-          className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50 group" 
-          onClick={() => playSong(song)}
-        >
-          <div className="bg-gray-700 w-8 h-8 rounded flex items-center justify-center shrink-0 overflow-hidden relative">
-            {song.coverArt ? (
-              <>
-                <img src={song.coverArt} alt={song.title} className="w-full h-full object-cover"/>
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Play className="w-3 h-3 text-white fill-white" />
-                </div>
-              </>
-            ) : (
-              <Music2 className="w-4 h-4" />
+      {data.songs?.slice(0, 3).map((song: any) => {
+        // DRAFT KONTROLÜ
+        const isDraftActive = playlistDraft.isActive;
+        const isSelected = playlistDraft.selectedSongIds.includes(song.id);
+
+        return (
+          <div 
+            key={song.id} 
+            className={`flex items-center gap-2 p-2 rounded hover:bg-gray-800 cursor-pointer border transition-all group ${
+                isSelected 
+                  ? 'bg-pink/10 border-pink' 
+                  : 'bg-gray-800 border-gray-700/50'
+            }`}
+            // Eğer draft açıksa seç, değilse çal
+            onClick={() => isDraftActive ? toggleSongSelection(song.id) : playSong(song)}
+          >
+            <div className="bg-gray-700 w-8 h-8 rounded flex items-center justify-center shrink-0 overflow-hidden relative">
+              {song.coverArt ? (
+                <>
+                  <img src={song.coverArt} alt={song.title} className="w-full h-full object-cover"/>
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* İkon Duruma Göre Değişir */}
+                    {isDraftActive ? (
+                       isSelected ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4 text-white" />
+                    ) : (
+                       <Play className="w-3 h-3 text-white fill-white" />
+                    )}
+                  </div>
+                </>
+              ) : (
+                <Music2 className="w-4 h-4" />
+              )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <p className={`text-xs font-bold truncate ${isSelected ? 'text-pink' : 'text-white group-hover:text-pink'}`}>
+                  {song.title}
+              </p>
+              <p className="text-[10px] text-gray-400 truncate">{song.artist}</p>
+            </div>
+
+            {/* Sağ tarafta seçim göstergesi (Sadece draft modunda) */}
+            {isDraftActive && (
+               <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-pink border-pink' : 'border-gray-500'}`}>
+                  {isSelected && <Check className="w-3 h-3 text-black" />}
+               </div>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold truncate text-white group-hover:text-pink transition-colors">{song.title}</p>
-            <p className="text-[10px] text-gray-400 truncate">{song.artist}</p>
-          </div>
-        </div>
-      ))}
+        );
+      })}
 
       {/* PLAYLISTS */}
-      {data.playlists?.length > 0 && <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">Playlists</p>}
-      {data.playlists?.map((pl: any) => ( // slice kaldırıldı, gelen tüm popüler listeleri göstersin
+      {data.playlists?.map((pl: any) => (
         <div key={pl.id} className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50" onClick={() => navigate(`/app/playlist/${pl.id}`)}>
           <div className="bg-gray-700 w-8 h-8 rounded flex items-center justify-center shrink-0">
             <ListMusic className="w-4 h-4" />
@@ -279,7 +376,6 @@ export function ChatBot() {
       ))}
 
       {/* USERS */}
-      {data.users?.length > 0 && <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">Users</p>}
       {data.users?.slice(0, 2).map((u: any) => (
         <div key={u.id} className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50" onClick={() => navigate(`/app/user/${u.id}`)}>
           <div className="bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
@@ -309,7 +405,6 @@ export function ChatBot() {
 
       {isOpen && (
         <div 
-          // ✅ TASARIM GÜNCELLENDİ: Opak Arka Plan (bg-gray-900)
           className="fixed w-80 sm:w-96 bg-gray-900 rounded-xl shadow-2xl flex flex-col z-[9999] border border-gray-700 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden"
           style={{ 
             position: 'fixed', 
@@ -321,7 +416,7 @@ export function ChatBot() {
             flexDirection: 'column' 
           }} 
         >
-          {/* Header - Opak */}
+          {/* Header */}
           <div className="flex-none flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900">
             <div className="flex items-center gap-2">
               <div className="p-2 bg-pink/20 rounded-full">
@@ -345,7 +440,25 @@ export function ChatBot() {
             </Button>
           </div>
 
-          {/* Messages Area - Opak */}
+          {/* DRAFT MODU BİLGİ ÇUBUĞU */}
+          {playlistDraft.isActive && (
+            <div className="flex-none bg-gray-800 p-2 px-4 flex items-center justify-between border-b border-gray-700 animate-in slide-in-from-top-2">
+                <div className="flex flex-col min-w-0">
+                    <span className="text-xs text-pink font-bold truncate">Creating: {playlistDraft.title}</span>
+                    <span className="text-[10px] text-gray-400">{playlistDraft.selectedSongIds.length} songs selected</span>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                    <Button size="sm" variant="ghost" onClick={cancelDraft} className="h-7 px-2 text-[10px] text-red-400 hover:text-red-300 hover:bg-red-900/20">
+                        Cancel
+                    </Button>
+                    <Button size="sm" onClick={savePlaylist} className="h-7 px-2 text-[10px] bg-green-600 hover:bg-green-500 text-white">
+                        <Save className="w-3 h-3 mr-1"/> Save
+                    </Button>
+                </div>
+            </div>
+          )}
+
+          {/* Messages Area */}
           <div 
             className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-800 min-h-0 bg-gray-900" 
             ref={scrollRef}
@@ -381,14 +494,15 @@ export function ChatBot() {
             )}
           </div>
 
-          {/* Input Area - Opak */}
+          {/* Input Area */}
           <div className="flex-none p-3 border-t border-gray-800 bg-gray-900">
             <div className="flex gap-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="Ask for a song or create a playlist..."
+                // Draft modu varsa placeholder değişsin
+                placeholder={playlistDraft.isActive ? "Search songs to add..." : "Ask SoundPuff AI..."}
                 className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-500 focus:ring-1 focus:ring-pink focus:border-pink rounded-full px-4 h-10 text-sm"
                 disabled={isTyping}
               />
