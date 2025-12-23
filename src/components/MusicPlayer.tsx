@@ -7,10 +7,19 @@ import { usePlayer } from '../contexts/PlayerContext';
 
 export function MusicPlayer() {
   // Global state'leri alıyoruz: currentSong, isPlaying ve togglePlay fonksiyonu
-  const { currentSong, isPlaying, togglePlay } = usePlayer();
+  const {
+    currentSong,
+    isPlaying,
+    togglePlay,
+    currentTime,
+    duration
+  } = usePlayer();
+
   
   // Progress ve Volume şimdilik görsel kalabilir (Context'e time update eklenirse burası da bağlanır)
-  const [progress, setProgress] = useState(0);
+  const progress =
+  duration > 0 ? (currentTime / duration) * 100 : 0;
+
   const [volume, setVolume] = useState(70);
   const [isLiked, setIsLiked] = useState(false);
 
@@ -73,17 +82,17 @@ export function MusicPlayer() {
           
           <div className="flex items-center gap-2 w-full">
             <span className="text-xs text-gray-400 w-10 text-right">
-              {formatTime(Math.floor((progress / 100) * (currentSong.duration || 180)))}
+              {formatTime(Math.floor(currentTime))}
             </span>
             <Slider
               value={[progress]}
-              onValueChange={(value) => setProgress(value[0])}
               max={100}
-              step={1}
+              step={0.1}
               className="flex-1"
             />
+
             <span className="text-xs text-gray-400 w-10">
-              {formatTime(currentSong.duration || 180)}
+              {formatTime(Math.floor(duration))}
             </span>
           </div>
         </div>
