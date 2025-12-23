@@ -27,6 +27,7 @@ export function AuthPage() {
   const [resetSuccess, setResetSuccess] = useState(false);
   const [isSignUpHovered, setIsSignUpHovered] = useState(false);
   const [isLogInHovered, setIsLogInHovered] = useState(false);
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +57,7 @@ export function AuthPage() {
     }
   };
 
+  
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -111,21 +113,40 @@ export function AuthPage() {
           </Alert>
         )}
 
-        <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">
-              <p className='text-white'
-              style={{ 
-                    WebkitTextStroke: '0.5px #d95a96'
-                  }}>Login</p>
-            </TabsTrigger>
-            <TabsTrigger value="signup">
-              <p className='text-white'
-              style={{ 
-                    WebkitTextStroke: '0.5px #d95a96'
-                  }}>Sign Up</p>
-            </TabsTrigger>
-          </TabsList>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}
+          className="w-full"
+        >
+
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger
+            value="login"
+            className="
+              data-[state=active]:bg-[#DB77A6]
+              data-[state=inactive]:bg-gray-800
+              data-[state=active]:text-black
+              data-[state=inactive]:text-white
+              transition-colors
+            "
+          >
+            Login
+          </TabsTrigger>
+
+          <TabsTrigger
+            value="signup"
+            className="
+              data-[state=active]:bg-[#DB77A6]
+              data-[state=inactive]:bg-gray-800
+              data-[state=active]:text-black
+              data-[state=inactive]:text-white
+              transition-colors
+            "
+          >
+            Sign Up
+          </TabsTrigger>
+        </TabsList>
+
 
           <TabsContent value="login">
             <Card
