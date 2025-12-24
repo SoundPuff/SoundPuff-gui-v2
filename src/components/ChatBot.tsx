@@ -24,7 +24,7 @@ interface Message {
   data?: any;
 }
 
-// ✅ YENİ: Playlist Taslak Tipi
+// Playlist Taslak Tipi
 interface PlaylistDraft {
   isActive: boolean;
   title: string;
@@ -41,7 +41,7 @@ export function ChatBot() {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   
-  // ✅ YENİ: Playlist Taslak State'i
+  // Playlist Taslak State'i
   const [playlistDraft, setPlaylistDraft] = useState<PlaylistDraft>({
     isActive: false,
     title: "",
@@ -52,7 +52,7 @@ export function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      text: "Hi! I'm SoundPuff AI. I can help you create playlists interactively. Try saying 'Create a playlist named Road Trip'.",
+      text: "Hi! I'm SoundPuff AI. I can help you find music, create playlists, or guide you through the app. Ask me anything about SoundPuff!",
       sender: 'bot',
       timestamp: new Date(),
     },
@@ -66,30 +66,69 @@ export function ChatBot() {
     }
   }, [messages, isTyping]);
 
-  // ✅ SİSTEM KOMUTLARI GÜNCELLENDİ
+  // ✅ SİSTEM KOMUTLARI GÜNCELLENDİ (Mevcut özellikler korundu + Context Arama eklendi)
   const SYSTEM_PROMPT = `
     You are SoundPuff's intelligent music assistant.
-    
-    IMPORTANT: Reply with a JSON object ONLY. Do not wrap it in markdown.
-    
-    Available Actions:
-    1. Search Music: 
-       Reply: {"action": "search", "query": "search term"}
-       
-    2. Start Playlist Creation (User wants to build a playlist): 
-       Reply: {"action": "start_playlist_draft", "title": "Playlist Name", "description": "Optional description"}
-       Example: "Make a rock playlist" -> {"action": "start_playlist_draft", "title": "Rock Playlist", "description": "Created by AI"}
-       
-    3. Get Popular Playlists:
-       Reply: {"action": "get_popular_playlists", "limit": 5}
-       
-    4. Navigate: 
-       Reply: {"action": "navigate", "path": "/app/..."}
 
-    If the user is currently selecting songs for a playlist (you will know from context), just help them search for songs using action #1.
+    --- RULES OF BEHAVIOR ---
+    1. SCOPE RESTRICTION (STRICT):
+       - You ONLY answer questions about music, songs, artists, playlists, and how to use the SoundPuff app.
+       - If the user asks about weather, general life, "how are you", math, or politics, politely refuse.
+
+    2. AMBIGUOUS INPUTS (SINGLE NAMES / KEYWORDS):
+       - If the user types ONLY a name (e.g., "Tarkan", "Taylor Swift") without verbs like "search", "play", "find":
+       - CHECK THE "CURRENT_STATE" provided below.
+         * IF "PLAYLIST_DRAFT_MODE" is "ON": Interpret this as a search request. Return {"action": "search", "query": "..."}.
+         * IF "PLAYLIST_DRAFT_MODE" is "OFF": Do NOT search automatically. Reply with TEXT: "Did you want to search for [Name], play their songs, or create a playlist? Please be more specific."
+
+    3. UNCLEAR / NONSENSE INPUTS:
+       - If the user input is gibberish or lacks clear intent (e.g., just "gemini lyrics" or "asdf"), DO NOT SEARCH.
+       - Reply with TEXT: "I couldn't understand what you wanted 😔. Could you please specify a song, artist, or action? I can help you find music, create playlists, or guide you through the app 😌😊."
+
+    4. NAVIGATION & GUIDANCE LOGIC (CRITICAL):
+       
+       A. SAFE NAVIGATION (AUTO-ACTION):
+          - If the user asks "Where is my playlists?", "How do I change my profile pic?", "Go to settings", or "Show my library":
+          - Do NOT explain with text only. IMMEDIATELY return a JSON {"action": "navigate", ...}.
+          - INCLUDE a helpful "message" field in the JSON explaining what to do there.
+          - Example: "Change profile pic" -> {"action": "navigate", "path": "/app/profile", "message": "I'm taking you to your Profile page. You can click on your avatar to upload a new photo."}
+          - Example: "My playlists" -> {"action": "navigate", "path": "/app/library", "message": "Opening your Library. You can find all your playlists here."}
+
+       B. DESTRUCTIVE/CRITICAL ACTIONS (TEXT ONLY):
+          - If the user asks to DELETE account, DELETE data, or performs sensitive actions:
+          - Return a TEXT explanation only. NEVER navigate automatically for these.
+          - Example: "To delete your account, please go to your Profile page and look for the Danger Zone settings."
+
+    5. ACTIONS (JSON RESPONSE):
+       - Use these JSON structures for actions:
+       
+    --- AVAILABLE JSON ACTIONS ---
+    1. Search Music: {"action": "search", "query": "search term"}
+    2. Start Playlist: {"action": "start_playlist_draft", "title": "Name", "description": "Desc"}
+    3. Popular Playlists: {"action": "get_popular_playlists", "limit": 5}
+    4. Navigate: {"action": "navigate", "path": "VALID_PATH", "message": "Short explanation of what user should do there"}
+       
+    --- VALID ROUTES ---
+    - Home: "/app/home"
+    - Search: "/app/search"
+    - Library: "/app/library"
+    - Profile: "/app/profile"
+    - Create Playlist: "/app/create-playlist"
+    
+    Context: User is currently using the app.
   `;
 
   const processAIResponse = async (userText: string) => {
+    // API Key kontrolü
+    if (!OPENROUTER_API_KEY) {
+      console.error("API Key missing");
+      return;
+    }
+
+    // ✅ YENİ: Yapay zekaya o anki modu bildiriyoruz (Prompt'taki kuralın çalışması için şart)
+    const currentContextState = playlistDraft.isActive ? "PLAYLIST_DRAFT_MODE: ON" : "PLAYLIST_DRAFT_MODE: OFF";
+    const finalSystemMessage = `${SYSTEM_PROMPT}\n\nCURRENT_STATE: ${currentContextState}`;
+
     try {
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -102,7 +141,7 @@ export function ChatBot() {
         body: JSON.stringify({
           model: "google/gemma-3-27b-it:free",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: finalSystemMessage }, // ✅ Güncellenmiş mesajı gönderiyoruz
             ...messages.slice(-5).filter(m => !m.type).map(m => ({ 
               role: m.sender === 'user' ? 'user' : 'assistant',
               content: m.text
@@ -141,7 +180,6 @@ export function ChatBot() {
         const results = await searchService.searchAll(cmd.query);
         
         if (results.songs.length > 0 || results.playlists.length > 0 || results.users.length > 0) {
-          // Mesaj draft moduna göre değişir
           const msgText = playlistDraft.isActive 
             ? `Here are songs for "${cmd.query}". Click on them to add to "${playlistDraft.title}":`
             : `Here is what I found for "${cmd.query}".\n\n💡 Tip: Click on a song to play it.`;
@@ -162,7 +200,7 @@ export function ChatBot() {
         }
       } 
       
-      // ✅ 2. START PLAYLIST DRAFT (YENİ)
+      // 2. START PLAYLIST DRAFT
       else if (cmd.action === 'start_playlist_draft') {
         if (!user) {
           addBotMessage("You need to be logged in to create playlists.");
@@ -205,7 +243,8 @@ export function ChatBot() {
       // 4. NAVIGATE
       else if (cmd.action === 'navigate') {
         navigate(cmd.path);
-        addBotMessage(`Navigating to ${cmd.path}...`);
+        const navMessage = cmd.message || `Navigating to ${cmd.path}...`;
+        addBotMessage(navMessage);
       }
     } catch (error) {
       console.error("Exec Error:", error);
@@ -215,7 +254,7 @@ export function ChatBot() {
     }
   };
 
-  // ✅ Şarkı Seç/Kaldır Fonksiyonu
+  // Şarkı Seç/Kaldır
   const toggleSongSelection = (songId: string) => {
     setPlaylistDraft(prev => {
       const isSelected = prev.selectedSongIds.includes(songId);
@@ -227,7 +266,7 @@ export function ChatBot() {
     });
   };
 
-  // ✅ Playlisti Kaydet
+  // Playlisti Kaydet
   const savePlaylist = async () => {
     if (playlistDraft.selectedSongIds.length === 0) {
       addBotMessage("Please select at least one song first.");
@@ -256,7 +295,7 @@ export function ChatBot() {
     }
   };
 
-  // ✅ Draft İptal
+  // Draft İptal
   const cancelDraft = () => {
     setPlaylistDraft({ isActive: false, title: "", description: "", selectedSongIds: [] });
     addBotMessage("Playlist creation cancelled.");
@@ -298,7 +337,6 @@ export function ChatBot() {
       {/* SONGS */}
       {data.songs?.length > 0 && <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">Songs</p>}
       {data.songs?.slice(0, 3).map((song: any) => {
-        // ✅ DRAFT KONTROLÜ
         const isDraftActive = playlistDraft.isActive;
         const isSelected = playlistDraft.selectedSongIds.includes(song.id);
 
@@ -310,7 +348,6 @@ export function ChatBot() {
                   ? 'bg-pink/10 border-pink' 
                   : 'bg-gray-800 border-gray-700/50'
             }`}
-            // Eğer draft açıksa seç, değilse çal
             onClick={() => isDraftActive ? toggleSongSelection(song.id) : playSong(song)}
           >
             <div className="bg-gray-700 w-8 h-8 rounded flex items-center justify-center shrink-0 overflow-hidden relative">
@@ -318,7 +355,6 @@ export function ChatBot() {
                 <>
                   <img src={song.coverArt} alt={song.title} className="w-full h-full object-cover"/>
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* İkon Duruma Göre Değişir */}
                     {isDraftActive ? (
                        isSelected ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4 text-white" />
                     ) : (
@@ -338,7 +374,6 @@ export function ChatBot() {
               <p className="text-[10px] text-gray-400 truncate">{song.artist}</p>
             </div>
 
-            {/* Sağ tarafta seçim göstergesi (Sadece draft modunda) */}
             {isDraftActive && (
                <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-pink border-pink' : 'border-gray-500'}`}>
                   {isSelected && <Check className="w-3 h-3 text-black" />}
@@ -431,7 +466,7 @@ export function ChatBot() {
             </Button>
           </div>
 
-          {/* ✅ YENİ: DRAFT MODU BİLGİ ÇUBUĞU (Eğer draft aktifse görünür) */}
+          {/* DRAFT MODU BİLGİ ÇUBUĞU */}
           {playlistDraft.isActive && (
             <div className="flex-none bg-gray-800 p-2 px-4 flex items-center justify-between border-b border-gray-700 animate-in slide-in-from-top-2">
                 <div className="flex flex-col min-w-0">
@@ -492,7 +527,6 @@ export function ChatBot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                // Draft modu varsa placeholder değişsin
                 placeholder={playlistDraft.isActive ? "Search songs to add..." : "Ask SoundPuff AI..."}
                 className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-500 focus:ring-1 focus:ring-pink focus:border-pink rounded-full px-4 h-10 text-sm"
                 disabled={isTyping}
