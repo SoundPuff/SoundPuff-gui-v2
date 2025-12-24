@@ -66,7 +66,7 @@ export function ChatBot() {
     }
   }, [messages, isTyping]);
 
-  // ✅ SİSTEM KOMUTLARI GÜNCELLENDİ (Mevcut özellikler korundu + Context Arama eklendi)
+  // ✅ SİSTEM KOMUTLARI GÜNCELLENDİ (Mevcut özellikler korundu + Playlist Kilidi Eklendi)
   const SYSTEM_PROMPT = `
     You are SoundPuff's intelligent music assistant.
 
@@ -75,17 +75,23 @@ export function ChatBot() {
        - You ONLY answer questions about music, songs, artists, playlists, and how to use the SoundPuff app.
        - If the user asks about weather, general life, "how are you", math, or politics, politely refuse.
 
-    2. AMBIGUOUS INPUTS (SINGLE NAMES / KEYWORDS):
-       - If the user types ONLY a name (e.g., "Tarkan", "Taylor Swift") without verbs like "search", "play", "find":
-       - CHECK THE "CURRENT_STATE" provided below.
-         * IF "PLAYLIST_DRAFT_MODE" is "ON": Interpret this as a search request. Return {"action": "search", "query": "..."}.
-         * IF "PLAYLIST_DRAFT_MODE" is "OFF": Do NOT search automatically. Reply with TEXT: "Did you want to search for [Name], play their songs, or create a playlist? Please be more specific."
+    2. STATE AWARENESS (CRITICAL - READ CAREFULLY):
+       - CHECK "CURRENT_STATE" provided below.
+       - IF "PLAYLIST_DRAFT_MODE" is "ON":
+         * YOU ARE LOCKED IN CREATION MODE.
+         * DO NOT generate {"action": "start_playlist_draft"} again.
+         * Treat ANY input (names, titles, genres) as a SEARCH request to add songs to the current playlist.
+         * Example: User says "Pop" -> Return {"action": "search", "query": "Pop"} (Do NOT start a new playlist called Pop).
 
-    3. UNCLEAR / NONSENSE INPUTS:
+    3. AMBIGUOUS INPUTS (SINGLE NAMES / KEYWORDS):
+       - If "PLAYLIST_DRAFT_MODE" is "OFF" and the user types ONLY a name (e.g., "Tarkan", "Taylor Swift") without verbs:
+       - Do NOT search automatically. Reply with TEXT: "Did you want to search for [Name], play their songs, or create a playlist? Please be more specific."
+
+    4. UNCLEAR / NONSENSE INPUTS:
        - If the user input is gibberish or lacks clear intent (e.g., just "gemini lyrics" or "asdf"), DO NOT SEARCH.
        - Reply with TEXT: "I couldn't understand what you wanted 😔. Could you please specify a song, artist, or action? I can help you find music, create playlists, or guide you through the app 😌😊."
 
-    4. NAVIGATION & GUIDANCE LOGIC (CRITICAL):
+    5. NAVIGATION & GUIDANCE LOGIC (CRITICAL):
        
        A. SAFE NAVIGATION (AUTO-ACTION):
           - If the user asks "Where is my playlists?", "How do I change my profile pic?", "Go to settings", or "Show my library":
@@ -99,7 +105,7 @@ export function ChatBot() {
           - Return a TEXT explanation only. NEVER navigate automatically for these.
           - Example: "To delete your account, please go to your Profile page and look for the Danger Zone settings."
 
-    5. ACTIONS (JSON RESPONSE):
+    6. ACTIONS (JSON RESPONSE):
        - Use these JSON structures for actions:
        
     --- AVAILABLE JSON ACTIONS ---
@@ -117,7 +123,6 @@ export function ChatBot() {
     
     Context: User is currently using the app.
   `;
-
   const processAIResponse = async (userText: string) => {
     // API Key kontrolü
     if (!OPENROUTER_API_KEY) {
@@ -202,6 +207,13 @@ export function ChatBot() {
       
       // 2. START PLAYLIST DRAFT
       else if (cmd.action === 'start_playlist_draft') {
+
+        //Zaten bir playlist yapılıyorsa yenisini başlatma!
+        if (playlistDraft.isActive) {
+          addBotMessage(`You are already creating a playlist named "${playlistDraft.title}". Please save or cancel it first to create a new one.`);
+          return; 
+       }
+
         if (!user) {
           addBotMessage("You need to be logged in to create playlists.");
           return;
