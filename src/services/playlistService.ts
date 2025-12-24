@@ -52,19 +52,22 @@ const mapBackendPlaylistToFrontend = (
 };
 
 // Helper function to map backend comment to frontend comment
-const mapBackendCommentToFrontend = (
-  backendComment: BackendComment
-): Comment => {
+const mapBackendCommentToFrontend = (backendComment: BackendComment): Comment => {
   return {
-    id: backendComment.id, // Keep as number to match API
-    playlistId: backendComment.playlist_id, // Keep as number to match API
+    id: backendComment.id,
+    playlistId: backendComment.playlist_id,
     userId: backendComment.user_id,
     username: backendComment.user.username,
     avatar: backendComment.user.avatar_url || "https://github.com/shadcn.png",
     text: backendComment.body,
     createdAt: backendComment.created_at,
+
+    likes_count: (backendComment.likes_count ?? 0), // add this
+    is_liked: (backendComment.is_liked ?? false),   // add this
   };
 };
+
+
 
 export const playlistService = {
   /**
@@ -275,4 +278,31 @@ export const playlistService = {
       throw error;
     }
   },
+
+  
+  /**
+   * Like a comment
+   */
+  likeComment: async (commentId: number): Promise<void> => {
+    try {
+      await api.post(`/playlists/comments/${commentId}/like`);
+    } catch (error) {
+      console.error("Like comment error:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Unlike a comment
+   */
+  unlikeComment: async (commentId: number): Promise<void> => {
+    try {
+      await api.delete(`/playlists/comments/${commentId}/like`);
+    } catch (error) {
+      console.error("Unlike comment error:", error);
+      throw error;
+    }
+  },
+
+
 };

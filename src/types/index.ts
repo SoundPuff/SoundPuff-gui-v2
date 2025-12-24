@@ -54,7 +54,11 @@ export interface Comment {
   avatar: string; // From user.avatar_url
   text: string; // API field is "body"
   createdAt: string; // API field is "created_at"
+
+  likes_count?: number; // new
+  is_liked?: boolean;   // new
 }
+
 
 // Backend SONG SEARCH TYPE
 // Backend'den gelen ham şarkı verisi
@@ -156,7 +160,12 @@ export interface BackendComment {
   playlist_id: number;
   created_at: string; // date-time
   user: BackendUser; // User schema
+
+  // Add these optional fields if API supports them
+  likes_count?: number;
+  is_liked?: boolean;
 }
+
 
 // --- PLAYLIST REQUEST TYPES ---
 // Matches API schema "PlaylistCreate"

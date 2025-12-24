@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Playlist, Comment } from '../types';
-import { Heart, Play, Pause, MessageCircle, Clock, Send, Trash2, Edit } from 'lucide-react'; // Pause eklendi
+import { Heart, Play, Pause, MessageCircle, Clock, Send, Trash2, Edit, MoreHorizontal } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
@@ -30,6 +30,12 @@ export function PlaylistPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // inside PlaylistPage component, add near other useState declarations:
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null); // which comment menu is open
+  const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
+
 
   useEffect(() => {
     const fetchPlaylistData = async () => {
@@ -175,6 +181,94 @@ export function PlaylistPage() {
     }
     navigate(`/app/user/${userId}`);
   };
+
+  const handleLikeComment = async (commentId: number) => {
+    if (!currentUser) return;
+
+    setComments((prev) =>
+      prev.map((c) => {
+        if (c.id === commentId) {
+          const isLiked = c.is_liked;
+          return {
+            ...c,
+            is_liked: !isLiked,
+            likes_count: isLiked ? (c.likes_count || 0) - 1 : (c.likes_count || 0) + 1,
+          };
+        }
+        return c;
+      })
+    );
+
+    try {
+      if (comments.find((c) => c.id === commentId)?.is_liked) {
+        await playlistService.unlikeComment(commentId);
+      } else {
+        await playlistService.likeComment(commentId);
+      }
+    } catch (error) {
+      console.error("Failed to like/unlike comment:", error);
+      // Revert on error
+      setComments((prev) =>
+        prev.map((c) => {
+          if (c.id === commentId) {
+            const isLiked = c.is_liked;
+            return {
+              ...c,
+              is_liked: !isLiked,
+              likes_count: isLiked ? (c.likes_count || 0) - 1 : (c.likes_count || 0) + 1,
+            };
+          }
+          return c;
+        })
+      );
+    }
+  };
+
+  const toggleMenu = (commentId: number) => {
+    setOpenMenuId((prev) => (prev === commentId ? null : commentId));
+  };
+
+  const startEditComment = (comment: Comment) => {
+    setEditingCommentId(comment.id);
+    setEditingText(comment.text);
+    setOpenMenuId(null); // close menu
+  };
+
+  const cancelEdit = () => {
+    setEditingCommentId(null);
+    setEditingText('');
+  };
+
+  const saveEditedComment = async (commentId: number) => {
+    if (!editingText.trim()) return;
+    try {
+      const updated = await playlistService.updateComment(commentId, { body: editingText });
+      setComments((prev) => prev.map((c) => (c.id === commentId ? { ...c, ...updated } : c)));
+      setEditingCommentId(null);
+      setEditingText('');
+    } catch (err) {
+      console.error('Failed to update comment:', err);
+      alert('Failed to update comment. Please try again.');
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    const confirmed = window.confirm('Are you sure you want to delete this comment?');
+    if (!confirmed) {
+      setOpenMenuId(null);
+      return;
+    }
+
+    try {
+      await playlistService.deleteComment(commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Failed to delete comment:', err);
+      alert('Failed to delete comment. Please try again.');
+    }
+  };
+
 
   const PLAYABLE_SONG_DURATION = 30; // seconds
 
@@ -360,28 +454,107 @@ export function PlaylistPage() {
               </div>
             </form>
 
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3">
-                  <img
-                    src={comment.avatar}
-                    alt={comment.username}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <div className="flex-1">
-                    <div className="bg-gray-900 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-white">{comment.username}</span>
-                        <span className="text-gray-500 text-sm">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-gray-300">{comment.text}</p>
-                    </div>
-                  </div>
+<div className="space-y-4">
+  {comments.map((comment) => (
+    <div key={comment.id} className="flex gap-3 relative">
+      <img
+        src={comment.avatar}
+        alt={comment.username}
+        className="w-10 h-10 rounded-full object-cover"
+      />
+
+      <div className="flex-1">
+        <div className="bg-gray-900 rounded-lg p-4 relative">
+        
+
+        {/* three-dot menu button (only for owner) */}
+          {comment.userId === currentUser.id && (
+            <div className="absolute top-2 right-2 left-[-8px] p-1 rounded-full">
+              <button
+                onClick={() => toggleMenu(comment.id)}
+                className="w-5 h-5 text-gray-400 hover:text-white"
+              >
+                <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-white" />
+              </button>
+
+
+              {/* dropdown menu */}
+              {openMenuId === comment.id && (
+                <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-30 overflow-hidden">
+                  <button
+                    onClick={() => startEditComment(comment)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                  >
+                    <Edit className="w-4 h-4" />
+                    Edit
+                  </button>
+
+                  <button
+                    onClick={() => handleDeleteComment(comment.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    Delete
+                  </button>
                 </div>
-              ))}
+              )}
             </div>
+          )}
+          {/* Username + Date */}
+          <div className="flex items-center gap-2 mb-2 pr-12">
+            <span className="text-white font-semibold">{comment.username}</span>
+            <span className="text-gray-500 text-sm">
+              {new Date(comment.createdAt).toLocaleDateString()}
+            </span>
+          </div>
+
+          {/* Comment text or editable textarea */}
+          {editingCommentId === comment.id ? (
+            <div>
+              <textarea
+                value={editingText}
+                onChange={(e) => setEditingText(e.target.value)}
+                className="w-full bg-gray-800 text-white p-2 rounded resize-none border border-gray-700"
+                rows={3}
+              />
+              <div className="mt-2 flex gap-2">
+                <button
+                  onClick={() => saveEditedComment(comment.id)}
+                  className="bg-pink text-black px-3 py-1 rounded"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="px-3 py-1 rounded border border-gray-700 text-gray-300"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-300">{comment.text}</p>
+          )}
+
+          {/* Likes (heart + count) */}
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              onClick={() => handleLikeComment(comment.id)}
+              className="hover:text-pink text-gray-400"
+              aria-label="Like comment"
+            >
+              <Heart className={`w-6 h-6 ${comment.is_liked ? 'fill-pink text-pink' : ''}`} />
+            </button>
+            <span className="text-gray-400 text-sm">{comment.likes_count || 0}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+
+
           </div>
         </div>
       </div>
