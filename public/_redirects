@@ -1,0 +1,7 @@
+# 1. API İsteklerini Backend'e Yönlendir (Proxy)
+# Frontend '/api/v1/users' dediğinde, Netlify bunu alıp backend'e iletecek.
+/api/* https://soundpuff-api.ozten.app/api/:splat  200
+
+# 2. SPA (Single Page Application) Yönlendirmesi
+# Kullanıcı sayfayı yenilediğinde 404 almasın diye her şeyi index.html'e yönlendir.
+/* /index.html  200

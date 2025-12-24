@@ -13,8 +13,7 @@ import { playlistService } from '../services/playlistService';
 // Import Player Context
 import { usePlayer } from '../contexts/PlayerContext';
 
-//şimdilik buraya koydum, env alınca çalışmadı
-const OPENROUTER_API_KEY = "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"; 
+const OPENROUTER_API_KEY = (import.meta as any).env.VITE_OPENROUTER_API_KEY;
 
 interface Message {
   id: string;
