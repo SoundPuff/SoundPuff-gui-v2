@@ -108,7 +108,7 @@ export function PlaylistPage() {
     return null;
   }
 
-  const isLiked = playlist.likes?.includes(currentUser.id);
+  const isLiked = playlist.is_liked;
   const isOwner = playlist.userId === currentUser.id;
 
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -129,33 +129,46 @@ export function PlaylistPage() {
   };
 
   const handleLike = async () => {
-    if (!playlistId || !currentUser?.id) return;
+    if (!playlistId || !currentUser || !playlist) return;
+
+    const playlistIdNum = Number(playlistId);
+    const currentlyLiked = playlist.is_liked;
+
+    // ✅ Optimistic UI update
+    setPlaylist((prev) =>
+      prev
+        ? {
+            ...prev,
+            is_liked: !currentlyLiked,
+            likes_count: currentlyLiked
+              ? Math.max(0, prev.likes_count - 1)
+              : prev.likes_count + 1,
+          }
+        : prev
+    );
 
     try {
-      const playlistIdNum = parseInt(playlistId);
-      if (isLiked) {
+      if (currentlyLiked) {
         await playlistService.unlikePlaylist(playlistIdNum);
-        setPlaylist((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            likes: prev.likes?.filter((id) => id !== currentUser.id),
-          };
-        });
       } else {
         await playlistService.likePlaylist(playlistIdNum);
-        setPlaylist((prev) => {
-          if (!prev) return null;
-          return {
-            ...prev,
-            likes: [...(prev.likes || []), currentUser.id],
-          };
-        });
       }
     } catch (error) {
       console.error('Failed to like/unlike playlist:', error);
+
+      // ❌ Revert on failure
+      setPlaylist((prev) =>
+        prev
+          ? {
+              ...prev,
+              is_liked: currentlyLiked,
+              likes_count: prev.likes_count,
+            }
+          : prev
+      );
     }
   };
+
 
   const handleDeletePlaylist = async () => {
     if (!playlistId) return;

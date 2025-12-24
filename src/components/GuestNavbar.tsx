@@ -2,7 +2,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import logoGif from '../data/soundpuff_logo.gif';
 import { Button } from './ui/button';
-import { ThemeToggle } from './ThemeToggle';
 
 export function GuestNavbar() {
   const navigate = useNavigate();
@@ -23,7 +22,6 @@ export function GuestNavbar() {
 
         {/* Right Side: Theme Toggle and Auth Buttons */}
         <div className="flex items-center gap-4">
-          <ThemeToggle />
           <div className="flex items-center gap-2 border-l border-gray-800 pl-4">
             <Button
               variant="ghost"

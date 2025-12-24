@@ -264,46 +264,53 @@ export function ProfilePage() {
 
   const handleLike = async (playlistId: string) => {
     if (!currentUser?.id) return;
-    try {
-      const playlistIdNum = parseInt(playlistId);
-      const playlist = playlists.find((p) => p.id === playlistIdNum);
-      const isLiked = playlist?.likes?.includes(currentUser.id) || false;
 
-      if (isLiked) {
+    const playlistIdNum = Number(playlistId);
+
+    const target = playlists.find((p) => p.id === playlistIdNum);
+    if (!target) return;
+
+    const currentlyLiked = target.is_liked;
+
+    // ✅ optimistic UI update
+    setPlaylists((prev) =>
+      prev.map((p) =>
+        p.id === playlistIdNum
+          ? {
+              ...p,
+              is_liked: !currentlyLiked,
+              likes_count: currentlyLiked
+                ? Math.max(0, p.likes_count - 1)
+                : p.likes_count + 1,
+            }
+          : p
+      )
+    );
+
+    try {
+      if (currentlyLiked) {
         await playlistService.unlikePlaylist(playlistIdNum);
-        setPlaylists((prev) =>
-          prev.map((p) => {
-             if (p.id === playlistIdNum) {
-               const newCount = Math.max(0, (p.likes_count || 0) - 1);
-               return { 
-                 ...p, 
-                 likes: p.likes?.filter((id) => id !== currentUser.id),
-                 likes_count: newCount
-               };
-             }
-             return p;
-          })
-        );
       } else {
         await playlistService.likePlaylist(playlistIdNum);
-        setPlaylists((prev) =>
-          prev.map((p) => {
-             if (p.id === playlistIdNum) {
-               const newCount = (p.likes_count || 0) + 1;
-               return { 
-                 ...p, 
-                 likes: [...(p.likes || []), currentUser.id],
-                 likes_count: newCount
-               };
-             }
-             return p;
-          })
-        );
       }
     } catch (error) {
-       console.error("Like error", error);
+      console.error("Like error", error);
+
+      // ❌ revert on failure
+      setPlaylists((prev) =>
+        prev.map((p) =>
+          p.id === playlistIdNum
+            ? {
+                ...p,
+                is_liked: currentlyLiked,
+                likes_count: p.likes_count,
+              }
+            : p
+        )
+      );
     }
   };
+
 
   if (isLoading || !currentUser || !profileUser) {
     return (

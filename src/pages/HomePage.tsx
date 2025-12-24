@@ -23,34 +23,9 @@ export function HomePage() {
   
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // ✨ VERİ BİRLEŞTİRME (HYDRATION)
-  const hydrateList = (list: Playlist[]) => {
-    if (!user) return list;
-    return list.map(playlist => {
-      const isLiked = user.likedPlaylists?.includes(playlist.id.toString());
-      let updatedLikes = playlist.likes || [];
-      
-      if (isLiked && !updatedLikes.includes(user.id)) {
-        updatedLikes = [...updatedLikes, user.id];
-      } else if (!isLiked && updatedLikes.includes(user.id)) {
-        updatedLikes = updatedLikes.filter(id => id !== user.id);
-      }
-
-      let updatedCount = playlist.likes_count;
-      if (isLiked && updatedCount === 0) {
-        updatedCount = 1;
-      }
-
-      return {
-        ...playlist,
-        likes: updatedLikes,
-        likes_count: updatedCount
-      };
-    });
-  };
-
-  const feedPlaylists = useMemo(() => hydrateList(rawFeed), [rawFeed, user?.likedPlaylists, user?.id]);
-  const discoverPlaylists = useMemo(() => hydrateList(rawDiscover), [rawDiscover, user?.likedPlaylists, user?.id]);
+  // Use backend-provided playlist state directly. Do NOT derive `is_liked` from user.likedPlaylists.
+  const feedPlaylists = rawFeed;
+  const discoverPlaylists = rawDiscover;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -73,6 +48,24 @@ export function HomePage() {
 
     fetchData();
   }, [user?.id]);
+
+  useEffect(() => {
+    if (rawFeed.length > 0) {
+      console.group("FEED playlists is_liked");
+      rawFeed.forEach(p =>
+        console.log(`Playlist ${p.id}`, p.is_liked)
+      );
+      console.groupEnd();
+    }
+
+    if (rawDiscover.length > 0) {
+      console.group("DISCOVER playlists is_liked");
+      rawDiscover.forEach(p =>
+        console.log(`Playlist ${p.id}`, p.is_liked)
+      );
+      console.groupEnd();
+    }
+  }, [rawFeed, rawDiscover]);
 
   // --- DESIGN LOGIC ENTEGRASYONU ---
   const filterByCategory = (playlistList: Playlist[]) => {
@@ -135,33 +128,49 @@ export function HomePage() {
     navigate(`/app/user/${username}`);
   };
 
+const handleLike = async (playlistId: string) => {
+  const idStr = playlistId.toString();
+  const idNum = Number(playlistId);
 
-  const handleLike = async (playlistId: string) => {
-    if (!user?.id) return;
+  // 1️⃣ read previous state ONCE (before setState)
+  const source = [...rawFeed, ...rawDiscover];
+  const target = source.find(p => p.id.toString() === idStr);
 
-    const isLiked = user.likedPlaylists?.includes(playlistId.toString()) ?? false;
-    const playlistIdNum = parseInt(playlistId);
+  if (!target) return;
 
-    const updatedLikedPlaylists = isLiked
-        ? user.likedPlaylists.filter(id => id !== playlistId.toString())
-        : [...(user.likedPlaylists || []), playlistId.toString()];
+  const wasLiked = target.is_liked;
 
-    updateUser({
-        ...user,
-        likedPlaylists: updatedLikedPlaylists
-    });
+  // 2️⃣ optimistic UI update
+  const updateList = (list: Playlist[]) =>
+    list.map(p =>
+      p.id.toString() === idStr
+        ? {
+            ...p,
+            is_liked: !wasLiked,
+            likes_count: (p.likes_count || 0) + (wasLiked ? -1 : 1),
+          }
+        : p
+    );
 
-    try {
-      if (isLiked) {
-        await playlistService.unlikePlaylist(playlistIdNum);
-      } else {
-        await playlistService.likePlaylist(playlistIdNum);
-      }
-    } catch (error) {
-      console.error("Failed to like/unlike playlist:", error);
-      updateUser({ ...user, likedPlaylists: user.likedPlaylists });
+  setRawFeed(prev => updateList(prev));
+  setRawDiscover(prev => updateList(prev));
+
+  // 3️⃣ backend sync
+  try {
+    if (wasLiked) {
+      await playlistService.unlikePlaylist(idNum);
+    } else {
+      await playlistService.likePlaylist(idNum);
     }
-  };
+  } catch (err) {
+    console.error("Like failed, reverting", err);
+
+    // 4️⃣ rollback (same flip again)
+    setRawFeed(prev => updateList(prev));
+    setRawDiscover(prev => updateList(prev));
+  }
+};
+
 
   if (!user) return null;
 
