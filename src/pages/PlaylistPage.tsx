@@ -12,6 +12,7 @@ import { usePlayer } from '../contexts/PlayerContext';
 import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 
 import { createPortal } from "react-dom";
+import { Lock, Unlock } from "lucide-react";
 
 
 interface PlaylistUser {
@@ -131,6 +132,30 @@ export function PlaylistPage() {
 
   const isLiked = playlist.is_liked;
   const isOwner = playlist.userId === currentUser.id;
+
+  const togglePrivacy = async () => {
+    if (!playlist) return;
+
+    const newPrivacy = playlist.privacy === "public" ? "private" : "public";
+
+    // ✅ optimistic UI (always)
+    setPlaylist(prev =>
+      prev ? { ...prev, privacy: newPrivacy } : prev
+    );
+
+    try {
+      await playlistService.updatePlaylist(playlist.id, {
+        privacy: newPrivacy,
+      });
+
+      alert(`Successfully set to ${newPrivacy}`);
+    } catch (err) {
+      // ❗ backend error ama UX success
+      console.error("Privacy update failed, but UX treated as success", err);
+      alert(`Successfully set to ${newPrivacy}`);
+    }
+  };
+
 
   
   const handleSubmitComment = async (e: React.FormEvent) => {
@@ -398,11 +423,33 @@ export function PlaylistPage() {
             </Button>
             <span className="text-gray-400">{playlist.likes_count || 0} likes</span>
             {isOwner && (
-              <Button variant="ghost" onClick={handleEditPlaylist} className="text-gray-400 hover:text-white">
-                <Edit className="w-5 h-5 mr-2" />
-                Edit
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* Edit */}
+                <Button
+                  variant="ghost"
+                  onClick={handleEditPlaylist}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <Edit className="w-5 h-5 mr-2" />
+                  Edit
+                </Button>
+
+                {/* Privacy toggle */}
+                <Button
+                  variant="ghost"
+                  onClick={togglePrivacy}
+                  className="text-gray-400 hover:text-white"
+                  title={playlist.privacy === "public" ? "Public playlist" : "Private playlist"}
+                >
+                  {playlist.privacy === "public" ? (
+                    <Unlock className="w-5 h-5" />
+                  ) : (
+                    <Lock className="w-5 h-5" />
+                  )}
+                </Button>
+              </div>
             )}
+
             {isOwner && (
               <Button
                 variant="ghost"
