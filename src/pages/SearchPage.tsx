@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, Play, Pause } from "lucide-react";
 import { Input } from "../components/ui/input";
@@ -43,20 +43,8 @@ export function SearchPage() {
     users: User[];
   }>({ songs: [], playlists: [], users: [] });
 
-  // Hydrate playlists: do NOT invent a `likes` array. Use server contract fields only.
-  // - `is_liked` tells whether the current user liked the playlist
-  // - `likes_count` is the total count
-  const hydratedPlaylists = useMemo(() => {
-    if (!rawResults.playlists) return [];
-
-    return rawResults.playlists.map((playlist) => ({
-      ...playlist,
-      is_liked:
-        user?.likedPlaylists?.includes(playlist.id.toString()) ??
-        playlist.is_liked,
-      likes_count: playlist.likes_count,
-    }));
-  }, [rawResults.playlists, user]);
+  // NOTE: Do not hydrate playlists with user state here. Use server-provided
+  // `is_liked` and `likes_count` from `rawResults.playlists` directly.
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -474,18 +462,18 @@ export function SearchPage() {
               )}
 
             {/* PLAYLISTS */}
-            {hydratedPlaylists.length > 0 && (
+            {rawResults.playlists.length > 0 && (
               <div>
                 <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
                   Playlists
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {hydratedPlaylists.slice(0, PREVIEW_LIMIT).map((playlist) => (
+                  {rawResults.playlists.slice(0, PREVIEW_LIMIT).map((playlist) => (
                     <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
                   ))}
                 </div>
 
-                {hydratedPlaylists.length > PREVIEW_LIMIT && (
+                {rawResults.playlists.length > PREVIEW_LIMIT && (
                   <button
                     onClick={() => setActiveTab("playlists")}
                     className="mt-3 text-pink hover:underline text-sm"
@@ -497,7 +485,7 @@ export function SearchPage() {
             )}
 
             {/* USERS - ALL TAB */}
-            {rawResults.users.length > 0 && (
+              {rawResults.users.length > 0 && (
               <div>
                 <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
                   Users
@@ -520,7 +508,7 @@ export function SearchPage() {
             {!isLoading &&
               searchQuery &&
               rawResults.songs.length === 0 &&
-              hydratedPlaylists.length === 0 &&
+              rawResults.playlists.length === 0 &&
               rawResults.users.length === 0 && (
                 <div className="text-center py-12 text-gray-400">
                   No results found for "{searchQuery}"
@@ -529,15 +517,15 @@ export function SearchPage() {
           </TabsContent>
 
           <TabsContent value="playlists" className="mt-6">
-            {hydratedPlaylists.length > 0 ? (
+            {rawResults.playlists.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {hydratedPlaylists.slice(0, visiblePlaylists).map((playlist) => (
+                  {rawResults.playlists.slice(0, visiblePlaylists).map((playlist) => (
                     <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
                   ))}
                 </div>
 
-                {(hydratedPlaylists.length >= visiblePlaylists || rawResults.playlists.length > 0 || searchQuery.trim()) && (
+                {(rawResults.playlists.length >= visiblePlaylists || rawResults.playlists.length > 0 || searchQuery.trim()) && (
                   <div className="flex justify-center mt-4">
                     <Button onClick={() => fetchMorePlaylists()} disabled={loadingMorePlaylists} className="bg-pink text-black hover:bg-[#5b0426]">
                       {loadingMorePlaylists ? "Loading..." : "Show more"}
