@@ -433,7 +433,7 @@ export function ChatBot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-pink hover:bg-green-600 shadow-lg z-[9999] transition-transform hover:scale-110"
+          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-pink hover:bg-dark-pink shadow-lg z-[9999] transition-transform hover:scale-110"
           size="icon"
           style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem' }}
         >
@@ -489,7 +489,7 @@ export function ChatBot() {
                     <Button size="sm" variant="ghost" onClick={cancelDraft} className="h-7 px-2 text-[10px] text-red-400 hover:text-red-300 hover:bg-red-900/20">
                         Cancel
                     </Button>
-                    <Button size="sm" onClick={savePlaylist} className="h-7 px-2 text-[10px] bg-green-600 hover:bg-green-500 text-white">
+                    <Button size="sm" onClick={savePlaylist} className="h-7 px-2 text-[10px] bg-dark-pink hover:bg-green-500 text-white">
                         <Save className="w-3 h-3 mr-1"/> Save
                     </Button>
                 </div>
@@ -546,7 +546,7 @@ export function ChatBot() {
               <Button
                 onClick={handleSend}
                 size="icon"
-                className="bg-pink hover:bg-green-600 rounded-full w-10 h-10 shrink-0 transition-colors"
+                className="bg-pink hover:bg-dark-pink rounded-full w-10 h-10 shrink-0 transition-colors"
                 disabled={isTyping || !input.trim()}
               >
                 <Send className="h-4 w-4 text-black" />
