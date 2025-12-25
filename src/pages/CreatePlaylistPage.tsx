@@ -27,6 +27,8 @@ export function CreatePlaylistPage() {
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
   const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [trendingSongs, setTrendingSongs] = useState<Song[]>([]);
+  const [isTrendingLoading, setIsTrendingLoading] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isCreatePlaylistHovered, setIsCreatePlaylistHovered] = useState(false);
@@ -71,6 +73,41 @@ export function CreatePlaylistPage() {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  // Fetch simple trending/recommended songs once by deriving from popular playlists
+  useEffect(() => {
+    const fetchTrending = async () => {
+      setIsTrendingLoading(true);
+      try {
+        const playlists = await playlistService.getPlaylists(0, 20);
+        const annotated: Array<Song & { playlistLikes: number }> = playlists.flatMap((p) =>
+          (p.songs || []).map((s) => ({ ...s, playlistLikes: p.likes_count || 0 }))
+        );
+        annotated.sort((a, b) => b.playlistLikes - a.playlistLikes);
+        const seen = new Set<string>();
+        const unique: Song[] = [];
+        for (const s of annotated) {
+          if (!seen.has(s.id)) {
+            seen.add(s.id);
+            const { playlistLikes: _pl, ...song } = s;
+            unique.push(song as Song);
+          }
+          if (unique.length >= 20) break;
+        }
+        setTrendingSongs(unique);
+      } catch (err) {
+        console.error("Failed to fetch trending songs:", err);
+        setTrendingSongs([]);
+      } finally {
+        setIsTrendingLoading(false);
+      }
+    };
+
+    fetchTrending();
+  }, []);
+
+  const shouldShowTrending = !searchQuery.trim();
+  const songsToShow = shouldShowTrending ? trendingSongs.slice(0, 5) : availableSongs;
 
   // --- File upload handlers (Cloudinary) ---
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,82 +370,80 @@ export function CreatePlaylistPage() {
             </div>
 
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {availableSongs.map((song) => {
-                const isSelected = isSongSelected(song.id);
-                return (
-                  <div
-                    key={song.id}
-                    className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
-                      !isSelected ? "hover:bg-gray-800" : ""
-                    }`}
-                    onClick={() => handleToggleSong(song)}
-                    style={
-                      isSelected
-                        ? {
-                            backgroundColor: "rgba(51, 172, 227, 0.2)",
-                            border: "1px solid rgba(51, 172, 227, 0.3)",
-                          }
-                        : undefined
-                    }
+              {shouldShowTrending && (
+                <div className="text-sm text-gray-400 mb-2">Recommended songs</div>
+              )}
+
+              {isTrendingLoading && shouldShowTrending ? (
+                <div className="p-4 text-gray-400">Loading recommendations...</div>
+              ) : songsToShow.length === 0 ? (
+                (searchQuery.trim() ? (
+                  <p
+                    className="text-white text-center py-8"
+                    style={{ WebkitTextStroke: "0.5px #d95a96" }}
                   >
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <Checkbox
-                        checked={isSelected}
-                        onCheckedChange={(checked) => {
-                          if (!song || !song.id) return;
-                          setSelectedSongs((prev) => {
-                            if (checked) {
-                              if (!prev.some((s) => s && s.id === song.id)) {
-                                return [...prev, song];
-                              }
-                              return prev;
-                            } else {
-                              return prev.filter((s) => s && s.id !== song.id);
+                    No songs found
+                  </p>
+                ) : (
+                  <div className="p-4 text-gray-400">No recommendations</div>
+                ))
+              ) : (
+                songsToShow.map((song) => {
+                  const isSelected = isSongSelected(song.id);
+                  return (
+                    <div
+                      key={song.id}
+                      className={`flex items-center gap-4 p-3 rounded-lg cursor-pointer transition-colors ${
+                        !isSelected ? "hover:bg-gray-800" : ""
+                      }`}
+                      onClick={() => handleToggleSong(song)}
+                      style={
+                        isSelected
+                          ? {
+                              backgroundColor: "rgba(51, 172, 227, 0.2)",
+                              border: "1px solid rgba(51, 172, 227, 0.3)",
                             }
-                          });
-                        }}
+                          : undefined
+                      }
+                    >
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (!song || !song.id) return;
+                            setSelectedSongs((prev) => {
+                              if (checked) {
+                                if (!prev.some((s) => s && s.id === song.id)) {
+                                  return [...prev, song];
+                                }
+                                return prev;
+                              } else {
+                                return prev.filter((s) => s && s.id !== song.id);
+                              }
+                            });
+                          }}
+                        />
+                      </div>
+                      <img
+                        src={song.coverArt}
+                        alt={song.album}
+                        className="w-12 h-12 rounded object-cover"
                       />
-                    </div>
-                    <img
-                      src={song.coverArt}
-                      alt={song.album}
-                      className="w-12 h-12 rounded object-cover"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white truncate">{song.title}</div>
-                      <div className="text-sm text-gray-400 truncate">
-                        {song.artist}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-white truncate">{song.title}</div>
+                        <div className="text-sm text-gray-400 truncate">
+                          {song.artist}
+                        </div>
+                      </div>
+                      <div className="text-gray-400 text-sm">
+                        {Math.floor(song.duration / 60)}:
+                        {(song.duration % 60).toString().padStart(2, "0")}
                       </div>
                     </div>
-                    <div className="text-gray-400 text-sm">
-                      {Math.floor(song.duration / 60)}:
-                      {(song.duration % 60).toString().padStart(2, "0")}
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
-
-            {selectedSongs.length === 0 && availableSongs.length !== 0 && (
-              <p
-                className="text-white text-center py-4"
-                style={{
-                  WebkitTextStroke: "0.5px #d95a96",
-                }}
-              >
-                Select at least one song
-              </p>
-            )}
-            {availableSongs.length === 0 && (
-              <p
-                className="text-white text-center py-8"
-                style={{
-                  WebkitTextStroke: "0.5px #d95a96",
-                }}
-              >
-                Select at least one song
-              </p>
-            )}
           </div>
 
           <div className="flex gap-3">
