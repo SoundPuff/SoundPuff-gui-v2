@@ -13,7 +13,6 @@ import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import { Lock, Unlock } from "lucide-react";
-import { AlertWidget } from '../components/AlertModal'; // yolunu kendi projenin dosya yapısına göre değiştir
 
 interface PlaylistUser {
   id: string;
@@ -23,8 +22,11 @@ interface PlaylistUser {
 }
 
 export function PlaylistPage() {
-  const [alertWidget, setAlertWidget] = useState<{ title?: string; message: string } | null>(null);
+  const [alertModal, setAlertModal] = useState<{ title?: string; message: string } | null>(null);
 
+  const showAlert = (message: string, title?: string) => {
+    setAlertModal({ title, message });
+  };
 
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
@@ -240,15 +242,7 @@ return (
                    black`,
     }}
   >
-    {/* ALERT WIDGET BURAYA */}
-    {alertWidget && (
-      <AlertWidget
-        title={alertWidget.title}
-        message={alertWidget.message}
-        duration={4000}
-      />
-    )}
-
+    
     <div className="bg-gradient-to-b from-pink to-transparent p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex gap-6 items-end">
