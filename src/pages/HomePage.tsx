@@ -348,7 +348,7 @@ const handleLike = async (playlistId: string) => {
                 WebkitTextStroke: '0.75px #d95a96'
               }}>Trending Songs</h1>
             </div>
-            <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
+            <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50" style={{ borderRadius: '10px' }}>
               {trendingSongs.map((song, index) => {
                 const isCurrentSong = currentSong?.id === song.id;
 

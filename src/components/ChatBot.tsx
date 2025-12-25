@@ -1,26 +1,39 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { MessageCircle, X, Send, Music2, Sparkles, Loader2, ListMusic, User as UserIcon, Play, Plus, Check, Save } from 'lucide-react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import {
+  MessageCircle,
+  X,
+  Send,
+  Music2,
+  Sparkles,
+  Loader2,
+  ListMusic,
+  User as UserIcon,
+  Play,
+  Plus,
+  Check,
+  Save,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 // Import Services
-import { searchService } from '../services/searchService';
-import { playlistService } from '../services/playlistService';
+import { searchService } from "../services/searchService";
+import { playlistService } from "../services/playlistService";
 
 // Import Player Context
-import { usePlayer } from '../contexts/PlayerContext';
+import { usePlayer } from "../contexts/PlayerContext";
 
 const OPENROUTER_API_KEY = (import.meta as any).env.VITE_OPENROUTER_API_KEY;
 
 interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'bot';
+  sender: "user" | "bot";
   timestamp: Date;
-  type?: 'text' | 'card';
+  type?: "text" | "card";
   data?: any;
 }
 
@@ -35,29 +48,29 @@ interface PlaylistDraft {
 export function ChatBot() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { playSong } = usePlayer();
+  const { playSong, currentSong } = usePlayer();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  
+
   // Playlist Taslak State'i
   const [playlistDraft, setPlaylistDraft] = useState<PlaylistDraft>({
     isActive: false,
     title: "",
     description: "",
-    selectedSongIds: []
+    selectedSongIds: [],
   });
 
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
+      id: "1",
       text: "Hi! I'm SoundPuff AI. I can help you find music, create playlists, or guide you through the app. Ask me anything about SoundPuff!",
-      sender: 'bot',
+      sender: "bot",
       timestamp: new Date(),
     },
   ]);
-  
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -131,37 +144,50 @@ export function ChatBot() {
     }
 
     // ✅ YENİ: Yapay zekaya o anki modu bildiriyoruz (Prompt'taki kuralın çalışması için şart)
-    const currentContextState = playlistDraft.isActive ? "PLAYLIST_DRAFT_MODE: ON" : "PLAYLIST_DRAFT_MODE: OFF";
+    const currentContextState = playlistDraft.isActive
+      ? "PLAYLIST_DRAFT_MODE: ON"
+      : "PLAYLIST_DRAFT_MODE: OFF";
     const finalSystemMessage = `${SYSTEM_PROMPT}\n\nCURRENT_STATE: ${currentContextState}`;
 
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
-          "HTTP-Referer": window.location.origin,
-          "X-Title": "SoundPuff",
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "google/gemma-3-27b-it:free",
-          messages: [
-            { role: "system", content: finalSystemMessage }, // ✅ Güncellenmiş mesajı gönderiyoruz
-            ...messages.slice(-5).filter(m => !m.type).map(m => ({ 
-              role: m.sender === 'user' ? 'user' : 'assistant',
-              content: m.text
-            })),
-            { role: "user", content: userText }
-          ]
-        })
-      });
+      const response = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "HTTP-Referer": window.location.origin,
+            "X-Title": "SoundPuff",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemma-3-27b-it:free",
+            messages: [
+              { role: "system", content: finalSystemMessage }, // ✅ Güncellenmiş mesajı gönderiyoruz
+              ...messages
+                .slice(-5)
+                .filter((m) => !m.type)
+                .map((m) => ({
+                  role: m.sender === "user" ? "user" : "assistant",
+                  content: m.text,
+                })),
+              { role: "user", content: userText },
+            ],
+          }),
+        }
+      );
 
       const data = await response.json();
-      const aiContent = data.choices?.[0]?.message?.content || "Sorry, I couldn't connect to the server.";
+      const aiContent =
+        data.choices?.[0]?.message?.content ||
+        "Sorry, I couldn't connect to the server.";
 
       try {
-        const cleanJson = aiContent.replace(/```json/g, '').replace(/```/g, '').trim();
-        if (cleanJson.startsWith('{') && cleanJson.endsWith('}')) {
+        const cleanJson = aiContent
+          .replace(/```json/g, "")
+          .replace(/```/g, "")
+          .trim();
+        if (cleanJson.startsWith("{") && cleanJson.endsWith("}")) {
           const command = JSON.parse(cleanJson);
           await executeCommand(command);
         } else {
@@ -170,7 +196,6 @@ export function ChatBot() {
       } catch (e) {
         addBotMessage(aiContent);
       }
-
     } catch (error) {
       console.error("AI Error:", error);
       addBotMessage("I'm having trouble connecting right now.");
@@ -181,79 +206,90 @@ export function ChatBot() {
     setIsTyping(true);
     try {
       // 1. SEARCH ACTION
-      if (cmd.action === 'search') {
+      if (cmd.action === "search") {
         const results = await searchService.searchAll(cmd.query);
-        
-        if (results.songs.length > 0 || results.playlists.length > 0 || results.users.length > 0) {
-          const msgText = playlistDraft.isActive 
+
+        if (
+          results.songs.length > 0 ||
+          results.playlists.length > 0 ||
+          results.users.length > 0
+        ) {
+          const msgText = playlistDraft.isActive
             ? `Here are songs for "${cmd.query}". Click on them to add to "${playlistDraft.title}":`
             : `Here is what I found for "${cmd.query}".\n\n💡 Tip: Click on a song to play it.`;
 
           addBotMessage(msgText);
-          
+
           const resultMessage: Message = {
             id: Date.now().toString(),
-            text: 'Search Results',
-            sender: 'bot',
+            text: "Search Results",
+            sender: "bot",
             timestamp: new Date(),
-            type: 'card',
-            data: results
+            type: "card",
+            data: results,
           };
-          setMessages(prev => [...prev, resultMessage]);
+          setMessages((prev) => [...prev, resultMessage]);
         } else {
-          addBotMessage(`I searched for "${cmd.query}" but couldn't find anything.`);
+          addBotMessage(
+            `I searched for "${cmd.query}" but couldn't find anything.`
+          );
         }
-      } 
-      
-      // 2. START PLAYLIST DRAFT
-      else if (cmd.action === 'start_playlist_draft') {
+      }
 
+      // 2. START PLAYLIST DRAFT
+      else if (cmd.action === "start_playlist_draft") {
         //Zaten bir playlist yapılıyorsa yenisini başlatma!
         if (playlistDraft.isActive) {
-          addBotMessage(`You are already creating a playlist named "${playlistDraft.title}". Please save or cancel it first to create a new one.`);
-          return; 
-       }
+          addBotMessage(
+            `You are already creating a playlist named "${playlistDraft.title}". Please save or cancel it first to create a new one.`
+          );
+          return;
+        }
 
         if (!user) {
           addBotMessage("You need to be logged in to create playlists.");
           return;
         }
-        
+
         setPlaylistDraft({
           isActive: true,
           title: cmd.title || "New Playlist",
           description: cmd.description || "Created with AI",
-          selectedSongIds: []
+          selectedSongIds: [],
         });
 
-        addBotMessage(`started creating "${cmd.title}". Now search for songs (e.g. "Tarkan songs") and select them using the list below.`);
+        addBotMessage(
+          `started creating "${cmd.title}". Now search for songs (e.g. "Tarkan songs") and select them using the list below.`
+        );
       }
 
       // 3. POPULAR PLAYLISTS
-      else if (cmd.action === 'get_popular_playlists') {
+      else if (cmd.action === "get_popular_playlists") {
         const allPlaylists = await playlistService.getPlaylists(0, 50);
         const popularPlaylists = allPlaylists
-            .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
-            .slice(0, cmd.limit || 5);
+          .sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0))
+          .slice(0, cmd.limit || 5);
 
         if (popularPlaylists.length > 0) {
-            addBotMessage(`Here are the top ${popularPlaylists.length} most popular playlists:`);
-            const resultMessage: Message = {
-                id: Date.now().toString(),
-                text: 'Popular Playlists',
-                sender: 'bot',
-                timestamp: new Date(),
-                type: 'card',
-                data: { playlists: popularPlaylists, songs: [], users: [] }
-            };
-            setMessages(prev => [...prev, resultMessage]);
+          addBotMessage(
+            `Here are the top ${popularPlaylists.length} most popular playlists:`
+          );
+          const resultMessage: Message = {
+            id: Date.now().toString(),
+            text: "Popular Playlists",
+            sender: "bot",
+            timestamp: new Date(),
+            type: "card",
+            data: { playlists: popularPlaylists, songs: [], users: [] },
+          };
+          setMessages((prev) => [...prev, resultMessage]);
         } else {
-            addBotMessage("I couldn't find any playlists right now.");
+          addBotMessage("I couldn't find any playlists right now.");
         }
       }
 
       // 4. NAVIGATE
-      else if (cmd.action === 'navigate') {
+      else if (cmd.action === "navigate") {
         navigate(cmd.path);
         const navMessage = cmd.message || `Navigating to ${cmd.path}...`;
         addBotMessage(navMessage);
@@ -268,12 +304,12 @@ export function ChatBot() {
 
   // Şarkı Seç/Kaldır
   const toggleSongSelection = (songId: string) => {
-    setPlaylistDraft(prev => {
+    setPlaylistDraft((prev) => {
       const isSelected = prev.selectedSongIds.includes(songId);
-      const newIds = isSelected 
-        ? prev.selectedSongIds.filter(id => id !== songId)
+      const newIds = isSelected
+        ? prev.selectedSongIds.filter((id) => id !== songId)
         : [...prev.selectedSongIds, songId];
-      
+
       return { ...prev, selectedSongIds: newIds };
     });
   };
@@ -290,15 +326,21 @@ export function ChatBot() {
       await playlistService.createPlaylist({
         title: playlistDraft.title,
         description: playlistDraft.description,
-        privacy: 'public',
-        song_ids: playlistDraft.selectedSongIds.map(id => parseInt(id)) 
+        privacy: "public",
+        song_ids: playlistDraft.selectedSongIds.map((id) => parseInt(id)),
       });
 
-      addBotMessage(`✅ Playlist "${playlistDraft.title}" created successfully with ${playlistDraft.selectedSongIds.length} songs!`);
-      
-      setPlaylistDraft({ isActive: false, title: "", description: "", selectedSongIds: [] });
-      navigate('/app/library');
+      addBotMessage(
+        `✅ Playlist "${playlistDraft.title}" created successfully with ${playlistDraft.selectedSongIds.length} songs!`
+      );
 
+      setPlaylistDraft({
+        isActive: false,
+        title: "",
+        description: "",
+        selectedSongIds: [],
+      });
+      navigate("/app/library");
     } catch (error) {
       console.error("Save Playlist Error:", error);
       addBotMessage("Failed to create playlist. Please try again.");
@@ -309,36 +351,47 @@ export function ChatBot() {
 
   // Draft İptal
   const cancelDraft = () => {
-    setPlaylistDraft({ isActive: false, title: "", description: "", selectedSongIds: [] });
+    setPlaylistDraft({
+      isActive: false,
+      title: "",
+      description: "",
+      selectedSongIds: [],
+    });
     addBotMessage("Playlist creation cancelled.");
   };
 
   const addBotMessage = (text: string) => {
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      text,
-      sender: 'bot',
-      timestamp: new Date(),
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        text,
+        sender: "bot",
+        timestamp: new Date(),
+      },
+    ]);
   };
 
   const handleSend = async () => {
     if (!input.trim()) return;
     const userText = input;
-    setInput('');
-    setMessages(prev => [...prev, {
-      id: Date.now().toString(),
-      text: userText,
-      sender: 'user',
-      timestamp: new Date(),
-    }]);
+    setInput("");
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        text: userText,
+        sender: "user",
+        timestamp: new Date(),
+      },
+    ]);
     setIsTyping(true);
     await processAIResponse(userText);
     setIsTyping(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -347,30 +400,44 @@ export function ChatBot() {
   const renderSearchResults = (data: any) => (
     <div className="flex flex-col gap-2 mt-2 w-full">
       {/* SONGS */}
-      {data.songs?.length > 0 && <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">Songs</p>}
+      {data.songs?.length > 0 && (
+        <p className="text-[10px] uppercase text-gray-400 font-bold mt-1">
+          Songs
+        </p>
+      )}
       {data.songs?.slice(0, 3).map((song: any) => {
         const isDraftActive = playlistDraft.isActive;
         const isSelected = playlistDraft.selectedSongIds.includes(song.id);
 
         return (
-          <div 
-            key={song.id} 
+          <div
+            key={song.id}
             className={`flex items-center gap-2 p-2 rounded hover:bg-gray-800 cursor-pointer border transition-all group ${
-                isSelected 
-                  ? 'bg-pink/10 border-pink' 
-                  : 'bg-gray-800 border-gray-700/50'
+              isSelected
+                ? "bg-pink/10 border-pink"
+                : "bg-gray-800 border-gray-700/50"
             }`}
-            onClick={() => isDraftActive ? toggleSongSelection(song.id) : playSong(song)}
+            onClick={() =>
+              isDraftActive ? toggleSongSelection(song.id) : playSong(song)
+            }
           >
             <div className="bg-gray-700 w-8 h-8 rounded flex items-center justify-center shrink-0 overflow-hidden relative">
               {song.coverArt ? (
                 <>
-                  <img src={song.coverArt} alt={song.title} className="w-full h-full object-cover"/>
+                  <img
+                    src={song.coverArt}
+                    alt={song.title}
+                    className="w-full h-full object-cover"
+                  />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     {isDraftActive ? (
-                       isSelected ? <Check className="w-4 h-4 text-green-400" /> : <Plus className="w-4 h-4 text-white" />
+                      isSelected ? (
+                        <Check className="w-4 h-4 text-green-400" />
+                      ) : (
+                        <Plus className="w-4 h-4 text-white" />
+                      )
                     ) : (
-                       <Play className="w-3 h-3 text-white fill-white" />
+                      <Play className="w-3 h-3 text-white fill-white" />
                     )}
                   </div>
                 </>
@@ -378,18 +445,28 @@ export function ChatBot() {
                 <Music2 className="w-4 h-4" />
               )}
             </div>
-            
+
             <div className="flex-1 min-w-0">
-              <p className={`text-xs font-bold truncate ${isSelected ? 'text-pink' : 'text-white group-hover:text-pink'}`}>
-                  {song.title}
+              <p
+                className={`text-xs font-bold truncate ${
+                  isSelected ? "text-pink" : "text-white group-hover:text-pink"
+                }`}
+              >
+                {song.title}
               </p>
-              <p className="text-[10px] text-gray-400 truncate">{song.artist}</p>
+              <p className="text-[10px] text-gray-400 truncate">
+                {song.artist}
+              </p>
             </div>
 
             {isDraftActive && (
-               <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${isSelected ? 'bg-pink border-pink' : 'border-gray-500'}`}>
-                  {isSelected && <Check className="w-3 h-3 text-black" />}
-               </div>
+              <div
+                className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                  isSelected ? "bg-pink border-pink" : "border-gray-500"
+                }`}
+              >
+                {isSelected && <Check className="w-3 h-3 text-black" />}
+              </div>
             )}
           </div>
         );
@@ -397,17 +474,21 @@ export function ChatBot() {
 
       {/* PLAYLISTS */}
       {data.playlists?.map((pl: any) => (
-        <div key={pl.id} className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50" onClick={() => navigate(`/app/playlist/${pl.id}`)}>
+        <div
+          key={pl.id}
+          className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50"
+          onClick={() => navigate(`/app/playlist/${pl.id}`)}
+        >
           <div className="bg-gray-700 w-8 h-8 rounded flex items-center justify-center shrink-0">
             <ListMusic className="w-4 h-4" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold truncate text-white">{pl.title}</p>
             <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                <span>Playlist</span>
-                {pl.likes_count !== undefined && (
-                    <span className="text-green-400">• {pl.likes_count} likes</span>
-                )}
+              <span>Playlist</span>
+              {pl.likes_count !== undefined && (
+                <span className="text-green-400">• {pl.likes_count} likes</span>
+              )}
             </div>
           </div>
         </div>
@@ -415,12 +496,22 @@ export function ChatBot() {
 
       {/* USERS */}
       {data.users?.slice(0, 2).map((u: any) => (
-        <div key={u.id} className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50" onClick={() => navigate(`/app/user/${u.id}`)}>
+        <div
+          key={u.id}
+          className="flex items-center gap-2 bg-gray-800 p-2 rounded hover:bg-gray-700 cursor-pointer border border-gray-700/50"
+          onClick={() => navigate(`/app/user/${u.id}`)}
+        >
           <div className="bg-gray-700 w-8 h-8 rounded-full flex items-center justify-center shrink-0 overflow-hidden">
-             <img src={u.avatar || "https://github.com/shadcn.png"} alt={u.username} className="w-full h-full object-cover"/>
+            <img
+              src={u.avatar || "https://github.com/shadcn.png"}
+              alt={u.username}
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-bold truncate text-white">{u.username}</p>
+            <p className="text-xs font-bold truncate text-white">
+              {u.username}
+            </p>
             <p className="text-[10px] text-gray-400">User</p>
           </div>
         </div>
@@ -433,27 +524,40 @@ export function ChatBot() {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-pink hover:bg-dark-pink shadow-lg z-[9999] transition-transform hover:scale-110"
+          className="fixed bottom-6 right-6 rounded-full bg-pink hover:bg-dark-pink shadow-lg z-[9999] transition-transform hover:scale-110"
           size="icon"
-          style={{ position: 'fixed', bottom: '1.5rem', right: '1.5rem' }}
+          style={{
+            position: "fixed",
+            bottom: currentSong ? "7rem" : "1.5rem",
+            right: "1.5rem",
+            transition: "bottom 0.3s ease-in-out",
+            width: "4rem",
+            height: "4rem",
+          }}
         >
-          <MessageCircle className="h-6 w-6" />
+          <MessageCircle
+            style={{
+              width: "1.7rem",
+              height: "1.7rem",
+            }}
+          />
         </Button>
       )}
 
       {isOpen && (
-        <div 
+        <div
           className="fixed w-80 sm:w-96 bg-gray-900 rounded-xl shadow-2xl flex flex-col z-[9999] border border-gray-700 animate-in slide-in-from-bottom-5 fade-in duration-300 overflow-hidden"
-          style={{ 
-            position: 'fixed', 
-            bottom: '1.5rem', 
-            right: '1.5rem', 
-            height: '500px',        
-            maxHeight: '80vh',      
-            display: 'flex',        
-            flexDirection: 'column',
+          style={{
+            position: "fixed",
+            bottom: currentSong ? "7rem" : "1.5rem",
+            right: "1.5rem",
+            height: "500px",
+            maxHeight: "80vh",
+            display: "flex",
+            flexDirection: "column",
             outline: "1px solid #db77a6",
-          }} 
+            transition: "bottom 0.3s ease-in-out",
+          }}
         >
           {/* Header */}
           <div className="flex-none flex items-center justify-between p-4 border-b border-gray-800 bg-gray-900">
@@ -464,7 +568,7 @@ export function ChatBot() {
               <div>
                 <h3 className="text-white font-bold text-sm">SoundPuff AI</h3>
                 <span className="flex items-center gap-1 text-[10px] text-green-400">
-                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"/>
+                  <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
                   Online
                 </span>
               </div>
@@ -482,47 +586,75 @@ export function ChatBot() {
           {/* DRAFT MODU BİLGİ ÇUBUĞU */}
           {playlistDraft.isActive && (
             <div className="flex-none bg-gray-800 p-2 px-4 flex items-center justify-between border-b border-gray-700 animate-in slide-in-from-top-2">
-                <div className="flex flex-col min-w-0">
-                    <span className="text-xs text-pink font-bold truncate">Creating: {playlistDraft.title}</span>
-                    <span className="text-[10px] text-gray-400">{playlistDraft.selectedSongIds.length} songs selected</span>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                    <Button size="sm" variant="ghost" onClick={cancelDraft} className="h-7 px-2 text-[10px] text-red-400 hover:text-red-300 hover:bg-red-900/20">
-                        Cancel
-                    </Button>
-                    <Button size="sm" onClick={savePlaylist} className="h-7 px-2 text-[10px] bg-dark-pink hover:bg-green-500 text-white">
-                        <Save className="w-3 h-3 mr-1"/> Save
-                    </Button>
-                </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs text-pink font-bold truncate">
+                  Creating: {playlistDraft.title}
+                </span>
+                <span className="text-[10px] text-gray-400">
+                  {playlistDraft.selectedSongIds.length} songs selected
+                </span>
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={cancelDraft}
+                  className="h-7 px-2 text-[10px] text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={savePlaylist}
+                  className="h-7 px-2 text-[10px] bg-dark-pink hover:bg-green-500 text-white"
+                >
+                  <Save className="w-3 h-3 mr-1" /> Save
+                </Button>
+              </div>
             </div>
           )}
 
           {/* Messages Area */}
-          <div 
-            className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-800 min-h-0 bg-gray-900" 
+          <div
+            className="flex-1 p-4 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-gray-800 min-h-0 bg-gray-900"
             ref={scrollRef}
           >
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${
+                  message.sender === "user" ? "justify-end" : "justify-start"
+                }`}
               >
                 <div
                   className={`max-w-[85%] rounded-lg p-3 text-sm ${
-                    message.sender === 'user'
-                      ? 'bg-pink text-black font-medium rounded-br-none'
-                      : 'bg-gray-800 text-gray-200 rounded-bl-none border border-gray-700'
+                    message.sender === "user"
+                      ? "bg-pink text-black font-medium rounded-br-none"
+                      : "bg-gray-800 text-gray-200 rounded-bl-none border border-gray-700"
                   }`}
                 >
-                  <p className="leading-relaxed whitespace-pre-wrap">{message.text}</p>
-                  {message.type === 'card' && message.data && renderSearchResults(message.data)}
-                  <span className={`text-[9px] mt-1 block text-right ${message.sender === 'user' ? 'text-black/60' : 'text-gray-500'}`}>
-                    {message.timestamp.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  <p className="leading-relaxed whitespace-pre-wrap">
+                    {message.text}
+                  </p>
+                  {message.type === "card" &&
+                    message.data &&
+                    renderSearchResults(message.data)}
+                  <span
+                    className={`text-[9px] mt-1 block text-right ${
+                      message.sender === "user"
+                        ? "text-black/60"
+                        : "text-gray-500"
+                    }`}
+                  >
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
                 </div>
               </div>
             ))}
-            
+
             {isTyping && (
               <div className="flex justify-start">
                 <div className="bg-gray-800 rounded-2xl rounded-bl-none p-3 flex items-center gap-2 border border-gray-700">
@@ -540,10 +672,14 @@ export function ChatBot() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={playlistDraft.isActive ? "Search songs to add..." : "Ask SoundPuff AI..."}
+                placeholder={
+                  playlistDraft.isActive
+                    ? "Search songs to add..."
+                    : "Ask SoundPuff AI..."
+                }
                 className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-500 focus:ring-1 focus:ring-pink focus:border-pink rounded-full px-4 h-10 text-sm"
                 disabled={isTyping}
-                style={{outline: "1px solid #db77a6"}}
+                style={{ outline: "1px solid #db77a6" }}
               />
               <Button
                 onClick={handleSend}

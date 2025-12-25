@@ -198,7 +198,7 @@ export function SearchPage() {
   const renderSongList = (songs: Song[]) => {
     return (
       // Ana Container: HomePage ile aynı stiller (bg-gray-900/30, border, divide-y)
-      <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
+      <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50" style={{ borderRadius: '10px' }}>
         {songs.map((song, index) => {
           const isCurrentSong = currentSong?.id === song.id;
 
@@ -301,11 +301,11 @@ export function SearchPage() {
         )}
 
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="bg-gray-900 border-gray-800">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="songs">Songs</TabsTrigger>
-            <TabsTrigger value="playlists">Playlists</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsList className="bg-transparent" style={{ border: "1px solid #DB77A6" }}>
+            <TabsTrigger value="all" className="text-white cursor-pointer">All</TabsTrigger>
+            <TabsTrigger value="songs" className="text-white cursor-pointer">Songs</TabsTrigger>
+            <TabsTrigger value="playlists" className="text-white cursor-pointer">Playlists</TabsTrigger>
+            <TabsTrigger value="users" className="text-white cursor-pointer">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-6 space-y-8">

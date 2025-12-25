@@ -18,6 +18,8 @@ export function MusicPlayer() {
     seekTo,
     volume,      // ✅ add
     setVolume,   // ✅ add
+    queue,       // ✅ add queue
+    currentIndex, // ✅ add currentIndex
   } = usePlayer();
 
   
@@ -47,9 +49,14 @@ export function MusicPlayer() {
     seekTo(newTime);
   };
 
+  // Check if next/previous buttons should be disabled
+  const hasQueue = queue.length > 0;
+  const hasNext = hasQueue && currentIndex + 1 < queue.length;
+  const hasPrevious = hasQueue && currentIndex > 0;
+
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 px-4 py-3 z-50">
+    <div className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-pink px-4 py-3 z-50">
       <div className="max-w-screen-2xl mx-auto flex items-center justify-between gap-4">
         {/* Song Info */}
         <div className="flex items-center gap-3 min-w-[200px] flex-1">
@@ -59,14 +66,19 @@ export function MusicPlayer() {
             className="w-14 h-14 rounded object-cover shadow-lg"
           />
           <div className="min-w-0">
-            <div className="text-white truncate font-medium">{currentSong.title}</div>
-            <div className="text-gray-400 text-sm truncate">{currentSong.artist}</div>
+            <div 
+              className="text-pink truncate font-medium"
+              style={{ WebkitTextStroke: '0.5px #d95a96' }}
+            >
+              {currentSong.title}
+            </div>
+            <div className="text-pink/70 text-sm truncate">{currentSong.artist}</div>
           </div>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setIsLiked(!isLiked)}
-            className="text-gray-400 hover:text-white ml-2"
+            className="text-pink/70 hover:text-pink ml-2"
           >
             <Heart className={`w-5 h-5 ${isLiked ? 'fill-pink text-pink' : ''}`} />
           </Button>
@@ -79,7 +91,8 @@ export function MusicPlayer() {
               variant="ghost"
               size="sm"
               onClick={playPrevious}
-              className="text-gray-400 hover:text-white"
+              disabled={!hasPrevious}
+              className="text-pink/70 hover:text-pink disabled:text-gray-600 disabled:hover:text-gray-600 disabled:cursor-not-allowed cursor-pointer"
             >
               <SkipBack className="w-5 h-5" />
             </Button>
@@ -88,7 +101,7 @@ export function MusicPlayer() {
             <Button
               onClick={togglePlay} // <-- Context'teki fonksiyonu çağırıyoruz
               size="sm"
-              className="bg-white text-black hover:bg-gray-200 rounded-full w-10 h-10 p-0 transition-transform hover:scale-105"
+              className="bg-pink text-black hover:bg-dark-pink rounded-full w-10 h-10 p-0 transition-transform hover:scale-105 cursor-pointer"
             >
               {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
             </Button>
@@ -97,7 +110,8 @@ export function MusicPlayer() {
               variant="ghost"
               size="sm"
               onClick={playNext}
-              className="text-gray-400 hover:text-white"
+              disabled={!hasNext}
+              className="text-pink/70 hover:text-pink disabled:text-gray-600 disabled:hover:text-gray-600 disabled:cursor-not-allowed cursor-pointer"
             >
               <SkipForward className="w-5 h-5" />
             </Button>
@@ -105,7 +119,7 @@ export function MusicPlayer() {
           </div>
           
           <div className="flex items-center gap-2 w-full">
-            <span className="text-xs text-gray-400 w-10 text-right">
+            <span className="text-xs text-pink/70 w-10 text-right">
               {formatTime(Math.floor(currentTime))}
             </span>
             <Slider
@@ -117,7 +131,7 @@ export function MusicPlayer() {
             />
 
 
-            <span className="text-xs text-gray-400 w-10">
+            <span className="text-xs text-pink/70 w-10">
               {formatTime(Math.floor(duration))}
             </span>
           </div>
@@ -125,7 +139,7 @@ export function MusicPlayer() {
 
         {/* Volume Control */}
         <div className="flex items-center gap-2 min-w-[200px] flex-1 justify-end">
-          <Volume2 className="w-5 h-5 text-gray-400" />
+          <Volume2 className="w-5 h-5 text-pink/70" />
             <Slider
               value={[volume * 100]}              // convert 0-1 to 0-100
               onValueChange={(value) => setVolume(value[0] / 100)} // convert 0-100 to 0-1

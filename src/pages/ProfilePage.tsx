@@ -7,7 +7,7 @@ import { Textarea } from "../components/ui/textarea";
 import { PlaylistCard } from "../components/PlaylistCard";
 import { AccountSettings } from "../components/AccountSettings";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
-import { Edit2, Check, X, Search, Upload } from "lucide-react"; 
+import { Edit2, Check, X, Search, Upload } from "lucide-react";
 import {
   Tabs,
   TabsContent,
@@ -26,19 +26,20 @@ import { userService } from "../services/userService";
 import { useAuth } from "../contexts/AuthContext";
 
 //profil fotoğrafları buraya kaydolup buradan çekilecek
-const CLOUD_NAME = "ddknfnvis"; 
+const CLOUD_NAME = "ddknfnvis";
 const UPLOAD_PRESET = "soundpuff_preset";
 
 export function ProfilePage() {
   const { username } = useParams<{ username?: string }>();
   const navigate = useNavigate();
   const { user: currentUser, updateUser } = useAuth();
-  
+
+  const tabsRef = useRef<HTMLDivElement>(null);
   // --- TEMEL STATE'LER ---
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // --- EDİT STATE'LERİ ---
   const [isEditing, setIsEditing] = useState(false);
   const [editBio, setEditBio] = useState("");
@@ -52,16 +53,19 @@ export function ProfilePage() {
   // --- TABS İÇİN STATE'LER ---
   const [followersList, setFollowersList] = useState<User[]>([]);
   const [followingList, setFollowingList] = useState<User[]>([]);
-  const [followersSearch, setFollowersSearch] = useState('');
-  const [followingSearch, setFollowingSearch] = useState('');
+  const [followersSearch, setFollowersSearch] = useState("");
+  const [followingSearch, setFollowingSearch] = useState("");
 
   // --- MODAL STATE'LERİ ---
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogType, setDialogType] = useState<"followers" | "following">("followers");
+  const [dialogType, setDialogType] = useState<"followers" | "following">(
+    "followers"
+  );
   const [dialogUsers, setDialogUsers] = useState<User[]>([]);
   const [isDialogLoading, setIsDialogLoading] = useState(false);
 
-  const isOwnProfile = !username || (currentUser && username === currentUser.username);
+  const isOwnProfile =
+    !username || (currentUser && username === currentUser.username);
 
   const [isFollowHovered, setIsFollowHovered] = useState(false);
   const [isUnfollowHovered, setIsUnfollowHovered] = useState(false);
@@ -84,14 +88,13 @@ export function ProfilePage() {
         setPlaylists(allPlaylists.filter((p) => p.userId === fetchedUser.id));
 
         if (targetUsername === currentUser.username) {
-            const [followersData, followingData] = await Promise.all([
-                userService.getUserFollowers(targetUsername),
-                userService.getUserFollowing(targetUsername)
-            ]);
-            setFollowersList(followersData);
-            setFollowingList(followingData);
+          const [followersData, followingData] = await Promise.all([
+            userService.getUserFollowers(targetUsername),
+            userService.getUserFollowing(targetUsername),
+          ]);
+          setFollowersList(followersData);
+          setFollowingList(followingData);
         }
-
       } catch (error) {
         console.error("Failed to fetch profile data:", error);
       } finally {
@@ -124,7 +127,7 @@ export function ProfilePage() {
     }
 
     // Yükleniyor efekti için loading state'i açabilirsin istersen
-    // setIsUploading(true); 
+    // setIsUploading(true);
 
     // 2. Form verisi oluşturma
     const formData = new FormData();
@@ -149,7 +152,6 @@ export function ProfilePage() {
       } else {
         throw new Error("Resim yüklenemedi");
       }
-
     } catch (error) {
       console.error("Upload hatası:", error);
       alert("Resim yüklenirken bir hata oluştu.");
@@ -157,7 +159,6 @@ export function ProfilePage() {
       // setIsUploading(false);
     }
   };
-
 
   // Gizli input'a tıklatmayı tetikleyen yardımcı fonksiyon
   const triggerFileInput = () => {
@@ -171,9 +172,10 @@ export function ProfilePage() {
     setDialogUsers([]);
     setIsDialogLoading(true);
     try {
-      const users = type === "followers" 
-        ? await userService.getUserFollowers(profileUser.username)
-        : await userService.getUserFollowing(profileUser.username);
+      const users =
+        type === "followers"
+          ? await userService.getUserFollowers(profileUser.username)
+          : await userService.getUserFollowing(profileUser.username);
       setDialogUsers(users);
     } catch (error) {
       console.error(`Failed to fetch ${type}:`, error);
@@ -183,8 +185,8 @@ export function ProfilePage() {
   };
 
   const handleUserClick = (targetUserId: string, targetUsername: string) => {
-     setIsDialogOpen(false);
-     navigate(`/app/user/${targetUsername}`);
+    setIsDialogOpen(false);
+    navigate(`/app/user/${targetUsername}`);
   };
 
   const handleSaveProfile = async () => {
@@ -192,10 +194,12 @@ export function ProfilePage() {
     try {
       await userService.updateCurrentUser({
         bio: editBio,
-        avatar_url: editAvatar
+        avatar_url: editAvatar,
       });
       updateUser({ ...currentUser, bio: editBio, avatar: editAvatar });
-      setProfileUser(prev => prev ? ({ ...prev, bio: editBio, avatar: editAvatar }) : null);
+      setProfileUser((prev) =>
+        prev ? { ...prev, bio: editBio, avatar: editAvatar } : null
+      );
       setIsEditing(false);
     } catch (error) {
       console.error("Profil güncellenemedi:", error);
@@ -204,8 +208,8 @@ export function ProfilePage() {
 
   const handleCancelEdit = () => {
     if (profileUser) {
-        setEditBio(profileUser.bio);
-        setEditAvatar(profileUser.avatar);
+      setEditBio(profileUser.bio);
+      setEditAvatar(profileUser.avatar);
     }
     setIsEditing(false);
   };
@@ -216,36 +220,36 @@ export function ProfilePage() {
     const isCurrentlyFollowing = currentUser.following.includes(userId);
 
     const updatedMyFollowing = isCurrentlyFollowing
-        ? currentUser.following.filter(id => id !== userId)
-        : [...currentUser.following, userId];
+      ? currentUser.following.filter((id) => id !== userId)
+      : [...currentUser.following, userId];
 
     updateUser({ ...currentUser, following: updatedMyFollowing });
 
     if (isOwnProfile) {
-        const updatedProfileFollowingIds = isCurrentlyFollowing
-            ? profileUser.following.filter(id => id !== userId)
-            : [...profileUser.following, userId];
-        
-        setProfileUser({
-            ...profileUser,
-            following: updatedProfileFollowingIds
-        });
+      const updatedProfileFollowingIds = isCurrentlyFollowing
+        ? profileUser.following.filter((id) => id !== userId)
+        : [...profileUser.following, userId];
 
-        if (isCurrentlyFollowing) {
-            setFollowingList(prev => prev.filter(u => u.id !== userId));
-        } else {
-            const userToAdd = followersList.find(u => u.id === userId);
-            if (userToAdd) {
-                setFollowingList(prev => [...prev, userToAdd]);
-            }
+      setProfileUser({
+        ...profileUser,
+        following: updatedProfileFollowingIds,
+      });
+
+      if (isCurrentlyFollowing) {
+        setFollowingList((prev) => prev.filter((u) => u.id !== userId));
+      } else {
+        const userToAdd = followersList.find((u) => u.id === userId);
+        if (userToAdd) {
+          setFollowingList((prev) => [...prev, userToAdd]);
         }
+      }
     } else {
-        if (profileUser.id === userId) {
-            const updatedProfileFollowers = isCurrentlyFollowing
-                ? profileUser.followers.filter(id => id !== currentUser.id)
-                : [...profileUser.followers, currentUser.id];
-            setProfileUser({ ...profileUser, followers: updatedProfileFollowers });
-        }
+      if (profileUser.id === userId) {
+        const updatedProfileFollowers = isCurrentlyFollowing
+          ? profileUser.followers.filter((id) => id !== currentUser.id)
+          : [...profileUser.followers, currentUser.id];
+        setProfileUser({ ...profileUser, followers: updatedProfileFollowers });
+      }
     }
 
     try {
@@ -254,12 +258,13 @@ export function ProfilePage() {
       } else {
         await userService.followUser(targetUsername);
       }
-      
-      if (isOwnProfile && !isCurrentlyFollowing) {
-          const newFollowing = await userService.getUserFollowing(currentUser.username);
-          setFollowingList(newFollowing);
-      }
 
+      if (isOwnProfile && !isCurrentlyFollowing) {
+        const newFollowing = await userService.getUserFollowing(
+          currentUser.username
+        );
+        setFollowingList(newFollowing);
+      }
     } catch (error) {
       console.error("Takip işlemi başarısız:", error);
       updateUser({ ...currentUser, following: currentUser.following });
@@ -315,7 +320,6 @@ export function ProfilePage() {
     }
   };
 
-
   if (isLoading || !currentUser || !profileUser) {
     return (
       <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
@@ -327,30 +331,30 @@ export function ProfilePage() {
   const userPlaylists = playlists;
   const isFollowing = currentUser.following?.includes(profileUser.id);
   const handleDragOver = (e: React.DragEvent) => {
-  e.preventDefault();
-  if (!isEditing) return;
-  setIsDragging(true);
-};
+    e.preventDefault();
+    if (!isEditing) return;
+    setIsDragging(true);
+  };
 
-const handleDragLeave = () => {
-  setIsDragging(false);
-};
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
 
-const handleDrop = (e: React.DragEvent) => {
-  e.preventDefault();
-  setIsDragging(false);
-  if (!isEditing) return;
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (!isEditing) return;
 
-  const file = e.dataTransfer.files?.[0];
-  if (file) {
-    handleFile(file);
-  }
-};
-
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFile(file);
+    }
+  };
 
   return (
-    <div className="flex-1 text-white overflow-y-auto pb-32"
-    style={{
+    <div
+      className="flex-1 text-white overflow-y-auto pb-32"
+      style={{
         background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
@@ -358,11 +362,11 @@ const handleDrop = (e: React.DragEvent) => {
           radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           black
         `,
-      }}>
+      }}
+    >
       <div className="bg-gradient-to-b from-pink to-transparent p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-end gap-6">
-            
             {/* --- AVATAR GÖRÜNTÜLEME --- */}
             <div
               className={`relative group ${
@@ -374,72 +378,88 @@ const handleDrop = (e: React.DragEvent) => {
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
             >
-
               <img
-                src={isEditing ? (editAvatar || profileUser.avatar) : profileUser.avatar}
+                src={
+                  isEditing
+                    ? editAvatar || profileUser.avatar
+                    : profileUser.avatar
+                }
                 alt={profileUser.username}
                 // Edit modundaysa, resme tıklanınca dosya seçici açılır
                 onClick={() => isEditing && triggerFileInput()}
                 className={`w-48 h-48 rounded-full object-cover shadow-2xl bg-gray-800 ${
-                  isEditing ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''
+                  isEditing
+                    ? "cursor-pointer hover:opacity-90 transition-opacity"
+                    : ""
                 }`}
               />
-              
+
               {/* Overlay: Resmin üzerine gelince "Upload" ikonu çıkar */}
               {isEditing && (
                 <div
                   className={`absolute inset-0 rounded-full flex flex-col items-center justify-center text-white transition-opacity ${
-                    isDragging ? "opacity-100 bg-black/60" : "opacity-0 group-hover:opacity-100 bg-black/40"
+                    isDragging
+                      ? "opacity-100 bg-black/60"
+                      : "opacity-0 group-hover:opacity-100 bg-black/40"
                   }`}
                   onClick={triggerFileInput}
-                >
-                </div>
+                ></div>
               )}
-
             </div>
 
             <div className="flex-1 pb-4">
-              <h4 className="text-sm uppercase mb-2"
-              style={{
-                color: "#5b0425"
-              }}>Profile</h4>
-              <h1 className="mb-2"
-              style={{
-                WebkitTextStroke: "0.6px #5b0425"
-              }}>{profileUser.username}</h1>
-              
+              <h4
+                className="text-sm uppercase mb-2"
+                style={{
+                  color: "#5b0425",
+                }}
+              >
+                Profile
+              </h4>
+              <h1
+                className="mb-2"
+                style={{
+                  WebkitTextStroke: "0.6px #5b0425",
+                }}
+              >
+                {profileUser.username}
+              </h1>
+
               {!isEditing ? (
                 <p className="text-gray-300 mb-4">{profileUser.bio}</p>
               ) : (
                 <div className="space-y-4 mb-4 max-w-lg">
-                  
                   {/* --- INSTAGRAM TARZI DEĞİŞTİRME BUTONU --- */}
                   <div className="flex flex-col items-start">
                     {/* Bu yazıya tıklanınca da dosya seçici açılır */}
-          <button 
-            type="button"
-            onClick={triggerFileInput}
-            className="text-pink font-bold text-sm hover:text-[#5b0426] transition-colors cursor-pointer"
-          >
-                        Change Profile Photo
+                    <button
+                      type="button"
+                      onClick={triggerFileInput}
+                      className="text-pink font-bold text-sm hover:text-[#5b0426] transition-colors cursor-pointer"
+                    >
+                      Change Profile Photo
                     </button>
-                    
+
                     {/* GİZLİ INPUT (Tüm tıklamalar burayı tetikler) */}
-                    <input 
-                        type="file" 
-                        ref={fileInputRef} 
-                        className="hidden" 
-                        accept="image/*"
-                        onChange={handleFileInput}
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleFileInput}
                     />
                   </div>
                   {/* ----------------------------------------- */}
 
                   <div className="space-y-3">
-                    <label className="text-sm text-bold font-medium ml-1 uppercase"
-                    style={{
-                      color: "#5b0425"
-                    }}>Bio</label>
+                    <label
+                      className="text-sm text-bold font-medium ml-1 uppercase"
+                      style={{
+                        color: "#5b0425",
+                      }}
+                    >
+                      Bio
+                    </label>
                     <Textarea
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
@@ -448,37 +468,41 @@ const handleDrop = (e: React.DragEvent) => {
                       style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-
                 </div>
               )}
-              
+
               <div className="flex items-center gap-6 text-sm">
                 <span>{userPlaylists.length} playlists</span>
-                
-                {isOwnProfile ? (
-                    <>
-                        <span>{profileUser.followers.length} followers</span>
-                        <span>{profileUser.following.length} following</span>
-                    </>
-                ) : (
-                    <>
-                        <button 
-                        onClick={() => handleOpenListModal("followers")}
-                        className="hover:text-[#5b0426] hover:underline transition-colors focus:outline-none"
-                        >
-                        <span className="font-bold">{profileUser.followers.length}</span> followers
-                        </button>
 
-                        <button 
-                        onClick={() => handleOpenListModal("following")}
-                        className="hover:text-[#5b0426] hover:underline transition-colors focus:outline-none"
-                        >
-                        <span className="font-bold">{profileUser.following.length}</span> following
-                        </button>
-                    </>
+                {isOwnProfile ? (
+                  <>
+                    <span>{profileUser.followers.length} followers</span>
+                    <span>{profileUser.following.length} following</span>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleOpenListModal("followers")}
+                      className="hover:text-[#5b0426] hover:underline transition-colors focus:outline-none"
+                    >
+                      <span className="font-bold">
+                        {profileUser.followers.length}
+                      </span>{" "}
+                      followers
+                    </button>
+
+                    <button
+                      onClick={() => handleOpenListModal("following")}
+                      className="hover:text-[#5b0426] hover:underline transition-colors focus:outline-none"
+                    >
+                      <span className="font-bold">
+                        {profileUser.following.length}
+                      </span>{" "}
+                      following
+                    </button>
+                  </>
                 )}
               </div>
-
             </div>
           </div>
 
@@ -498,10 +522,12 @@ const handleDrop = (e: React.DragEvent) => {
                     onMouseEnter={() => setIsCancelHovered(true)}
                     onMouseLeave={() => setIsCancelHovered(false)}
                     style={{
-                      backgroundColor: isCancelHovered ? '#DB77A6' : 'transparent',
-                      color: isCancelHovered ? 'black' : '#DB77A6',
-                      borderColor: '#D95A96',
-                      borderWidth: '1px'
+                      backgroundColor: isCancelHovered
+                        ? "#DB77A6"
+                        : "transparent",
+                      color: isCancelHovered ? "black" : "#DB77A6",
+                      borderColor: "#D95A96",
+                      borderWidth: "1px",
                     }}
                   >
                     <X className="w-4 h-4 mr-2" />
@@ -517,33 +543,37 @@ const handleDrop = (e: React.DragEvent) => {
                   Edit Profile
                 </Button>
               )
+            ) : isFollowing ? (
+              <Button
+                onClick={() =>
+                  handleFollow(profileUser.id, profileUser.username)
+                }
+                onMouseEnter={() => setIsUnfollowHovered(true)}
+                onMouseLeave={() => setIsUnfollowHovered(false)}
+                style={{
+                  backgroundColor: isUnfollowHovered
+                    ? "#DB77A6"
+                    : "transparent",
+                  color: isUnfollowHovered ? "black" : "#DB77A6",
+                  borderColor: "#D95A96",
+                  borderWidth: "1px",
+                }}
+              >
+                Unfollow
+              </Button>
             ) : (
-              isFollowing ? (
-                <Button
-                  onClick={() => handleFollow(profileUser.id, profileUser.username)}
-                  onMouseEnter={() => setIsUnfollowHovered(true)}
-                  onMouseLeave={() => setIsUnfollowHovered(false)}
-                  style={{
-                    backgroundColor: isUnfollowHovered ? '#DB77A6' : 'transparent',
-                    color: isUnfollowHovered ? 'black' : '#DB77A6',
-                    borderColor: '#D95A96',
-                    borderWidth: '1px'
-                  }}
-                >
-                  Unfollow
-                </Button>
-              ) : (
-                <Button
-                  onClick={() => handleFollow(profileUser.id, profileUser.username)}
-                  onMouseEnter={() => setIsFollowHovered(true)}
-                  onMouseLeave={() => setIsFollowHovered(false)}
-                  style={{
-                    backgroundColor: isFollowHovered ? '#D95A96' : '#DB77A6',
-              }}
-                >
-                  Follow
-                </Button>
-              )
+              <Button
+                onClick={() =>
+                  handleFollow(profileUser.id, profileUser.username)
+                }
+                onMouseEnter={() => setIsFollowHovered(true)}
+                onMouseLeave={() => setIsFollowHovered(false)}
+                style={{
+                  backgroundColor: isFollowHovered ? "#D95A96" : "#DB77A6",
+                }}
+              >
+                Follow
+              </Button>
             )}
           </div>
         </div>
@@ -552,29 +582,48 @@ const handleDrop = (e: React.DragEvent) => {
       <div className="p-8">
         <div className="max-w-7xl mx-auto">
           {isOwnProfile ? (
-            <Tabs defaultValue="playlists" className="w-full">
-              <TabsList className="mb-6 bg-transparent border-b border-gray-800 rounded-none w-full justify-start h-auto p-0">
-                <TabsTrigger 
+            <Tabs ref={tabsRef} defaultValue="playlists" className="w-full">
+              <TabsList
+                className="mb-6 bg-transparent border-gray-800 rounded-none w-full justify-start h-auto p-0"
+                style={{ borderBottom: "1px solid #DB77A6" }}
+              >
+                <TabsTrigger
                   value="playlists"
-                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg cursor-pointer data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  style={{
+                    color: "#DB77A6",
+                    WebkitTextStroke: "0.5px #DB77A6",
+                  }}
                 >
                   Playlists
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="followers"
-                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg cursor-pointer data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  style={{
+                    color: "#DB77A6",
+                    WebkitTextStroke: "0.5px #DB77A6",
+                  }}
                 >
                   Followers
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="following"
-                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg cursor-pointer data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  style={{
+                    color: "#DB77A6",
+                    WebkitTextStroke: "0.5px #DB77A6",
+                  }}
                 >
                   Following
                 </TabsTrigger>
-                <TabsTrigger 
+                <TabsTrigger
                   value="settings"
-                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-pink/5 px-6 py-3"
+                  className="rounded-lg cursor-pointer data-[state=active]:border-pink data-[state=active]:bg-pink/5 px-6 py-3"
+                  style={{
+                    color: "#DB77A6",
+                    WebkitTextStroke: "0.5px #DB77A6",
+                  }}
                 >
                   Settings
                 </TabsTrigger>
@@ -614,7 +663,9 @@ const handleDrop = (e: React.DragEvent) => {
                   {filteredFollowers.length > 0 ? (
                     <div className="space-y-1">
                       {filteredFollowers.map((follower) => {
-                        const isFollowingBack = currentUser.following.includes(follower.id);
+                        const isFollowingBack = currentUser.following.includes(
+                          follower.id
+                        );
                         return (
                           <div
                             key={follower.id}
@@ -622,7 +673,9 @@ const handleDrop = (e: React.DragEvent) => {
                           >
                             <div
                               className="flex items-center gap-3 flex-1 cursor-pointer"
-                              onClick={() => handleUserClick(follower.id, follower.username)}
+                              onClick={() =>
+                                handleUserClick(follower.id, follower.username)
+                              }
                             >
                               <img
                                 src={follower.avatar}
@@ -634,21 +687,27 @@ const handleDrop = (e: React.DragEvent) => {
                                   {follower.username}
                                 </p>
                                 {follower.bio && (
-                                  <p className="text-xs text-gray-400 truncate max-w-[200px]">{follower.bio}</p>
+                                  <p className="text-xs text-gray-400 truncate max-w-[200px]">
+                                    {follower.bio}
+                                  </p>
                                 )}
                               </div>
                             </div>
                             <Button
-                                onClick={() => handleFollow(follower.id, follower.username)}
-                                variant={isFollowingBack ? "secondary" : "default"}
-                                size="sm"
-                                className={`ml-4 w-24 h-8 text-xs font-semibold justify-center ${
-                                    isFollowingBack 
-                                    ? "bg-gray-800 text-white hover:bg-gray-700" 
-                                    : "bg-pink hover:bg-[#5b0426] text-black"
-                                }`}
+                              onClick={() =>
+                                handleFollow(follower.id, follower.username)
+                              }
+                              variant={
+                                isFollowingBack ? "secondary" : "default"
+                              }
+                              size="sm"
+                              className={`ml-4 w-24 h-8 text-xs font-semibold justify-center ${
+                                isFollowingBack
+                                  ? "bg-gray-800 text-white hover:bg-gray-700"
+                                  : "bg-pink hover:bg-[#5b0426] text-black"
+                              }`}
                             >
-                                {isFollowingBack ? "Following" : "Follow"}
+                              {isFollowingBack ? "Following" : "Follow"}
                             </Button>
                           </div>
                         );
@@ -657,7 +716,9 @@ const handleDrop = (e: React.DragEvent) => {
                   ) : (
                     <div className="text-center py-12">
                       <p className="text-gray-400">
-                        {followersSearch ? 'No followers found' : 'No followers yet'}
+                        {followersSearch
+                          ? "No followers found"
+                          : "No followers yet"}
                       </p>
                     </div>
                   )}
@@ -685,7 +746,12 @@ const handleDrop = (e: React.DragEvent) => {
                         >
                           <div
                             className="flex items-center gap-3 flex-1 cursor-pointer"
-                            onClick={() => handleUserClick(followedUser.id, followedUser.username)}
+                            onClick={() =>
+                              handleUserClick(
+                                followedUser.id,
+                                followedUser.username
+                              )
+                            }
                           >
                             <img
                               src={followedUser.avatar}
@@ -697,14 +763,22 @@ const handleDrop = (e: React.DragEvent) => {
                                 {followedUser.username}
                               </p>
                               {followedUser.bio && (
-                                <p className="text-xs text-gray-400 truncate max-w-[200px]">{followedUser.bio}</p>
+                                <p className="text-xs text-gray-400 truncate max-w-[200px]">
+                                  {followedUser.bio}
+                                </p>
                               )}
                             </div>
                           </div>
                           <Button
-                            onClick={() => handleFollow(followedUser.id, followedUser.username)}
+                            onClick={() =>
+                              handleFollow(
+                                followedUser.id,
+                                followedUser.username
+                              )
+                            }
                             variant="secondary"
-                            size="sm"                            className="ml-4 w-24 h-8 text-xs font-semibold justify-center bg-gray-800 text-white hover:bg-gray-700"
+                            size="sm"
+                            className="ml-4 w-24 h-8 text-xs font-semibold justify-center bg-gray-800 text-white hover:bg-gray-700"
                           >
                             Following
                           </Button>
@@ -714,7 +788,9 @@ const handleDrop = (e: React.DragEvent) => {
                   ) : (
                     <div className="text-center py-12">
                       <p className="text-gray-400">
-                        {followingSearch ? 'No users found' : 'Not following anyone yet'}
+                        {followingSearch
+                          ? "No users found"
+                          : "Not following anyone yet"}
                       </p>
                     </div>
                   )}
@@ -727,10 +803,14 @@ const handleDrop = (e: React.DragEvent) => {
             </Tabs>
           ) : (
             <>
-              <h2 className="mb-6"
-              style={{
-                WebkitTextStroke: "0.5px #DB77A6"
-              }}>Playlists</h2>
+              <h2
+                className="mb-6"
+                style={{
+                  WebkitTextStroke: "0.5px #DB77A6",
+                }}
+              >
+                Playlists
+              </h2>
               {userPlaylists.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {userPlaylists.map((playlist) => (
@@ -760,7 +840,7 @@ const handleDrop = (e: React.DragEvent) => {
                 {dialogType}
               </DialogTitle>
               <DialogDescription className="text-gray-400">
-                 Viewing list of {dialogType}.
+                Viewing list of {dialogType}.
               </DialogDescription>
             </DialogHeader>
             <div className="mt-4 space-y-4">
@@ -770,21 +850,23 @@ const handleDrop = (e: React.DragEvent) => {
                 </div>
               ) : dialogUsers.length > 0 ? (
                 dialogUsers.map((u) => (
-                  <div 
-                    key={u.id} 
+                  <div
+                    key={u.id}
                     className="flex items-center justify-between p-2 hover:bg-gray-800 rounded-lg transition-colors cursor-pointer"
                     onClick={() => handleUserClick(u.id, u.username)}
                   >
                     <div className="flex items-center gap-3">
-                      <img 
-                        src={u.avatar} 
-                        alt={u.username} 
+                      <img
+                        src={u.avatar}
+                        alt={u.username}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                       <div>
                         <p className="font-medium text-white">{u.username}</p>
                         {u.bio && (
-                          <p className="text-xs text-gray-400 line-clamp-1">{u.bio}</p>
+                          <p className="text-xs text-gray-400 line-clamp-1">
+                            {u.bio}
+                          </p>
                         )}
                       </div>
                     </div>
@@ -799,7 +881,6 @@ const handleDrop = (e: React.DragEvent) => {
           </DialogContent>
         </Dialog>
       )}
-
     </div>
   );
 }

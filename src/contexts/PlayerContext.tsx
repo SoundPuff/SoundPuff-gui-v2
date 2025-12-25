@@ -23,6 +23,8 @@ interface PlayerContextType {
   duration: number;
   volume: number;               // ✅ add
   setVolume: (vol: number) => void; // ✅ add
+  queue: Song[];                // ✅ expose queue
+  currentIndex: number;          // ✅ expose currentIndex
 
   playSong: (song: Song, options?: PlayOptions) => void;
   playNext: () => void;
@@ -232,6 +234,8 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
         duration,
         volume,         // ✅ expose
         setVolume,      // ✅ expose
+        queue,          // ✅ expose queue
+        currentIndex,   // ✅ expose currentIndex
         playSong,
         playNext,
         playPrevious,

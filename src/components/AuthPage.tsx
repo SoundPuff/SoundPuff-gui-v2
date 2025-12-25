@@ -1,32 +1,38 @@
-import React from 'react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Music, AlertCircle } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Alert, AlertDescription } from './ui/alert';
-import { useAuth } from '../contexts/AuthContext';
-import logoPng from '../data/soundpuff_logo.png';
-import { authService } from '../services/authService';
+import React from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { Music, AlertCircle } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
+import { Alert, AlertDescription } from "./ui/alert";
+import { useAuth } from "../contexts/AuthContext";
+import logoPng from "../data/soundpuff_logo.png";
+import { authService } from "../services/authService";
 
 export function AuthPage() {
   const navigate = useNavigate();
   const { login, register, requestResetPassword } = useAuth();
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-  const [signupUsername, setSignupUsername] = useState('');
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPassword, setSignupPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
-  const [resetEmail, setResetEmail] = useState('');
+  const [resetEmail, setResetEmail] = useState("");
   const [resetSuccess, setResetSuccess] = useState(false);
   const [isLogInHovered, setIsLogInHovered] = useState(false);
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,9 +40,9 @@ export function AuthPage() {
     setLoading(true);
     try {
       await login(loginEmail, loginPassword);
-      navigate('/app/home');
+      navigate("/app/home");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : "Login failed");
     } finally {
       setLoading(false);
     }
@@ -48,15 +54,14 @@ export function AuthPage() {
     setLoading(true);
     try {
       await register(signupUsername, signupEmail, signupPassword);
-      navigate('/app/home');
+      navigate("/app/home");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Signup failed');
+      setError(err instanceof Error ? err.message : "Signup failed");
     } finally {
       setLoading(false);
     }
   };
 
-  
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -66,7 +71,7 @@ export function AuthPage() {
       await requestResetPassword(resetEmail);
       setResetSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Reset failed');
+      setError(err instanceof Error ? err.message : "Reset failed");
     } finally {
       setLoading(false);
     }
@@ -88,20 +93,25 @@ export function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img src={logoPng} alt="SoundPuff Logo"/>
+            <img src={logoPng} alt="SoundPuff Logo" />
           </div>
-          <h3 className="text-white"
-            style={{ 
-                  WebkitTextStroke: '0.5px #d95a96'
-                }}>Your social music platform</h3>
-          <Button
-            onClick={() => navigate('/')}
-            variant="ghost"
+          <h3
+            className="text-white"
+            style={{
+              WebkitTextStroke: "0.5px #d95a96",
+            }}
           >
-            <p className='text-white'
-              style={{ 
-                    WebkitTextStroke: '0.5px #d95a96'
-                  }}>← Browse as guest</p>
+            Your social music platform
+          </h3>
+          <Button onClick={() => navigate("/")} variant="ghost">
+            <p
+              className="text-white"
+              style={{
+                WebkitTextStroke: "0.5px #d95a96",
+              }}
+            >
+              ← Browse as guest
+            </p>
           </Button>
         </div>
 
@@ -114,57 +124,67 @@ export function AuthPage() {
 
         <Tabs
           value={activeTab}
-          onValueChange={(value) => setActiveTab(value as 'login' | 'signup')}
+          onValueChange={(value) => setActiveTab(value as "login" | "signup")}
           className="w-full"
         >
-
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger
-            value="login"
-            className="
-              data-[state=active]:bg-[#DB77A6]
-              data-[state=inactive]:bg-gray-800
-              data-[state=active]:text-black
-              data-[state=inactive]:text-white
-              transition-colors
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger
+              value="login"
+              className="
+              cursor-pointer
             "
-          >
-            Login
-          </TabsTrigger>
+            style={{
+              WebkitTextStroke: "white",
+              backgroundColor: "black",
+              borderRadius: "10px 0 0 10px",
+              border: "1px solid #DB77A6",
+            }}
+            >
+              Login
+            </TabsTrigger>
 
-          <TabsTrigger
-            value="signup"
-            className="
-              data-[state=active]:bg-[#DB77A6]
-              data-[state=inactive]:bg-gray-800
-              data-[state=active]:text-black
-              data-[state=inactive]:text-white
-              transition-colors
+            <TabsTrigger
+              value="signup"
+              className="
+              cursor-pointer
             "
-          >
-            Sign Up
-          </TabsTrigger>
-        </TabsList>
-
+            style={{
+              WebkitTextStroke: "white",
+              backgroundColor: "black",
+              borderRadius: "0 10px 10px 0",
+              border: "1px solid #DB77A6",
+            }}
+            >
+              Sign Up
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="login">
             <Card
               className="bg-gray-900 border-gray-800"
-              style={{ outline: '3px solid #DB77A6' }}
+              style={{ outline: "3px solid #DB77A6" }}
             >
               <CardHeader>
                 <CardTitle className="text-white">
-                  <h4 className='text-white'
-                  style={{
-                        WebkitTextStroke: '0.5px #d95a96'
-                      }}>Welcome back</h4>
+                  <h4
+                    className="text-white"
+                    style={{
+                      WebkitTextStroke: "0.5px #d95a96",
+                    }}
+                  >
+                    Welcome back
+                  </h4>
                 </CardTitle>
                 <CardDescription>
-                  <p className='text-white'
-                  style={{ 
-                        color: '#d95a96', 
-                        WebkitTextStroke: '0.5px #d95a96'
-                      }}>Login to your SoundPuff Account</p>
+                  <p
+                    className="text-white"
+                    style={{
+                      color: "#d95a96",
+                      WebkitTextStroke: "0.5px #d95a96",
+                    }}
+                  >
+                    Login to your SoundPuff Account
+                  </p>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -199,58 +219,64 @@ export function AuthPage() {
                       style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-pink hover:bg-[#5b0426] text-black"
                     onMouseEnter={() => setIsLogInHovered(true)}
                     onMouseLeave={() => setIsLogInHovered(false)}
                     style={{
-                      backgroundColor: isLogInHovered ? '#D95A96' : '#DB77A6',
+                      backgroundColor: isLogInHovered ? "#D95A96" : "#DB77A6",
                     }}
                     disabled={loading}
                   >
-                    {loading ? 'Logging in...' : 'Login'}
+                    {loading ? "Logging in..." : "Login"}
                   </Button>
                 </form>
 
                 {/* Butonu formun DIŞINA aldık ve z-index/cursor ekledik */}
                 <div className="text-center mt-4 relative z-50">
-            <button
-                      type="button"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        console.log("Forgot password clicked"); // Tıklamayı test etmek için
-                        setShowResetDialog(true);
-                      }}
-                      className="text-sm text-green-400 hover:text-[#5b0426] underline cursor-pointer transition-colors"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      console.log("Forgot password clicked"); // Tıklamayı test etmek için
+                      setShowResetDialog(true);
+                    }}
+                    className="text-sm text-green-400 hover:text-[#5b0426] underline cursor-pointer transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          
           <TabsContent value="signup">
             <Card
               className="bg-gray-900 border-gray-800"
-              style={{ outline: '3px solid #DB77A6' }}
+              style={{ outline: "3px solid #DB77A6" }}
             >
               <CardHeader>
                 <CardTitle className="text-white">
-                  <h4 className='text-white'
-                  style={{
-                        WebkitTextStroke: '0.5px #d95a96'
-                      }}>Create Account</h4>
+                  <h4
+                    className="text-white"
+                    style={{
+                      WebkitTextStroke: "0.5px #d95a96",
+                    }}
+                  >
+                    Create Account
+                  </h4>
                 </CardTitle>
                 <CardDescription>
-                  <p className='text-white'
-                  style={{ 
-                        color: '#d95a96', 
-                        WebkitTextStroke: '0.5px #d95a96'
-                      }}>Join the SoundPuff community</p>
+                  <p
+                    className="text-white"
+                    style={{
+                      color: "#d95a96",
+                      WebkitTextStroke: "0.5px #d95a96",
+                    }}
+                  >
+                    Join the SoundPuff community
+                  </p>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -300,12 +326,12 @@ export function AuthPage() {
                       style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-pink hover:bg-dark-pink text-black"
                     disabled={loading}
                   >
-                    {loading ? 'Creating account...' : 'Sign Up'}
+                    {loading ? "Creating account..." : "Sign Up"}
                   </Button>
                 </form>
               </CardContent>
@@ -313,35 +339,33 @@ export function AuthPage() {
           </TabsContent>
         </Tabs>
 
-      
         {showResetDialog && (
-          <div 
+          <div
             className="fixed inset-0 z-[999] flex items-center justify-center p-4"
             style={{
-              position: 'fixed',
+              position: "fixed",
               top: 0,
               left: 0,
               right: 0,
               bottom: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              backdropFilter: 'blur(4px)',
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(0, 0, 0, 0.8)",
+              backdropFilter: "blur(4px)",
             }}
           >
             {/* Modal Kutusu */}
-            <div 
+            <div
               className="relative w-full max-w-md bg-gray-900 border border-gray-800 rounded-lg shadow-2xl p-6"
               style={{
-                position: 'relative',
-                width: '100%',
-                maxWidth: '28rem',
-                margin: '0 auto',
-                transform: 'translateY(0)',
+                position: "relative",
+                width: "100%",
+                maxWidth: "28rem",
+                margin: "0 auto",
+                transform: "translateY(0)",
               }}
             >
-              
               {/* Kapatma Butonu (X) */}
               <button
                 onClick={() => setShowResetDialog(false)}
@@ -352,25 +376,36 @@ export function AuthPage() {
 
               {/* Başlık ve Açıklama */}
               <div className="mb-6 text-center">
-                <h2 className="text-lg font-semibold text-white"
-                style={{ 
-                    WebkitTextStroke: '1px #d95a96'
-                  }}>
-                  Forgot your password?</h2>
-                <h4 className="text-sm text-gray-400 mt-2"
-                style={{ 
-                  color: '#d95a96', 
-                  WebkitTextStroke: '0.5px #5b0425'
-                }}>
-                  Enter your email below and we'll send you a password reset link.
+                <h2
+                  className="text-lg font-semibold text-white"
+                  style={{
+                    WebkitTextStroke: "1px #d95a96",
+                  }}
+                >
+                  Forgot your password?
+                </h2>
+                <h4
+                  className="text-sm text-gray-400 mt-2"
+                  style={{
+                    color: "#d95a96",
+                    WebkitTextStroke: "0.5px #5b0425",
+                  }}
+                >
+                  Enter your email below and we'll send you a password reset
+                  link.
                 </h4>
               </div>
 
               {/* Form */}
-              <form onSubmit={handleResetPassword} className="flex flex-col items-center justify-center">
+              <form
+                onSubmit={handleResetPassword}
+                className="flex flex-col items-center justify-center"
+              >
                 <div className="space-y-4 w-full">
                   <div className="space-y-3">
-                    <Label htmlFor="reset-email" className="text-white">Email</Label>
+                    <Label htmlFor="reset-email" className="text-white">
+                      Email
+                    </Label>
                     <Input
                       id="reset-email"
                       type="email"
@@ -382,13 +417,13 @@ export function AuthPage() {
                       style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-                  
+
                   <Button
                     type="submit"
                     className="w-full bg-pink hover:bg-dark-pink text-black font-medium"
                     disabled={loading}
                   >
-                    {loading ? 'Sending...' : 'Send password reset link'}
+                    {loading ? "Sending..." : "Send password reset link"}
                   </Button>
                 </div>
               </form>
@@ -397,13 +432,14 @@ export function AuthPage() {
               {resetSuccess && (
                 <div className="mt-4 p-3 bg-green-900/30 border border-pink/50 rounded flex items-center gap-2 text-green-400">
                   <AlertCircle className="h-4 w-4" />
-                  <span className="text-sm">Reset link sent to your email!</span>
+                  <span className="text-sm">
+                    Reset link sent to your email!
+                  </span>
                 </div>
               )}
             </div>
           </div>
         )}
-     
       </div>
     </div>
   );
