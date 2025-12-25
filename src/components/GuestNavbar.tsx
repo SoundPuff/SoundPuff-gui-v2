@@ -34,7 +34,7 @@ export function GuestNavbar() {
             </Button>
             <Button
               onClick={() => navigate('/auth')}
-              className="bg-pink text-black hover:bg-pink/90"
+              className="bg-pink text-black hover:bg-dark-pink"
             >
               Sign Up
             </Button>
