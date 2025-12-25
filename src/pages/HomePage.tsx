@@ -23,7 +23,7 @@ export function HomePage() {
   
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  // ✨ VERİ BİRLEŞTİRME (HYDRATION)
+  // VERİ BİRLEŞTİRME (HYDRATION)
   const hydrateList = (list: Playlist[]) => {
     if (!user) return list;
     return list.map(playlist => {
@@ -174,7 +174,16 @@ export function HomePage() {
   }
 
   return (
-    <div className="flex-1 bg-gray-950 text-white overflow-y-auto pb-32">
+    <div className="flex-1 text-white overflow-y-auto pb-32"
+    style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
       
       {/* Category Chips */}
       <div className="sticky top-0 z-20 bg-gray-950 border-b border-gray-800/50 backdrop-blur-sm">
@@ -211,7 +220,7 @@ export function HomePage() {
        {/* HERO BANNER */}
        {heroPlaylist && selectedCategory === 'All' && (
           <div 
-            className="mb-12 relative w-full h-[500px] rounded-2xl overflow-hidden group cursor-pointer border border-gray-800 shadow-2xl" 
+            className="relative w-full h-[500px] rounded-lg overflow-hidden group cursor-pointer border border-gray-800 shadow-2xl" 
             onClick={() => handlePlaylistClick(heroPlaylist.id.toString())}
           >
             <div className="absolute inset-0 w-full h-full">
@@ -273,7 +282,7 @@ export function HomePage() {
                 </div>
 
                 <Button
-                  className="bg-pink hover:bg-[#5b0426] text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
+                  className="bg-pink hover:bg-dark-pink text-black px-10 py-7 rounded-full font-bold text-lg shadow-xl shadow-green-900/40 transition-all hover:scale-105 hover:shadow-pink/20"
                   onClick={(e) => {
                     e.stopPropagation();
                     handlePlaylistClick(heroPlaylist.id.toString());
@@ -289,8 +298,11 @@ export function HomePage() {
         
         {/* FEATURED ARTISTS */}
         {featuredArtists.length > 0 && selectedCategory === 'All' && (
-          <div className="mb-10">
-            <h2 className="mb-5 text-xl font-bold">Featured Artists</h2>
+          <div className="mt-12 space-y-3">
+            <h1 className="mb-5 text-xl font-bold"
+            style={{ 
+              WebkitTextStroke: '0.75px #d95a96'
+            }}>Featured Artists</h1>
             <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4">
               {featuredArtists.map((artist) => (
                 <button
@@ -319,10 +331,13 @@ export function HomePage() {
 
         {/* TRENDING SONGS */}
         {trendingSongs.length > 0 && selectedCategory === 'All' && (
-          <div className="mb-10">
+          <div className="mt-12 space-y-3">
             <div className="flex items-center gap-2 mb-5">
-              <TrendingUp className="w-6 h-6 text-pink" />
-              <h2 className="text-xl font-bold">Trending Songs</h2>
+              <TrendingUp className="w-8 h-8 text-pink" />
+              <h1 className="text-xl font-bold"
+              style={{ 
+                WebkitTextStroke: '0.75px #d95a96'
+              }}>Trending Songs</h1>
             </div>
             <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
               {trendingSongs.map((song, index) => {
@@ -407,8 +422,11 @@ export function HomePage() {
 
         {/* FEED SECTION */}
         {filteredFeedPlaylists.length > 0 && (
-          <div className="mb-10">
-            <h2 className="mb-5 text-xl font-bold">Your Feed</h2>
+          <div className="mt-12 space-y-3">
+            <h1 className="mb-5 text-xl font-bold"
+            style={{ 
+              WebkitTextStroke: '0.75px #d95a96'
+            }}>Your Feed</h1>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {filteredFeedPlaylists.map((playlist) => (
                 <div key={`feed-${playlist.id}`} className="min-w-0">
@@ -424,13 +442,17 @@ export function HomePage() {
         )}
 
         {/* DISCOVER SECTION */}
-        <div>
-          <h2 className="mb-5 text-xl font-bold">
+        <div className="mt-12 space-y-3">
+          <h1 className="mb-5 text-xl font-bold"
+            style={{ 
+              WebkitTextStroke: '0.75px #d95a96'
+            }}>
             {filteredFeedPlaylists.length > 0 ? 'Discover More' : 'Discover Playlists'}
-          </h2>
+          </h1>
           
           {filteredDiscoverPlaylists.length === 0 ? (
-            <div className="bg-gray-900/50 rounded-2xl p-12 text-center border border-gray-800/50">
+            <div className="bg-gray-900/50 rounded-lg p-12 text-center border border-gray-800/50"
+            style={{ outline: "3px solid #DB77A6" }}>
               <p className="text-gray-400 mb-4">
                 No playlists found in this category.
               </p>
