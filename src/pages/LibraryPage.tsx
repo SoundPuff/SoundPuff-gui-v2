@@ -48,42 +48,44 @@ export function LibraryPage() {
 
   const handleLike = async (playlistId: string) => {
     if (!user?.id) return;
-    try {
-      const playlistIdNum = parseInt(playlistId);
-      const playlist = myPlaylists.find((p) => p.id === playlistIdNum);
-      const isLiked = playlist?.likes?.includes(user.id) || false;
 
-      if (isLiked) {
+    const playlistIdNum = Number(playlistId);
+    const playlist = myPlaylists.find(p => p.id === playlistIdNum);
+    if (!playlist) return;
+
+    try {
+      if (playlist.is_liked) {
         await playlistService.unlikePlaylist(playlistIdNum);
-        setMyPlaylists((prev) =>
-          prev.map((p) => {
-            if (p.id === playlistIdNum) {
-              return {
-                ...p,
-                likes: p.likes?.filter((id) => id !== user.id),
-              };
-            }
-            return p;
-          })
+        setMyPlaylists(prev =>
+          prev.map(p =>
+            p.id === playlistIdNum
+              ? {
+                  ...p,
+                  is_liked: false,
+                  likes_count: Math.max(0, p.likes_count - 1),
+                }
+              : p
+          )
         );
       } else {
         await playlistService.likePlaylist(playlistIdNum);
-        setMyPlaylists((prev) =>
-          prev.map((p) => {
-            if (p.id === playlistIdNum) {
-              return {
-                ...p,
-                likes: [...(p.likes || []), user.id],
-              };
-            }
-            return p;
-          })
+        setMyPlaylists(prev =>
+          prev.map(p =>
+            p.id === playlistIdNum
+              ? {
+                  ...p,
+                  is_liked: true,
+                  likes_count: p.likes_count + 1,
+                }
+              : p
+          )
         );
       }
     } catch (error) {
-      console.error('Failed to like/unlike playlist:', error);
+      console.error("Failed to like/unlike playlist:", error);
     }
   };
+
 
   if (!user) return null;
 

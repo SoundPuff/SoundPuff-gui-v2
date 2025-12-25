@@ -41,6 +41,7 @@ export interface Playlist {
   createdAt?: string;
   created_at?: string;
   updated_at?: string | null;
+  cover_image_url?: string | null;
 
   privacy: string;
   coverArt?: string;
@@ -94,10 +95,11 @@ export interface SearchResponse {
 export interface BackendUser {
   id: string;
   username: string;
+  avatar_url?: string | null;
   bio?: string | null;
-  avatar_url: string | null;
   created_at: string;
 }
+
 
 // Backend'den profil güncelleme isteği için (PUT /users/me)
 export interface UserUpdateRequest {
