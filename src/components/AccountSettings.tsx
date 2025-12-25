@@ -9,6 +9,8 @@ export function AccountSettings() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isDeleteHovered, setIsDeleteHovered] = useState(false);
   
   const { logout } = useAuth();
   const navigate = useNavigate();
@@ -36,13 +38,21 @@ export function AccountSettings() {
   };
 
   return (
-    <div className="bg-gray-900 rounded-lg p-6 mt-6 border border-red-900/30">
+    <div className="bg-gray-900 rounded-lg p-6 mt-6 border border-red-900/30"
+    style={{ outline: "3px solid #DB77A6" }}>
       <div className="flex items-start justify-between">
         <div>
-           <h3 className="text-white font-semibold mb-1">Danger Zone</h3>
-           <p className="text-gray-400 text-sm">
+           <h2 className="text-white mb-1"
+           style={{  
+              WebkitTextStroke: '0.75px #5b0425'
+            }}>Danger Zone</h2>
+           <h4 className="text-gray-400 text-sm"
+           style={{ 
+              color: '#d95a96', 
+              WebkitTextStroke: '0.5px #5b0425'
+            }}>
              Permanently remove your Personal Account and all of its contents.
-           </p>
+           </h4>
         </div>
       </div>
       
@@ -54,9 +64,13 @@ export function AccountSettings() {
 
       <div className="mt-6 flex justify-end">
         <Button 
-            variant="destructive" 
-            className="gap-2 bg-red-600 hover:bg-red-700 text-white"
+            className="gap-2 text-white"
             onClick={() => setShowConfirm(true)}
+            onMouseEnter={() => setIsDeleteHovered(true)}
+            onMouseLeave={() => setIsDeleteHovered(false)}
+            style={{
+              backgroundColor: isDeleteHovered ? '#ff0e0e' : '#ff3e3e',
+            }}
         >
             <Trash2 className="w-4 h-4" />
             Delete Account
