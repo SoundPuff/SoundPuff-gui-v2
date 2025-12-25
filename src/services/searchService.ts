@@ -12,7 +12,7 @@ export const searchService = {
 
 
     //End point for searching "all" in one request
-  searchAll: async (query: string): Promise<{ songs: Song[], playlists: Playlist[], users: User[] }> => {
+  searchAll: async (query: string, limit = 10, offset = 0): Promise<{ songs: Song[], playlists: Playlist[], users: User[] }> => {
     if (!query) return { songs: [], playlists: [], users: [] };
 
     try {
@@ -21,8 +21,8 @@ export const searchService = {
         params: { 
           query, 
           type: 'all', 
-          limit: 10, 
-          offset: 0 
+          limit, 
+          offset 
         }
       });
 
@@ -50,6 +50,7 @@ export const searchService = {
         bio: item.user.bio || "",
         followers: [],
         following: [],
+        likedPlaylists: [],
         createdAt: item.user.created_at
       }));
 
@@ -76,6 +77,7 @@ export const searchService = {
           userId: item.playlist.user_id,
           user_id: item.playlist.user_id,
           likes: [],
+          is_liked: item.playlist.is_liked ?? false,
           createdAt: item.playlist.created_at,
           created_at: item.playlist.created_at,
           updated_at: item.playlist.updated_at,
@@ -103,11 +105,11 @@ export const searchService = {
 
 
   // Searching songs
-  searchSongs: async (query: string): Promise<Song[]> => {
+  searchSongs: async (query: string, limit = 50, offset = 0): Promise<Song[]> => {
     if (!query) return [];
     try {
       const response = await api.get<SearchResponse>('/songs/search', {
-        params: { query, limit: 50, offset: 0 }
+        params: { query, limit, offset }
       });
       return response.data.songs.map((item) => ({
         id: item.song.id.toString(),
@@ -127,12 +129,12 @@ export const searchService = {
   },
 
   // Searching Playlists
-  searchPlaylists: async (query: string): Promise<Playlist[]> => {
+  searchPlaylists: async (query: string, limit = 20, offset = 0): Promise<Playlist[]> => {
     if (!query) return [];
     try {
       // Endpoint: /songs/playlists/search
       const response = await api.get<SearchPlaylistResponse>('/songs/playlists/search', {
-        params: { query, limit: 20, offset: 0 }
+        params: { query, limit, offset }
       });
 
       return response.data.playlists.map((item) => {
@@ -158,6 +160,7 @@ export const searchService = {
           userId: pl.user_id,
           user_id: pl.user_id,
           likes: [],
+          is_liked: pl.is_liked ?? false,
           createdAt: pl.created_at,
           created_at: pl.created_at,
           updated_at: pl.updated_at,
@@ -175,12 +178,12 @@ export const searchService = {
   },
 
   // Searching Users
-  searchUsers: async (query: string): Promise<User[]> => {
+  searchUsers: async (query: string, limit = 20, offset = 0): Promise<User[]> => {
     if (!query) return [];
     try {
       // Endpoint: /songs/users/search
       const response = await api.get<SearchUserResponse>('/songs/users/search', {
-        params: { query, limit: 20, offset: 0 }
+        params: { query, limit, offset }
       });
 
       return response.data.users.map((item) => {
@@ -193,6 +196,7 @@ export const searchService = {
           bio: u.bio || "",
           followers: [], // Search listesinde detaylı follower listesi gelmez
           following: [],
+          likedPlaylists: [],
           createdAt: u.created_at
         };
       });

@@ -27,6 +27,16 @@ export function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // UI-only preview limits and progressive reveal counts
+  const PREVIEW_LIMIT = 5;
+  const [visibleSongs, setVisibleSongs] = useState(10);
+  const [visiblePlaylists, setVisiblePlaylists] = useState(12);
+  const [visibleUsers, setVisibleUsers] = useState(12);
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [loadingMoreSongs, setLoadingMoreSongs] = useState(false);
+  const [loadingMorePlaylists, setLoadingMorePlaylists] = useState(false);
+  const [loadingMoreUsers, setLoadingMoreUsers] = useState(false);
+
   const [rawResults, setRawResults] = useState<{
     songs: Song[];
     playlists: Playlist[];
@@ -194,11 +204,109 @@ export function SearchPage() {
     }
   };
 
+  // --- FETCH MORE HELPERS ---
+  const fetchMoreSongs = async () => {
+    // If searching, call searchService with offset
+    if (searchQuery.trim()) {
+      setLoadingMoreSongs(true);
+      try {
+        const more = await searchService.searchSongs(searchQuery.trim(), 10, rawResults.songs.length);
+        if (more.length > 0) {
+          setRawResults((prev) => ({ ...prev, songs: [...prev.songs, ...more] }));
+          setVisibleSongs((v) => v + more.length);
+        }
+      } catch (err) {
+        console.error("Failed to fetch more songs:", err);
+      } finally {
+        setLoadingMoreSongs(false);
+      }
+      return;
+    }
+
+    // No search query: fetch more playlists and extract songs
+    setLoadingMoreSongs(true);
+    try {
+      const nextPlaylists = await playlistService.getPlaylists(rawResults.playlists.length, 20);
+      const moreSongs = nextPlaylists.flatMap((p) => p.songs || []);
+      setRawResults((prev) => ({
+        songs: [...prev.songs, ...moreSongs],
+        playlists: [...prev.playlists, ...nextPlaylists],
+        users: prev.users,
+      }));
+      setVisibleSongs((v) => v + moreSongs.length);
+    } catch (err) {
+      console.error("Failed to fetch more playlists for songs:", err);
+    } finally {
+      setLoadingMoreSongs(false);
+    }
+  };
+
+  const fetchMorePlaylists = async () => {
+    setLoadingMorePlaylists(true);
+    try {
+      if (searchQuery.trim()) {
+        const more = await searchService.searchPlaylists(searchQuery.trim(), 12, rawResults.playlists.length);
+        if (more.length > 0) {
+          setRawResults((prev) => ({ ...prev, playlists: [...prev.playlists, ...more] }));
+          setVisiblePlaylists((v) => v + more.length);
+        }
+      } else {
+        const more = await playlistService.getPlaylists(rawResults.playlists.length, 12);
+        if (more.length > 0) {
+          setRawResults((prev) => ({ ...prev, playlists: [...prev.playlists, ...more] }));
+          setVisiblePlaylists((v) => v + more.length);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch more playlists:", err);
+    } finally {
+      setLoadingMorePlaylists(false);
+    }
+  };
+
+  const fetchMoreUsers = async () => {
+    setLoadingMoreUsers(true);
+    try {
+      if (searchQuery.trim()) {
+        const more = await searchService.searchUsers(searchQuery.trim(), 12, rawResults.users.length);
+        if (more.length > 0) {
+          setRawResults((prev) => ({ ...prev, users: [...prev.users, ...more] }));
+          setVisibleUsers((v) => v + more.length);
+        }
+      } else {
+        // No user search: pull more playlists and extract unique owners
+        const morePlaylists = await playlistService.getPlaylists(rawResults.playlists.length, 20);
+        const ownersMap = new Map(rawResults.users.map((u) => [u.id, u]));
+        morePlaylists.forEach((p) => {
+          if (p.owner && !ownersMap.has(p.owner.id)) {
+            ownersMap.set(p.owner.id, {
+              id: p.owner.id,
+              username: p.owner.username,
+              email: "",
+              avatar: p.owner.avatar_url || "https://github.com/shadcn.png",
+              bio: p.owner.bio || "",
+              followers: [],
+              following: [],
+              likedPlaylists: [],
+              createdAt: p.owner.created_at,
+            });
+          }
+        });
+  setRawResults((prev) => ({ ...prev, users: Array.from(ownersMap.values()), playlists: [...prev.playlists, ...morePlaylists] }));
+  setVisibleUsers((v) => v + Array.from(ownersMap.values()).length - rawResults.users.length);
+      }
+    } catch (err) {
+      console.error("Failed to fetch more users:", err);
+    } finally {
+      setLoadingMoreUsers(false);
+    }
+  };
+
   // --- RENDER HELPER FUNCTION (HomePage Trending Songs yapısının birebir aynısı) ---
   const renderSongList = (songs: Song[]) => {
     return (
       // Ana Container: HomePage ile aynı stiller (bg-gray-900/30, border, divide-y)
-      <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50" style={{ borderRadius: '10px' }}>
+      <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
         {songs.map((song, index) => {
           const isCurrentSong = currentSong?.id === song.id;
 
@@ -261,6 +369,43 @@ export function SearchPage() {
     );
   };
 
+  const renderUserCard = (searchUser: User) => {
+    const isFollowing = user?.following?.includes(searchUser.id);
+    const isCurrentUser = searchUser.id === user?.id;
+
+    return (
+      <div key={searchUser.id} className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors">
+        <div className="flex items-center gap-4">
+          <img
+            src={searchUser.avatar}
+            alt={searchUser.username}
+            className="w-16 h-16 rounded-full object-cover cursor-pointer"
+            onClick={() => handleUserClick(searchUser.username)}
+          />
+          <div className="flex-1 min-w-0">
+            <div
+              className="text-white truncate cursor-pointer hover:underline"
+              onClick={() => handleUserClick(searchUser.username)}
+            >
+              {searchUser.username}
+            </div>
+            <div className="text-sm text-gray-400 truncate">{searchUser.bio}</div>
+          </div>
+        </div>
+        {!isCurrentUser && (
+          <Button
+            onClick={() => handleFollow(searchUser.id, searchUser.username)}
+            variant={isFollowing ? "outline" : "default"}
+            className={`w-full mt-3 ${isFollowing ? "border-gray-700 text-white hover:bg-gray-800" : "bg-pink hover:bg-[#5b0426] text-black"}`}
+          >
+            {isFollowing ? "Unfollow" : "Follow"}
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+
   if (!user) return null;
 
   return (
@@ -290,7 +435,6 @@ export function SearchPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-12 bg-gray-900 border-gray-800 text-white h-12"
-            style={{ outline: "1px solid #DB77A6" }}
           />
         </div>
 
@@ -300,107 +444,76 @@ export function SearchPage() {
           </div>
         )}
 
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="bg-transparent" style={{ border: "1px solid #DB77A6" }}>
-            <TabsTrigger value="all" className="text-white cursor-pointer">All</TabsTrigger>
-            <TabsTrigger value="songs" className="text-white cursor-pointer">Songs</TabsTrigger>
-            <TabsTrigger value="playlists" className="text-white cursor-pointer">Playlists</TabsTrigger>
-            <TabsTrigger value="users" className="text-white cursor-pointer">Users</TabsTrigger>
+  <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="w-full">
+          <TabsList className="bg-gray-900 border-gray-800">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="songs">Songs</TabsTrigger>
+            <TabsTrigger value="playlists">Playlists</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
           </TabsList>
 
           <TabsContent value="all" className="mt-6 space-y-8">
-            {/* SONGS */}
-            {rawResults.songs.length > 0 && (
-              <div>
-                <h2 className="mb-4"
-                style={{
-                  WebkitTextStroke: "0.5px #DB77A6"
-                }}>Songs</h2>
-                {/* YENİ GÖRÜNÜM İÇİN HELPER FONKSİYONU ÇAĞIRIYORUZ */}
-                {renderSongList(rawResults.songs.slice(0, 5))}
-              </div>
-            )}
+              {/* SONGS */}
+              {rawResults.songs.length > 0 && (
+                <div>
+                  <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
+                    Songs
+                  </h2>
+
+                  {renderSongList(rawResults.songs.slice(0, PREVIEW_LIMIT))}
+
+                  {rawResults.songs.length > PREVIEW_LIMIT && (
+                    <button
+                      onClick={() => setActiveTab("songs")}
+                      className="mt-3 text-pink hover:underline text-sm"
+                    >
+                      See more songs
+                    </button>
+                  )}
+                </div>
+              )}
 
             {/* PLAYLISTS */}
             {hydratedPlaylists.length > 0 && (
               <div>
-                <h2 className="mb-4"
-                style={{
-                  WebkitTextStroke: "0.5px #DB77A6"
-                }}>Playlists</h2>
+                <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
+                  Playlists
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {hydratedPlaylists.slice(0, 4).map((playlist) => {
-                    return (
-                      <PlaylistCard
-                        key={playlist.id}
-                        playlist={playlist}
-                        currentUserId={user.id}
-                        onLike={handleLike}
-                      />
-                    );
-                  })}
+                  {hydratedPlaylists.slice(0, PREVIEW_LIMIT).map((playlist) => (
+                    <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
+                  ))}
                 </div>
+
+                {hydratedPlaylists.length > PREVIEW_LIMIT && (
+                  <button
+                    onClick={() => setActiveTab("playlists")}
+                    className="mt-3 text-pink hover:underline text-sm"
+                  >
+                    See more playlists
+                  </button>
+                )}
               </div>
             )}
 
             {/* USERS - ALL TAB */}
             {rawResults.users.length > 0 && (
               <div>
-                <h2 className="mb-4"
-                style={{
-                  WebkitTextStroke: "0.5px #DB77A6"
-                }}>Users</h2>
+                <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
+                  Users
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rawResults.users.slice(0, 6).map((searchUser) => {
-                    const isFollowing = user.following?.includes(searchUser.id);
-                    const isCurrentUser = searchUser.id === user.id;
-
-                    return (
-                      <div
-                        key={searchUser.id}
-                        className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={searchUser.avatar}
-                            alt={searchUser.username}
-                            className="w-16 h-16 rounded-full object-cover cursor-pointer"
-                            onClick={() => handleUserClick(searchUser.username)}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div
-                              className="text-white truncate cursor-pointer hover:underline"
-                              onClick={() => handleUserClick(searchUser.username)}
-                            >
-                              {searchUser.username}
-                            </div>
-                            <div className="text-sm text-gray-400 truncate">
-                              {searchUser.bio}
-                            </div>
-                          </div>
-                        </div>
-                        {!isCurrentUser && (
-                          isFollowing ? (
-                            <Button
-                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
-                              variant="outline"
-                              className="w-full mt-3 border-dark-pink text-pink hover:bg-pink hover:text-black hover:border-pink"
-                            >
-                              Unfollow
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
-                              className="w-full mt-3 bg-pink hover:bg-dark-pink text-black"
-                            >
-                              Follow
-                            </Button>
-                          )
-                        )}
-                      </div>
-                    );
-                  })}
+                  {rawResults.users.slice(0, PREVIEW_LIMIT).map((searchUser) => renderUserCard(searchUser))}
                 </div>
+
+                {rawResults.users.length > PREVIEW_LIMIT && (
+                  <button
+                    onClick={() => setActiveTab("users")}
+                    className="mt-3 text-pink hover:underline text-sm"
+                  >
+                    See more users
+                  </button>
+                )}
               </div>
             )}
             
@@ -417,75 +530,59 @@ export function SearchPage() {
 
           <TabsContent value="playlists" className="mt-6">
             {hydratedPlaylists.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {hydratedPlaylists.map((playlist) => (
-                  <PlaylistCard
-                    key={playlist.id}
-                    playlist={playlist}
-                    currentUserId={user.id}
-                    onLike={handleLike}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {hydratedPlaylists.slice(0, visiblePlaylists).map((playlist) => (
+                    <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
+                  ))}
+                </div>
+
+                {(hydratedPlaylists.length >= visiblePlaylists || rawResults.playlists.length > 0 || searchQuery.trim()) && (
+                  <div className="flex justify-center mt-4">
+                    <Button onClick={() => fetchMorePlaylists()} disabled={loadingMorePlaylists} className="bg-pink text-black hover:bg-[#5b0426]">
+                      {loadingMorePlaylists ? "Loading..." : "Show more"}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="text-center py-12 text-gray-400">
-                {searchQuery ? `No playlists found` : "Start typing to search"}
-              </div>
+              <div className="text-center py-12 text-gray-400">{searchQuery ? `No playlists found` : "Start typing to search"}</div>
             )}
           </TabsContent>
           
           <TabsContent value="songs" className="mt-6">
-             {rawResults.songs.length > 0 ? (
-               // YENİ GÖRÜNÜM (Tüm liste)
-               renderSongList(rawResults.songs)
+            {rawResults.songs.length > 0 ? (
+              <>
+                {renderSongList(rawResults.songs.slice(0, visibleSongs))}
+
+                {(rawResults.songs.length >= visibleSongs || rawResults.songs.length > 0 || searchQuery.trim()) && (
+                  <div className="flex justify-center mt-4">
+                    <Button onClick={() => fetchMoreSongs()} disabled={loadingMoreSongs} className="bg-pink text-black hover:bg-[#5b0426]">
+                      {loadingMoreSongs ? "Loading..." : "Show more"}
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : null}
           </TabsContent>
           
           {/* USERS TAB */}
           <TabsContent value="users" className="mt-6">
-             {rawResults.users.length > 0 ? (
+            {rawResults.users.length > 0 ? (
+              <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rawResults.users.map((searchUser) => {
-                    const isFollowing = user.following?.includes(searchUser.id);
-                    const isCurrentUser = searchUser.id === user.id;
-                    return (
-                      <div key={searchUser.id} className="bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <img src={searchUser.avatar} alt={searchUser.username} className="w-16 h-16 rounded-full object-cover cursor-pointer" 
-                            onClick={() => handleUserClick(searchUser.username)}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-white truncate cursor-pointer hover:underline" 
-                                onClick={() => handleUserClick(searchUser.username)}
-                            >
-                                {searchUser.username}
-                            </div>
-                            <div className="text-sm text-gray-400 truncate">{searchUser.bio}</div>
-                          </div>
-                        </div>
-                        {!isCurrentUser && (
-                          isFollowing ? (
-                            <Button
-                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
-                              variant="outline"
-                              className="w-full mt-3 border-dark-pink text-pink hover:bg-pink hover:text-black hover:border-pink"
-                            >
-                              Unfollow
-                            </Button>
-                          ) : (
-                            <Button
-                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
-                              className="w-full mt-3 bg-pink hover:bg-dark-pink text-black"
-                            >
-                              Follow
-                            </Button>
-                          )
-                        )}
-                      </div>
-                    );
-                  })}
+                  {rawResults.users.slice(0, visibleUsers).map((searchUser) => renderUserCard(searchUser))}
                 </div>
-             ) : null}
+
+                {(rawResults.users.length >= visibleUsers || rawResults.users.length > 0 || searchQuery.trim()) && (
+                  <div className="flex justify-center mt-4">
+                    <Button onClick={() => fetchMoreUsers()} disabled={loadingMoreUsers} className="bg-pink text-black hover:bg-[#5b0426]">
+                      {loadingMoreUsers ? "Loading..." : "Show more"}
+                    </Button>
+                  </div>
+                )}
+              </>
+            ) : null}
           </TabsContent>
         </Tabs>
       </div>
