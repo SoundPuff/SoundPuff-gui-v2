@@ -458,8 +458,9 @@ export function PlaylistPage() {
           {/* Comments Section */}
           <div className="mt-12">
             <div className="flex items-center gap-2 mb-6">
-              <MessageCircle className="w-6 h-6" />
-              <h2>Comments ({comments.length})</h2>
+              <MessageCircle className="w-6 h-6 text-pink" />
+              <h2
+              style={{WebkitTextStroke: "0.5px #d95a96"}}>Comments ({comments.length})</h2>
             </div>
 
             <form onSubmit={handleSubmitComment} className="mb-8">
@@ -469,6 +470,7 @@ export function PlaylistPage() {
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Add a comment..."
                   className="bg-gray-900 border-gray-800 text-white"
+                  style={{ outline: "1px solid #DB77A6" }}
                 />
                 <Button type="submit" className="bg-pink hover:bg-dark-pink text-black">
                   <Send className="w-4 h-4" />
