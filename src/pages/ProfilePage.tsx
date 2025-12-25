@@ -122,7 +122,7 @@ export function ProfilePage() {
   const handleFile = async (file: File) => {
     // 1. Dosya kontrolü
     if (!file.type.startsWith("image/")) {
-      alert("Lütfen geçerli bir resim dosyası seçin.");
+      // alert("Lütfen geçerli bir resim dosyası seçin.");
       return;
     }
 
@@ -154,7 +154,7 @@ export function ProfilePage() {
       }
     } catch (error) {
       console.error("Upload hatası:", error);
-      alert("Resim yüklenirken bir hata oluştu.");
+      // alert("Resim yüklenirken bir hata oluştu.");
     } finally {
       // setIsUploading(false);
     }

@@ -33,7 +33,7 @@ export function SearchPage() {
 
   // UI-only preview limits and progressive reveal counts
   const PREVIEW_LIMIT = 5;
-  const [visibleSongs, setVisibleSongs] = useState(10);
+  const [visibleSongs, setVisibleSongs] = useState(5);
   const [visiblePlaylists, setVisiblePlaylists] = useState(12);
   const [visibleUsers, setVisibleUsers] = useState(12);
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -116,6 +116,33 @@ export function SearchPage() {
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      fetchInitialData();
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true);
+      setVisibleSongs(PREVIEW_LIMIT); // Reset visible count for new search
+      try {
+        const allData = await searchService.searchAll(searchQuery);
+        setRawResults({
+          songs: allData.songs,
+          playlists: allData.playlists,
+          users: allData.users,
+        });
+      } catch (error) {
+        console.error("Search error:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
+
 
   const handlePlaylistClick = (playlistId: string) => {
     navigate(`/app/playlist/${playlistId}`);
@@ -454,6 +481,37 @@ export function SearchPage() {
     );
   };
 
+  // Reusable Show More button with pink outline + subtle pink bg + white text
+  const ShowMoreButton: React.FC<{
+    onClick: () => void;
+    children: React.ReactNode;
+    disabled?: boolean;
+  }> = ({ onClick, children, disabled }) => {
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className="px-4 py-2 rounded-md text-white font-medium transition-all duration-200 ease-in-out"
+        style={{
+          background: "rgba(231, 140, 137, 0.1)", // subtle pink background
+          outline: "2px solid #DB77A6",          // thick pink outline like your search bar
+          outlineOffset: "-2px",
+        }}
+        onMouseEnter={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "rgba(231, 140, 137, 0.2)";
+        }}
+        onMouseLeave={(e) => {
+          (e.currentTarget as HTMLButtonElement).style.background = "rgba(231, 140, 137, 0.1)";
+        }}
+      >
+        {children}
+      </button>
+    );
+  };
+
+
+
+
 
   if (!user) return null;
 
@@ -506,69 +564,63 @@ export function SearchPage() {
   {/* ALL TAB */}
   <TabsContent value="all" className="mt-6 space-y-8">
 
-{/* SONGS */}
-{rawResults.songs.length > 0 && (
-  <div className="mt-6 space-y-4">
-    <h2 
-      className="text-2xl font-bold mb-4" 
-      style={{ WebkitTextStroke: "0.5px #DB77A6" }}
-    >
-      Songs
-    </h2>
-    
-    {renderSongList(rawResults.songs.slice(0, visibleSongs))}
+  {/* SONGS */}
+  {rawResults.songs.length > 0 && (
+    <div className="mt-6 space-y-4">
+      <h2 className="text-2xl font-bold mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
+        Songs
+      </h2>
 
-    {rawResults.songs.length > visibleSongs && (
-      <div className="flex justify-center mt-4">
-        <Button
-          onClick={() => fetchMoreSongs()}
-          disabled={loadingMoreSongs}
-          className="bg-pink text-black hover:bg-[#5b0426]"
-        >
-          {loadingMoreSongs ? "Loading..." : "Show more"}
-        </Button>
-      </div>
-    )}
-  </div>
-)}
+      {renderSongList(rawResults.songs.slice(0, visibleSongs))}
 
-    {/* PLAYLISTS */}
-    {rawResults.playlists.length > 0 && (
-      <div>
-        <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>Playlists</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {rawResults.playlists.slice(0, PREVIEW_LIMIT).map((playlist: Playlist) => (
-            <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
-          ))}
+      {rawResults.songs.length > visibleSongs && (
+        <div className="flex justify-center mt-4">
+          <ShowMoreButton onClick={() => setActiveTab("songs")}>
+            See more songs
+          </ShowMoreButton>
         </div>
-        {rawResults.playlists.length > PREVIEW_LIMIT && (
-          <button
-            onClick={() => setActiveTab("playlists")}
-            className="mt-3 text-pink hover:underline text-sm"
-          >
+      )}
+    </div>
+  )}
+
+
+  {/* PLAYLISTS */}
+  {rawResults.playlists.length > 0 && (
+    <div>
+      <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>Playlists</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {rawResults.playlists.slice(0, PREVIEW_LIMIT).map((playlist: Playlist) => (
+          <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
+        ))}
+      </div>
+      {rawResults.playlists.length > PREVIEW_LIMIT && (
+        <div className="flex justify-center mt-4">
+          <ShowMoreButton onClick={() => setActiveTab("playlists")}>
             See more playlists
-          </button>
-        )}
-      </div>
-    )}
-
-    {/* USERS */}
-    {rawResults.users.length > 0 && (
-      <div>
-        <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>Users</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rawResults.users.slice(0, PREVIEW_LIMIT).map((searchUser) => renderUserCard(searchUser))}
+          </ShowMoreButton>
         </div>
-        {rawResults.users.length > PREVIEW_LIMIT && (
-          <button
-            onClick={() => setActiveTab("users")}
-            className="mt-3 text-pink hover:underline text-sm"
-          >
-            See more users
-          </button>
-        )}
+      )}
+    </div>
+  )}
+
+
+  {/* USERS */}
+  {rawResults.users.length > 0 && (
+    <div>
+      <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>Users</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {rawResults.users.slice(0, PREVIEW_LIMIT).map((searchUser) => renderUserCard(searchUser))}
       </div>
-    )}
+      {rawResults.users.length > PREVIEW_LIMIT && (
+        <div className="flex justify-center mt-4">
+          <ShowMoreButton onClick={() => setActiveTab("users")}>
+            See more users
+          </ShowMoreButton>
+        </div>
+      )}
+    </div>
+  )}
+
 
     {!isLoading && searchQuery &&
       rawResults.songs.length === 0 &&
@@ -591,9 +643,9 @@ export function SearchPage() {
         </div>
         {(rawResults.playlists.length > visiblePlaylists) && (
           <div className="flex justify-center mt-4">
-            <Button onClick={() => fetchMorePlaylists()} disabled={loadingMorePlaylists} className="bg-pink text-black hover:bg-[#5b0426]">
+            <ShowMoreButton onClick={() => fetchMorePlaylists()} disabled={loadingMorePlaylists}>
               {loadingMorePlaylists ? "Loading..." : "Show more"}
-            </Button>
+            </ShowMoreButton>
           </div>
         )}
       </>
@@ -607,16 +659,20 @@ export function SearchPage() {
     {rawResults.songs.length > 0 && (
       <>
         {renderSongList(rawResults.songs.slice(0, visibleSongs))}
-        {(rawResults.songs.length > visibleSongs) && (
+        {rawResults.songs.length > visibleSongs && (
           <div className="flex justify-center mt-4">
-            <Button onClick={() => fetchMoreSongs()} disabled={loadingMoreSongs} className="bg-pink text-black hover:bg-[#5b0426]">
+            <ShowMoreButton
+              onClick={fetchMoreSongs}
+              disabled={loadingMoreSongs}
+            >
               {loadingMoreSongs ? "Loading..." : "Show more"}
-            </Button>
+            </ShowMoreButton>
           </div>
         )}
       </>
     )}
   </TabsContent>
+
 
   {/* USERS TAB */}
   <TabsContent value="users" className="mt-6">
@@ -627,9 +683,9 @@ export function SearchPage() {
         </div>
         {(rawResults.users.length > visibleUsers) && (
           <div className="flex justify-center mt-4">
-            <Button onClick={() => fetchMoreUsers()} disabled={loadingMoreUsers} className="bg-pink text-black hover:bg-[#5b0426]">
+            <ShowMoreButton onClick={() => fetchMoreUsers()} disabled={loadingMoreUsers}>
               {loadingMoreUsers ? "Loading..." : "Show more"}
-            </Button>
+            </ShowMoreButton>
           </div>
         )}
       </>
@@ -650,14 +706,14 @@ export function SearchPage() {
                 if (showAddToPlaylistForSong === null) return;
                 try {
                   await playlistService.addSongToPlaylist(targetPlaylistId, showAddToPlaylistForSong);
-                  alert("Song successfully added to playlist!");
+                  // alert("Song successfully added to playlist!");
                 } catch (err: any) {
                   const detail = err?.response?.data?.detail;
                   if (detail === "Song already in playlist") {
-                    alert("Song is already in that playlist ✔");
+                    // alert("Song is already in that playlist ✔");
                   } else {
                     console.error(err);
-                    alert("Failed to add song to playlist");
+                    // alert("Failed to add song to playlist");
                   }
                 } finally {
                   setShowAddToPlaylistForSong(null);
