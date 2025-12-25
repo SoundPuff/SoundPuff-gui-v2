@@ -312,5 +312,42 @@ export const playlistService = {
     }
   },
 
+  /**
+   * Add song to playlist
+   */
+  addSongToPlaylist: async (playlistId: number, songId: number) => {
+  console.log("ADD SONG REQUEST", {
+    playlistId,
+    songId,
+    body: { song_id: Number(songId) }
+  });
+
+  try {
+    const res = await api.post(
+      `/playlists/${playlistId}/songs`,
+      { song_id: Number(songId) }
+    );
+    console.log("ADD SONG RESPONSE", res.data);
+    return res.data;
+  } catch (err: any) {
+    console.error("ADD SONG ERROR");
+    console.error("status:", err?.response?.status);
+    console.error("data:", err?.response?.data);
+    console.error("config:", err?.config);
+    throw err;
+  }
+},
+
+
+  /**
+   * Remove song from playlist
+   */
+  removeSongFromPlaylist: async (
+    playlistId: number,
+    songId: number
+  ): Promise<void> => {
+    await api.delete(`/playlists/${playlistId}/songs/${songId}`);
+  },
+
 
 };

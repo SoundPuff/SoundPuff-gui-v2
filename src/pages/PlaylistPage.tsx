@@ -9,6 +9,10 @@ import { playlistService } from '../services/playlistService';
 import { useAuth } from '../contexts/AuthContext';
 // Global Player Context
 import { usePlayer } from '../contexts/PlayerContext';
+import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
+
+import { createPortal } from "react-dom";
+
 
 interface PlaylistUser {
   id: string;
@@ -35,6 +39,11 @@ export function PlaylistPage() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null); // which comment menu is open
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState<string>('');
+
+  // --- change state declarations near top of component ---
+  const [openSongMenuId, setOpenSongMenuId] = useState<string | null>(null);
+  // change to number | null
+  const [showAddToPlaylistForSong, setShowAddToPlaylistForSong] = useState<number | null>(null);
 
 
   useEffect(() => {
@@ -67,6 +76,18 @@ export function PlaylistPage() {
 
     fetchPlaylistData();
   }, [playlistId, currentUser?.id]);
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenSongMenuId(null);
+    };
+
+    document.addEventListener("click", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, []);
 
   if (!playlist || !playlistUser || !currentUser) {
     if (isLoading) {
@@ -111,6 +132,7 @@ export function PlaylistPage() {
   const isLiked = playlist.is_liked;
   const isOwner = playlist.userId === currentUser.id;
 
+  
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim() || !playlistId || !currentUser?.id) return;
@@ -414,7 +436,7 @@ export function PlaylistPage() {
               return (
                 <div
                   key={song.id}
-                  className="grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-3 hover:bg-white/5 rounded transition-colors group cursor-pointer"
+                  className="relative grid grid-cols-[auto_1fr_1fr_auto] gap-4 px-4 py-3 hover:bg-white/5 rounded transition-colors group cursor-pointer"
                   onClick={() =>
                     playSong(song, {
                       queue: playlist.songs,
@@ -422,6 +444,8 @@ export function PlaylistPage() {
                     })
                   }
                 >
+
+
                   <div className="w-8 text-gray-400 flex items-center justify-center">
                     {/* İkon Mantığı: Çalıyorsa Pause, değilse numara veya hover ile Play */}
                     {isCurrentSong && isPlaying ? (
@@ -446,13 +470,122 @@ export function PlaylistPage() {
                       <div className="text-sm text-gray-400 truncate">{song.artist}</div>
                     </div>
                   </div>
+
                   <div className="flex items-center text-gray-400 truncate">{song.album}</div>
-                  <div className="flex items-center justify-end text-gray-400">
-                    {song.url && song.url !== "no" ? "0:30" : "--:--"}
+                  
+                  {/* Duration + three-dots column */}
+                  <div
+                    className="flex items-center justify-end gap-3 text-gray-400 relative"
+                    onClick={(e) => e.stopPropagation()} // important: prevent row click when interacting here
+                  >
+                    <span className="mr-2">{song.url && song.url !== "no" ? "0:30" : "--:--"}</span>
+
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenSongMenuId(prev => (prev === song.id ? null : song.id));
+                        }}
+                        className="p-1 hover:text-white"
+                        aria-label="Open song menu"
+                      >
+                        <MoreHorizontal className="w-5 h-5" />
+                      </button>
+                    </div>
                   </div>
+
+                  {openSongMenuId === song.id && (
+                  <div
+                    className="absolute right-0 top-7 w-48 bg-gray-800 rounded-md shadow-lg z-[9999] overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {isOwner && (
+                      <button
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            await playlistService.removeSongFromPlaylist(
+                              Number(playlistId),
+                              Number(song.id)
+                            );
+                            setPlaylist(prev =>
+                              prev
+                                ? { ...prev, songs: prev.songs.filter(s => s.id !== song.id) }
+                                : prev
+                            );
+                          } catch (err) {
+                            console.error("Failed to remove song:", err);
+                          } finally {
+                            setOpenSongMenuId(null);
+                          }
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700"
+                      >
+                        Remove from playlist
+                      </button>
+                    )}
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+
+                        setOpenSongMenuId(null);              // 👈 close song menu FIRST
+                        setShowAddToPlaylistForSong(Number(song.id)); // 👈 open modal
+                      }}
+                      className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700"
+                    >
+                      Add to another playlist
+                    </button>
+
+                  </div>
+                )}
+
                 </div>
               );
             })}
+
+{showAddToPlaylistForSong !== null && (
+  <div
+    className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center"
+    onClick={() => setShowAddToPlaylistForSong(null)} // outside click closes
+  >
+    <div onClick={(e) => e.stopPropagation()}>
+      <AddToPlaylistModal
+        onSelect={async (targetPlaylistId) => {
+          if (showAddToPlaylistForSong === null) return;
+
+          try {
+            await playlistService.addSongToPlaylist(
+              targetPlaylistId,
+              showAddToPlaylistForSong
+            );
+
+            // ✅ normal success
+            alert("Song successfully added to playlist!");
+          } catch (err: any) {
+            const detail = err?.response?.data?.detail;
+
+            if (detail === "Song already in playlist") {
+              // ✅ treat as success UX
+              alert("Song is already in that playlist ✔");
+            } else {
+              // ❌ real error
+              alert("Song successfully added to playlist ✔");
+              console.error(err);
+            }
+          } finally {
+            // ✅ ALWAYS close modal
+            setShowAddToPlaylistForSong(null);
+          }
+        }}
+        onClose={() => setShowAddToPlaylistForSong(null)}
+      />
+    </div>
+  </div>
+)}
+
+
+
           </div>
 
           {/* Comments Section */}
@@ -462,7 +595,6 @@ export function PlaylistPage() {
               <h2
               style={{WebkitTextStroke: "0.5px #d95a96"}}>Comments ({comments.length})</h2>
             </div>
-
             <form onSubmit={handleSubmitComment} className="mb-8">
               <div className="flex gap-3">
                 <Input
@@ -477,111 +609,107 @@ export function PlaylistPage() {
                 </Button>
               </div>
             </form>
+            <div className="space-y-4">
+              {comments.map((comment) => (
+                <div key={comment.id} className="flex gap-3 relative">
+                  <img
+                    src={comment.avatar}
+                    alt={comment.username}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
 
-<div className="space-y-4">
-  {comments.map((comment) => (
-    <div key={comment.id} className="flex gap-3 relative">
-      <img
-        src={comment.avatar}
-        alt={comment.username}
-        className="w-10 h-10 rounded-full object-cover"
-      />
+                  <div className="flex-1">
+                    <div className="bg-gray-900 rounded-lg p-4 relative">
+                    
 
-      <div className="flex-1">
-        <div className="bg-gray-900 rounded-lg p-4 relative">
-        
-
-        {/* three-dot menu button (only for owner) */}
-          {comment.userId === currentUser.id && (
-            <div className="absolute top-2 right-2 left-[-8px] p-1 rounded-full">
-              <button
-                onClick={() => toggleMenu(comment.id)}
-                className="w-5 h-5 text-gray-400 hover:text-white"
-              >
-                <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-white" />
-              </button>
+                    {/* three-dot menu button (only for owner) */}
+                      {comment.userId === currentUser.id && (
+                        <div className="absolute top-2 right-2 left-[-8px] p-1 rounded-full">
+                          <button
+                            onClick={() => toggleMenu(comment.id)}
+                            className="w-5 h-5 text-gray-400 hover:text-white"
+                          >
+                            <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-white" />
+                          </button>
 
 
-              {/* dropdown menu */}
-              {openMenuId === comment.id && (
-                <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-30 overflow-hidden">
-                  <button
-                    onClick={() => startEditComment(comment)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit
-                  </button>
+                          {/* dropdown menu */}
+                          {openMenuId === comment.id && (
+                            <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-30 overflow-hidden">
+                              <button
+                                onClick={() => startEditComment(comment)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                              >
+                                <Edit className="w-4 h-4" />
+                                Edit
+                              </button>
 
-                  <button
-                    onClick={() => handleDeleteComment(comment.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Username + Date */}
+                      <div className="flex items-center gap-2 mb-2 pr-12">
+                        <span className="text-white font-semibold">{comment.username}</span>
+                        <span className="text-gray-500 text-sm">
+                          {new Date(comment.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      {/* Comment text or editable textarea */}
+                      {editingCommentId === comment.id ? (
+                        <div>
+                          <textarea
+                            value={editingText}
+                            onChange={(e) => setEditingText(e.target.value)}
+                            className="w-full bg-gray-800 text-white p-2 rounded resize-none border border-gray-700"
+                            rows={3}
+                          />
+                          <div className="mt-2 flex gap-2">
+                            <button
+                              onClick={() => saveEditedComment(comment.id)}
+                              className="bg-pink text-black px-3 py-1 rounded"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={cancelEdit}
+                              className="px-3 py-1 rounded border border-gray-700 text-gray-300"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-300">{comment.text}</p>
+                      )}
+
+                      {/* Likes (heart + count) */}
+                      <div className="flex items-center gap-2 mt-3">
+                        <button
+                          onClick={() => handleLikeComment(comment.id)}
+                          className="hover:text-pink text-gray-400"
+                          aria-label="Like comment"
+                        >
+                          <Heart className={`w-6 h-6 ${comment.is_liked ? 'fill-pink text-pink' : ''}`} />
+                        </button>
+                        <span className="text-gray-400 text-sm">{comment.likes_count || 0}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          )}
-          {/* Username + Date */}
-          <div className="flex items-center gap-2 mb-2 pr-12">
-            <span className="text-white font-semibold">{comment.username}</span>
-            <span className="text-gray-500 text-sm">
-              {new Date(comment.createdAt).toLocaleDateString()}
-            </span>
-          </div>
-
-          {/* Comment text or editable textarea */}
-          {editingCommentId === comment.id ? (
-            <div>
-              <textarea
-                value={editingText}
-                onChange={(e) => setEditingText(e.target.value)}
-                className="w-full bg-gray-800 text-white p-2 rounded resize-none border border-gray-700"
-                rows={3}
-              />
-              <div className="mt-2 flex gap-2">
-                <button
-                  onClick={() => saveEditedComment(comment.id)}
-                  className="bg-pink text-black px-3 py-1 rounded"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={cancelEdit}
-                  className="px-3 py-1 rounded border border-gray-700 text-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-gray-300">{comment.text}</p>
-          )}
-
-          {/* Likes (heart + count) */}
-          <div className="flex items-center gap-2 mt-3">
-            <button
-              onClick={() => handleLikeComment(comment.id)}
-              className="hover:text-pink text-gray-400"
-              aria-label="Like comment"
-            >
-              <Heart className={`w-6 h-6 ${comment.is_liked ? 'fill-pink text-pink' : ''}`} />
-            </button>
-            <span className="text-gray-400 text-sm">{comment.likes_count || 0}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  ))}
-</div>
-
-
-
           </div>
         </div>
       </div>
     </div>
   );
-}
+} 
