@@ -753,7 +753,7 @@ export function HomePage() {
                  {/* Left Button */}
                  <button 
                     onClick={() => handleSlide('discover', 'prev', true)}
-                    className="absolute left-0 top-1/2 z-50 p-3 bg-pink hover:bg-pink/80 rounded-full text-black opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1/2 -translate-x-1/2 shadow-[0_0_15px_rgba(219,119,166,0.6)]"
+                    className="absolute left-0 top-1/2 z-50 p-3 bg-pink hover:bg-dark-pink rounded-full text-black opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1/2 -translate-x-1/2 shadow-[0_0_15px_rgba(219,119,166,0.6)]"
                     style={{ display: filteredDiscoverPlaylists.length > VISIBLE_COUNT ? 'block' : 'none' }}
                 >
                     <ChevronLeft className="w-8 h-8 stroke-[3]" />
@@ -762,7 +762,7 @@ export function HomePage() {
                 {/* Right Button */}
                 <button 
                     onClick={() => handleSlide('discover', 'next', true)}
-                    className="absolute right-0 top-1/2 z-50 p-3 bg-pink hover:bg-pink/80 rounded-full text-black opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1/2 translate-x-1/2 shadow-[0_0_15px_rgba(219,119,166,0.6)]"
+                    className="absolute right-0 top-1/2 z-50 p-3 bg-pink hover:bg-dark-pink rounded-full text-black opacity-0 group-hover:opacity-100 transition-all duration-300 transform -translate-y-1/2 translate-x-1/2 shadow-[0_0_15px_rgba(219,119,166,0.6)]"
                     style={{ display: filteredDiscoverPlaylists.length > VISIBLE_COUNT ? 'block' : 'none' }}
                 >
                     <ChevronRight className="w-8 h-8 stroke-[3]" />
