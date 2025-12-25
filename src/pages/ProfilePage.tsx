@@ -63,6 +63,10 @@ export function ProfilePage() {
 
   const isOwnProfile = !username || (currentUser && username === currentUser.username);
 
+  const [isFollowHovered, setIsFollowHovered] = useState(false);
+  const [isUnfollowHovered, setIsUnfollowHovered] = useState(false);
+  const [isCancelHovered, setIsCancelHovered] = useState(false);
+
   // --- VERİ ÇEKME ---
   useEffect(() => {
     const fetchData = async () => {
@@ -338,8 +342,17 @@ const handleDrop = (e: React.DragEvent) => {
 
 
   return (
-    <div className="flex-1 bg-gradient-to-b from-gray-900 to-black text-white overflow-y-auto pb-32">
-      <div className="bg-gradient-to-b from-green-900/20 to-transparent p-8 pb-6">
+    <div className="flex-1 text-white overflow-y-auto pb-32"
+    style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
+      <div className="bg-gradient-to-b from-pink to-transparent p-8">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-end gap-6">
             
@@ -379,8 +392,14 @@ const handleDrop = (e: React.DragEvent) => {
             </div>
 
             <div className="flex-1 pb-4">
-              <p className="text-sm uppercase tracking-wide mb-2">Profile</p>
-              <h1 className="mb-2">{profileUser.username}</h1>
+              <h4 className="text-sm uppercase mb-2"
+              style={{
+                color: "#5b0425"
+              }}>Profile</h4>
+              <h1 className="mb-2"
+              style={{
+                WebkitTextStroke: "0.6px #5b0425"
+              }}>{profileUser.username}</h1>
               
               {!isEditing ? (
                 <p className="text-gray-300 mb-4">{profileUser.bio}</p>
@@ -409,13 +428,17 @@ const handleDrop = (e: React.DragEvent) => {
                   </div>
                   {/* ----------------------------------------- */}
 
-                  <div className="space-y-1">
-                    <label className="text-xs text-gray-500 font-medium ml-1 uppercase">Bio</label>
+                  <div className="space-y-3">
+                    <label className="text-sm text-bold font-medium ml-1 uppercase"
+                    style={{
+                      color: "#5b0425"
+                    }}>Bio</label>
                     <Textarea
                       value={editBio}
                       onChange={(e) => setEditBio(e.target.value)}
                       placeholder="Write something about yourself..."
                       className="bg-gray-800 border-gray-700 text-white min-h-[80px]"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
 
@@ -458,15 +481,21 @@ const handleDrop = (e: React.DragEvent) => {
                 <>
                   <Button
                     onClick={handleSaveProfile}
-                    className="bg-pink hover:bg-[#5b0426] text-black"
+                    className="bg-pink hover:bg-dark-pink text-black"
                   >
                     <Check className="w-4 h-4 mr-2" />
                     Save Changes
                   </Button>
                   <Button
                     onClick={handleCancelEdit}
-                    variant="outline"
-                    className="border-gray-700"
+                    onMouseEnter={() => setIsCancelHovered(true)}
+                    onMouseLeave={() => setIsCancelHovered(false)}
+                    style={{
+                      backgroundColor: isCancelHovered ? '#DB77A6' : 'transparent',
+                      color: isCancelHovered ? 'black' : '#DB77A6',
+                      borderColor: '#D95A96',
+                      borderWidth: '1px'
+                    }}
                   >
                     <X className="w-4 h-4 mr-2" />
                     Cancel
@@ -475,25 +504,39 @@ const handleDrop = (e: React.DragEvent) => {
               ) : (
                 <Button
                   onClick={() => setIsEditing(true)}
-                  variant="outline"
-                  className="border-gray-700"
+                  className="bg-pink hover:bg-dark-pink text-black"
                 >
                   <Edit2 className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
               )
             ) : (
+              isFollowing ? (
                 <Button
                   onClick={() => handleFollow(profileUser.id, profileUser.username)}
-                  variant={isFollowing ? "outline" : "default"}
-                  className={
-                    isFollowing
-                      ? "border border-gray-700 bg-transparent hover:bg-gray-800 text-white"
-                      : "bg-pink hover:bg-[#5b0426] text-black"
-                  }
+                  onMouseEnter={() => setIsUnfollowHovered(true)}
+                  onMouseLeave={() => setIsUnfollowHovered(false)}
+                  style={{
+                    backgroundColor: isUnfollowHovered ? '#DB77A6' : 'transparent',
+                    color: isUnfollowHovered ? 'black' : '#DB77A6',
+                    borderColor: '#D95A96',
+                    borderWidth: '1px'
+                  }}
                 >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </Button>
+                  Unfollow
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => handleFollow(profileUser.id, profileUser.username)}
+                  onMouseEnter={() => setIsFollowHovered(true)}
+                  onMouseLeave={() => setIsFollowHovered(false)}
+                  style={{
+                    backgroundColor: isFollowHovered ? '#D95A96' : '#DB77A6',
+              }}
+                >
+                  Follow
+                </Button>
+              )
             )}
           </div>
         </div>
@@ -506,25 +549,25 @@ const handleDrop = (e: React.DragEvent) => {
               <TabsList className="mb-6 bg-transparent border-b border-gray-800 rounded-none w-full justify-start h-auto p-0">
                 <TabsTrigger 
                   value="playlists"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Playlists
                 </TabsTrigger>
                 <TabsTrigger 
                   value="followers"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Followers
                 </TabsTrigger>
                 <TabsTrigger 
                   value="following"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
                 >
                   Following
                 </TabsTrigger>
                 <TabsTrigger 
                   value="settings"
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-transparent px-6 py-3"
+                  className="rounded-lg border-b-2 border-transparent data-[state=active]:border-pink data-[state=active]:bg-pink/5 px-6 py-3"
                 >
                   Settings
                 </TabsTrigger>
@@ -552,12 +595,13 @@ const handleDrop = (e: React.DragEvent) => {
               <TabsContent value="followers" className="mt-6">
                 <div className="max-w-2xl mx-auto space-y-4">
                   <div className="relative mb-6">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
                     <Input
                       value={followersSearch}
                       onChange={(e) => setFollowersSearch(e.target.value)}
                       placeholder="Search followers..."
-                      className="pl-10 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-pink h-10"
+                      className="pl-12 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-pink h-10"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
                   {filteredFollowers.length > 0 ? (
@@ -591,10 +635,10 @@ const handleDrop = (e: React.DragEvent) => {
                                 onClick={() => handleFollow(follower.id, follower.username)}
                                 variant={isFollowingBack ? "secondary" : "default"}
                                 size="sm"
-                                className={`ml-4 h-8 px-5 text-xs font-semibold ${
+                                className={`ml-4 w-24 h-8 text-xs font-semibold justify-center ${
                                     isFollowingBack 
                                     ? "bg-gray-800 text-white hover:bg-gray-700" 
-                  : "bg-pink hover:bg-[#5b0426] text-black"
+                                    : "bg-pink hover:bg-[#5b0426] text-black"
                                 }`}
                             >
                                 {isFollowingBack ? "Following" : "Follow"}
@@ -616,12 +660,13 @@ const handleDrop = (e: React.DragEvent) => {
               <TabsContent value="following" className="mt-6">
                 <div className="max-w-2xl mx-auto space-y-4">
                   <div className="relative mb-6">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
+                    <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 w-4 h-4" />
                     <Input
                       value={followingSearch}
                       onChange={(e) => setFollowingSearch(e.target.value)}
                       placeholder="Search following..."
-                      className="pl-10 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-pink h-10"
+                      className="pl-12 bg-gray-900 border-gray-800 text-white rounded-lg focus:ring-1 focus:ring-pink h-10"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
                   {filteredFollowing.length > 0 ? (
@@ -652,8 +697,7 @@ const handleDrop = (e: React.DragEvent) => {
                           <Button
                             onClick={() => handleFollow(followedUser.id, followedUser.username)}
                             variant="secondary"
-                            size="sm"
-                            className="ml-4 h-8 px-5 text-xs font-semibold bg-gray-800 text-white hover:bg-gray-700"
+                            size="sm"                            className="ml-4 w-24 h-8 text-xs font-semibold justify-center bg-gray-800 text-white hover:bg-gray-700"
                           >
                             Following
                           </Button>
@@ -676,7 +720,10 @@ const handleDrop = (e: React.DragEvent) => {
             </Tabs>
           ) : (
             <>
-              <h2 className="mb-6">Playlists</h2>
+              <h2 className="mb-6"
+              style={{
+                WebkitTextStroke: "0.5px #DB77A6"
+              }}>Playlists</h2>
               {userPlaylists.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {userPlaylists.map((playlist) => (
