@@ -75,6 +75,7 @@ export function AccountSettings() {
               boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
               maxHeight: "90vh",
               overflowY: "auto",
+              outline: "2px solid #DB77A6",
             }}
             onClick={(e) => e.stopPropagation()}
           >
