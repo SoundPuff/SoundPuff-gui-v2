@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Play, Pause } from "lucide-react";
+import { Search, Play, Pause, Heart } from "lucide-react";
+import { useLikedSongs } from "../hooks/useLikedSongs";
 import { Input } from "../components/ui/input";
 import {
   Tabs,
@@ -45,6 +46,9 @@ export function SearchPage() {
 
   // NOTE: Do not hydrate playlists with user state here. Use server-provided
   // `is_liked` and `likes_count` from `rawResults.playlists` directly.
+
+  // use shared liked-songs hook
+  const { likedSongIds, likingSongId, handleLikeSong } = useLikedSongs();
 
   const fetchInitialData = async () => {
     setIsLoading(true);
@@ -291,6 +295,7 @@ export function SearchPage() {
   };
 
   // --- RENDER HELPER FUNCTION (HomePage Trending Songs yapısının birebir aynısı) ---
+  // ...existing code continues
   const renderSongList = (songs: Song[]) => {
     return (
       // Ana Container: HomePage ile aynı stiller (bg-gray-900/30, border, divide-y)
@@ -345,11 +350,23 @@ export function SearchPage() {
                 {song.artist}
               </div>
 
-              {/* 4. Sütun: Süre (Aynısı) */}
-              <div className="text-sm text-gray-400 tabular-nums text-right pr-2">
-                {Math.floor(song.duration / 60)}:
-                {(song.duration % 60).toString().padStart(2, "0")}
-              </div>
+                {/* 4. Sütun: Heart (inline) + Süre */}
+                <div className="text-sm text-gray-400 tabular-nums text-right pr-2 flex items-center justify-end gap-3">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLikeSong(String(song.id));
+                    }}
+                    className={`flex items-center transition-colors ${likedSongIds.has(String(song.id)) ? 'text-pink opacity-100' : 'text-gray-400 group-hover:text-pink opacity-0 group-hover:opacity-100'} ${likingSongId === String(song.id) ? 'opacity-80 scale-95' : ''}`}
+                    title={likedSongIds.has(String(song.id)) ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
+                  >
+                    <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(String(song.id)) ? 'fill-pink text-pink' : ''}`} />
+                  </button>
+
+                  <div>
+                    {Math.floor(song.duration / 60)}:{(song.duration % 60).toString().padStart(2, "00")}
+                  </div>
+                </div>
             </div>
           );
         })}

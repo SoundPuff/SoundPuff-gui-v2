@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Playlist, Comment } from '../types';
 import { Heart, Play, Pause, MessageCircle, Clock, Send, Trash2, Edit, MoreHorizontal } from 'lucide-react';
+import { useLikedSongs } from "../hooks/useLikedSongs";
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
@@ -45,6 +46,9 @@ export function PlaylistPage() {
   const [openSongMenuId, setOpenSongMenuId] = useState<string | null>(null);
   // change to number | null
   const [showAddToPlaylistForSong, setShowAddToPlaylistForSong] = useState<number | null>(null);
+
+  // use shared liked-songs hook
+  const { likedSongIds, likingSongId, handleLikeSong } = useLikedSongs();
 
 
   useEffect(() => {
@@ -520,11 +524,23 @@ export function PlaylistPage() {
 
                   <div className="flex items-center text-gray-400 truncate">{song.album}</div>
                   
-                  {/* Duration + three-dots column */}
+                  {/* Duration + heart + three-dots column */}
                   <div
                     className="flex items-center justify-end gap-3 text-gray-400 relative"
                     onClick={(e) => e.stopPropagation()} // important: prevent row click when interacting here
                   >
+                    {/* Heart button (add/remove from Liked Songs) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLikeSong(String(song.id));
+                      }}
+                      className={`flex items-center transition-colors ${likedSongIds.has(String(song.id)) ? 'text-pink opacity-100' : 'text-gray-400 group-hover:text-pink opacity-0 group-hover:opacity-100'} ${likingSongId === String(song.id) ? 'opacity-80 scale-95' : ''}`}
+                      title={likedSongIds.has(String(song.id)) ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
+                    >
+                      <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(String(song.id)) ? 'fill-pink text-pink' : ''}`} />
+                    </button>
+
                     <span className="mr-2">{song.url && song.url !== "no" ? "0:30" : "--:--"}</span>
 
                     <div className="relative">
