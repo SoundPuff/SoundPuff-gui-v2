@@ -406,28 +406,20 @@ export function HomePage() {
         {heroPlaylist && selectedCategory === 'All' && (
           <div 
             className="relative w-full h-[500px] rounded-lg overflow-hidden group cursor-pointer border border-gray-800 shadow-2xl" 
-            onClick={() => handlePlaylistClick(heroPlaylist.id.toString())}
-          >
-<div className="absolute inset-0 w-full h-full">
-  {heroPlaylist.coverArt ? (
-    <img
-      src={heroPlaylist.coverArt}
-      alt={heroPlaylist.title}
-      className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000"
-    />
-  ) : (
-    <div className="w-full h-full bg-gradient-to-br from-green-900 to-black" />
-  )}
-
-  {/* 👇 NEW: soft darkening layer */}
-  <div className="absolute inset-0 bg-black/35" />
-
-  {/* existing gradients */}
-  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-  <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
-</div>
-
-
+            onClick={() => handlePlaylistClick(heroPlaylist.id.toString())}>
+            {/* 1. Background Container */}
+            <div className="absolute inset-0 w-full h-full overflow-hidden">
+              {heroPlaylist.coverArt ? (
+                <img
+                  src={heroPlaylist.coverArt}
+                  alt={heroPlaylist.title}
+                  className="w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-1000"
+                  style={{filter: 'brightness(0.3)'}}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-green-900 to-black" />
+              )}
+            </div>
             <div className="relative h-full flex items-end p-8 md:p-12 z-10">
               <div className="flex-1 max-w-4xl">
                 <span className="inline-block px-4 py-1.5 bg-pink text-black text-xs font-bold rounded-full mb-4 tracking-wide uppercase shadow-lg shadow-pink/20">
