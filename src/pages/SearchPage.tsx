@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Play, Pause, Heart, Plus } from "lucide-react";
+import { Search, Play, Pause, Heart, Plus, Music } from "lucide-react";
 import { createPortal } from "react-dom";
 import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 import { useLikedSongs } from "../hooks/useLikedSongs";
@@ -59,7 +59,8 @@ export function SearchPage() {
       const playlists = await playlistService.getPlaylists(0, 20);
       
       const allSongs = playlists.flatMap(p => p.songs || []);
-      const shuffledSongs = allSongs.sort(() => 0.5 - Math.random()).slice(0, 10);
+      const shuffledSongs = allSongs.sort(() => 0.5 - Math.random()).slice(0, 10)
+
 
       const uniqueUsersMap = new Map();
       playlists.forEach(p => {
@@ -297,113 +298,118 @@ export function SearchPage() {
     }
   };
 
-  // --- RENDER HELPER FUNCTION (HomePage Trending Songs yapısının birebir aynısı) ---
-  // ...existing code continues
+// --- HELPER FUNCTION: Renders song list in Trending Songs style ---
   const renderSongList = (songs: Song[]) => {
     return (
-      // Ana Container: HomePage ile aynı stiller (bg-gray-900/30, border, divide-y)
-      <div className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50">
+      <div 
+        className="bg-gray-900/30 rounded-2xl border border-gray-800/50 divide-y divide-gray-800/50" 
+        style={{ borderRadius: '10px' }}
+      >
         {songs.map((song, index) => {
           const isCurrentSong = currentSong?.id === song.id;
 
+          const s = song as Song & {
+            playlistId?: number;
+            playlistTitle?: string;
+            playlistUser?: { id: number; username: string; avatar_url?: string } | undefined;
+          };
+
           return (
             <div
-              key={song.id}
-              onClick={() => playSong(song)}
-              // Satır Container: HomePage ile birebir aynı grid yapısı
-              className="group p-4 grid grid-cols-[auto_1fr_1fr_auto] gap-4 items-center hover:bg-gray-800/30 transition-all cursor-pointer"
+              key={`${s.id}-${index}`}
+              className="group p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-all cursor-pointer"
+              onClick={() => playSong(s)}
             >
-              {/* 1. Sütun: Sıra Numarası / Play Butonu (Aynısı) */}
+              {/* Rank / Play Button */}
               <div className="w-8 flex items-center justify-center">
                 {isCurrentSong && isPlaying ? (
-                  <Pause className="w-4 h-4 text-pink fill-pink" />
+                  <Pause className="w-5 h-5 text-pink fill-pink" />
                 ) : isCurrentSong ? (
-                  <Play className="w-4 h-4 text-pink fill-pink" />
+                  <Play className="w-5 h-5 text-pink fill-pink" />
                 ) : (
                   <>
-                    <span className="text-gray-500 font-medium group-hover:hidden">
+                    <span className="text-2xl font-medium text-gray-500 group-hover:hidden">
                       {index + 1}
                     </span>
-                    <Play className="w-4 h-4 hidden group-hover:block text-white fill-white" />
+                    <Play className="w-5 h-5 hidden group-hover:block text-white fill-white" />
                   </>
                 )}
               </div>
 
-              {/* 2. Sütun: Resim, Başlık ve Sanatçı (Aynısı) */}
-              <div className="flex items-center gap-4 min-w-0">
-                <img
-                  src={song.coverArt}
-                  alt={song.title}
-                  className="w-12 h-12 rounded object-cover shadow-lg"
-                />
-                <div className="min-w-0">
-                  <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'text-white group-hover:text-[#5b0426]'}`}>
-                    {song.title}
-                  </p>
-                  {/* Sanatçı adı burada her zaman görünür */}
-                  <p className="text-sm text-gray-400 truncate">
-                    {song.artist}
-                  </p>
+              {/* Cover Art */}
+              <img src={s.coverArt} alt={s.title} className="w-12 h-12 rounded object-cover shadow-lg" />
+
+              {/* Song Info */}
+              <div className="flex-1 min-w-0">
+                <p className={`font-semibold truncate transition-colors ${isCurrentSong ? 'text-pink' : 'group-hover:text-[#5b0426]'}`}>
+                  {s.title}
+                </p>
+                <p className="text-sm text-gray-400 truncate">{s.artist}</p>
+              </div>
+
+              {/* Playlist Info */}
+              {s.playlistTitle && (
+                <div
+                  className="hidden md:block text-sm text-gray-400 truncate max-w-xs w-1/4 hover:text-white hover:underline z-10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (s.playlistId) handlePlaylistClick(s.playlistId.toString());
+                  }}
+                >
+                  {s.playlistTitle}
                 </div>
-              </div>
+              )}
 
-              {/* 3. Sütun: Masaüstü Ekstra Bilgi (HomePage'de Playlist Adı idi) */}
-              {/* Search sonucunda playlist bilgisi olmadığı için, görsel dengeyi korumak adına burada tekrar Sanatçı adını gösteriyoruz (sadece masaüstünde) */}
-              <div className="hidden md:block text-sm text-gray-400 truncate hover:text-white hover:underline z-10">
-                {song.artist}
-              </div>
-
-              {/* 4. Sütun: Like + Add + Duration */}
-              <div className="text-sm text-gray-400 tabular-nums text-right pr-2 flex items-center justify-end gap-3">
-
-                {/* LIKE */}
+              {/* Playlist User */}
+              {s.playlistUser && (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleLikeSong(String(song.id));
+                    if (s.playlistUser) handleUserClick(String(s.playlistUser.id));
+                  }}
+                  className="hidden lg:flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors z-10"
+                >
+                  <img
+                    src={s.playlistUser?.avatar_url || "https://github.com/shadcn.png"}
+                    alt={s.playlistUser?.username}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                  <span className="truncate max-w-24">{s.playlistUser?.username}</span>
+                </button>
+              )}
+
+              {/* Like + Add + Duration */}
+              <div className="flex items-center justify-end gap-3 pr-2 text-sm text-gray-400 tabular-nums">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLikeSong(s.id);
                   }}
                   className={`
                     flex items-center transition-all
-                    ${likedSongIds.has(String(song.id))
+                    ${likedSongIds.has(s.id)
                       ? 'text-pink opacity-100'
                       : 'text-gray-400 opacity-0 group-hover:opacity-100 group-hover:text-pink'}
-                    ${likingSongId === String(song.id) ? 'scale-95 opacity-80' : ''}
+                    ${likingSongId === s.id ? 'scale-95 opacity-80' : ''}
                   `}
-                  title={likedSongIds.has(String(song.id))
-                    ? 'Remove from Liked Songs'
-                    : 'Add to Liked Songs'}
                 >
-                  <Heart
-                    className={`w-4 h-4 transition-colors ${
-                      likedSongIds.has(String(song.id)) ? 'fill-pink text-pink' : ''
-                    }`}
-                  />
+                  <Heart className={`w-5 h-5 transition-colors ${likedSongIds.has(s.id) ? 'fill-pink text-pink' : ''}`} />
                 </button>
 
-                {/* ADD TO PLAYLIST */}
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setShowAddToPlaylistForSong(Number(song.id));
+                    setShowAddToPlaylistForSong(Number(s.id));
                   }}
-                  className="
-                    p-1 transition-all
-                    text-gray-400
-                    opacity-0 group-hover:opacity-100
-                    hover:text-white hover:scale-110
-                  "
-                  title="Add to another playlist"
+                  className="p-1 transition-all text-gray-400 opacity-0 group-hover:opacity-100 hover:text-white hover:scale-110"
                 >
                   <Plus className="w-5 h-5" />
                 </button>
 
-                {/* DURATION (always visible, last) */}
                 <div className="min-w-[44px] text-right">
-                  {song.url && song.url !== "no" ? "0:30" : "--:--"}
+                  {s.url && s.url !== "no" ? "3:00" : "--:--"}
                 </div>
-
               </div>
-
             </div>
           );
         })}
@@ -477,6 +483,7 @@ export function SearchPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-12 bg-gray-900 border-gray-800 text-white h-12"
+            style={{ outline: "1px solid #DB77A6" }}
           />
         </div>
 
@@ -486,147 +493,149 @@ export function SearchPage() {
           </div>
         )}
 
+
   <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="w-full">
-          <TabsList className="bg-gray-900 border-gray-800">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="songs">Songs</TabsTrigger>
-            <TabsTrigger value="playlists">Playlists</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-          </TabsList>
+  <TabsList className="bg-transparent" style={{ border: "1px solid #DB77A6" }}>
+    <TabsTrigger value="all" className="text-white cursor-pointer">All</TabsTrigger>
+    <TabsTrigger value="songs" className="text-white cursor-pointer">Songs</TabsTrigger>
+    <TabsTrigger value="playlists" className="text-white cursor-pointer">Playlists</TabsTrigger>
+    <TabsTrigger value="users" className="text-white cursor-pointer">Users</TabsTrigger>
+  </TabsList>
 
-          <TabsContent value="all" className="mt-6 space-y-8">
-              {/* SONGS */}
-              {rawResults.songs.length > 0 && (
-                <div>
-                  <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
-                    Songs
-                  </h2>
+  {/* ALL TAB */}
+  <TabsContent value="all" className="mt-6 space-y-8">
 
-                  {renderSongList(rawResults.songs.slice(0, PREVIEW_LIMIT))}
+{/* SONGS */}
+{rawResults.songs.length > 0 && (
+  <div className="mt-6 space-y-4">
+    <h2 
+      className="text-2xl font-bold mb-4" 
+      style={{ WebkitTextStroke: "0.5px #DB77A6" }}
+    >
+      Songs
+    </h2>
+    
+    {renderSongList(rawResults.songs.slice(0, visibleSongs))}
 
-                  {rawResults.songs.length > PREVIEW_LIMIT && (
-                    <button
-                      onClick={() => setActiveTab("songs")}
-                      className="mt-3 text-pink hover:underline text-sm"
-                    >
-                      See more songs
-                    </button>
-                  )}
-                </div>
-              )}
+    {rawResults.songs.length > visibleSongs && (
+      <div className="flex justify-center mt-4">
+        <Button
+          onClick={() => fetchMoreSongs()}
+          disabled={loadingMoreSongs}
+          className="bg-pink text-black hover:bg-[#5b0426]"
+        >
+          {loadingMoreSongs ? "Loading..." : "Show more"}
+        </Button>
+      </div>
+    )}
+  </div>
+)}
 
-            {/* PLAYLISTS */}
-            {rawResults.playlists.length > 0 && (
-              <div>
-                <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
-                  Playlists
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {rawResults.playlists.slice(0, PREVIEW_LIMIT).map((playlist) => (
-                    <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
-                  ))}
-                </div>
+    {/* PLAYLISTS */}
+    {rawResults.playlists.length > 0 && (
+      <div>
+        <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>Playlists</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {rawResults.playlists.slice(0, PREVIEW_LIMIT).map((playlist: Playlist) => (
+            <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
+          ))}
+        </div>
+        {rawResults.playlists.length > PREVIEW_LIMIT && (
+          <button
+            onClick={() => setActiveTab("playlists")}
+            className="mt-3 text-pink hover:underline text-sm"
+          >
+            See more playlists
+          </button>
+        )}
+      </div>
+    )}
 
-                {rawResults.playlists.length > PREVIEW_LIMIT && (
-                  <button
-                    onClick={() => setActiveTab("playlists")}
-                    className="mt-3 text-pink hover:underline text-sm"
-                  >
-                    See more playlists
-                  </button>
-                )}
-              </div>
-            )}
+    {/* USERS */}
+    {rawResults.users.length > 0 && (
+      <div>
+        <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>Users</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rawResults.users.slice(0, PREVIEW_LIMIT).map((searchUser) => renderUserCard(searchUser))}
+        </div>
+        {rawResults.users.length > PREVIEW_LIMIT && (
+          <button
+            onClick={() => setActiveTab("users")}
+            className="mt-3 text-pink hover:underline text-sm"
+          >
+            See more users
+          </button>
+        )}
+      </div>
+    )}
 
-            {/* USERS - ALL TAB */}
-              {rawResults.users.length > 0 && (
-              <div>
-                <h2 className="mb-4" style={{ WebkitTextStroke: "0.5px #DB77A6" }}>
-                  Users
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rawResults.users.slice(0, PREVIEW_LIMIT).map((searchUser) => renderUserCard(searchUser))}
-                </div>
+    {!isLoading && searchQuery &&
+      rawResults.songs.length === 0 &&
+      rawResults.playlists.length === 0 &&
+      rawResults.users.length === 0 && (
+        <div className="text-center py-12 text-gray-400">
+          No results found for "{searchQuery}"
+        </div>
+      )}
+  </TabsContent>
 
-                {rawResults.users.length > PREVIEW_LIMIT && (
-                  <button
-                    onClick={() => setActiveTab("users")}
-                    className="mt-3 text-pink hover:underline text-sm"
-                  >
-                    See more users
-                  </button>
-                )}
-              </div>
-            )}
-            
-            {!isLoading &&
-              searchQuery &&
-              rawResults.songs.length === 0 &&
-              rawResults.playlists.length === 0 &&
-              rawResults.users.length === 0 && (
-                <div className="text-center py-12 text-gray-400">
-                  No results found for "{searchQuery}"
-                </div>
-              )}
-          </TabsContent>
+  {/* PLAYLISTS TAB */}
+  <TabsContent value="playlists" className="mt-6">
+    {rawResults.playlists.length > 0 ? (
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {rawResults.playlists.slice(0, visiblePlaylists).map((playlist: Playlist) => (
+            <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
+          ))}
+        </div>
+        {(rawResults.playlists.length > visiblePlaylists) && (
+          <div className="flex justify-center mt-4">
+            <Button onClick={() => fetchMorePlaylists()} disabled={loadingMorePlaylists} className="bg-pink text-black hover:bg-[#5b0426]">
+              {loadingMorePlaylists ? "Loading..." : "Show more"}
+            </Button>
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="text-center py-12 text-gray-400">{searchQuery ? `No playlists found` : "Start typing to search"}</div>
+    )}
+  </TabsContent>
 
-          <TabsContent value="playlists" className="mt-6">
-            {rawResults.playlists.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {rawResults.playlists.slice(0, visiblePlaylists).map((playlist) => (
-                    <PlaylistCard key={playlist.id} playlist={playlist} currentUserId={user.id} onLike={handleLike} />
-                  ))}
-                </div>
+  {/* SONGS TAB */}
+  <TabsContent value="songs" className="mt-6">
+    {rawResults.songs.length > 0 && (
+      <>
+        {renderSongList(rawResults.songs.slice(0, visibleSongs))}
+        {(rawResults.songs.length > visibleSongs) && (
+          <div className="flex justify-center mt-4">
+            <Button onClick={() => fetchMoreSongs()} disabled={loadingMoreSongs} className="bg-pink text-black hover:bg-[#5b0426]">
+              {loadingMoreSongs ? "Loading..." : "Show more"}
+            </Button>
+          </div>
+        )}
+      </>
+    )}
+  </TabsContent>
 
-                {(rawResults.playlists.length >= visiblePlaylists || rawResults.playlists.length > 0 || searchQuery.trim()) && (
-                  <div className="flex justify-center mt-4">
-                    <Button onClick={() => fetchMorePlaylists()} disabled={loadingMorePlaylists} className="bg-pink text-black hover:bg-[#5b0426]">
-                      {loadingMorePlaylists ? "Loading..." : "Show more"}
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-12 text-gray-400">{searchQuery ? `No playlists found` : "Start typing to search"}</div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="songs" className="mt-6">
-            {rawResults.songs.length > 0 ? (
-              <>
-                {renderSongList(rawResults.songs.slice(0, visibleSongs))}
+  {/* USERS TAB */}
+  <TabsContent value="users" className="mt-6">
+    {rawResults.users.length > 0 && (
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rawResults.users.slice(0, visibleUsers).map((searchUser) => renderUserCard(searchUser))}
+        </div>
+        {(rawResults.users.length > visibleUsers) && (
+          <div className="flex justify-center mt-4">
+            <Button onClick={() => fetchMoreUsers()} disabled={loadingMoreUsers} className="bg-pink text-black hover:bg-[#5b0426]">
+              {loadingMoreUsers ? "Loading..." : "Show more"}
+            </Button>
+          </div>
+        )}
+      </>
+    )}
+  </TabsContent>
+</Tabs>
 
-                {(rawResults.songs.length >= visibleSongs || rawResults.songs.length > 0 || searchQuery.trim()) && (
-                  <div className="flex justify-center mt-4">
-                    <Button onClick={() => fetchMoreSongs()} disabled={loadingMoreSongs} className="bg-pink text-black hover:bg-[#5b0426]">
-                      {loadingMoreSongs ? "Loading..." : "Show more"}
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : null}
-          </TabsContent>
-          
-          {/* USERS TAB */}
-          <TabsContent value="users" className="mt-6">
-            {rawResults.users.length > 0 ? (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {rawResults.users.slice(0, visibleUsers).map((searchUser) => renderUserCard(searchUser))}
-                </div>
-
-                {(rawResults.users.length >= visibleUsers || rawResults.users.length > 0 || searchQuery.trim()) && (
-                  <div className="flex justify-center mt-4">
-                    <Button onClick={() => fetchMoreUsers()} disabled={loadingMoreUsers} className="bg-pink text-black hover:bg-[#5b0426]">
-                      {loadingMoreUsers ? "Loading..." : "Show more"}
-                    </Button>
-                  </div>
-                )}
-              </>
-            ) : null}
-          </TabsContent>
-        </Tabs>
       </div>
       {showAddToPlaylistForSong !== null && createPortal(
         <div
