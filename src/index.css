@@ -2290,3 +2290,28 @@
   syntax: "*";
   inherits: false
 }
+/* Heart blink animation */
+@keyframes heartBlink {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.2);
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.heart-blink {
+  animation: heartBlink 0.6s ease-in-out;
+}

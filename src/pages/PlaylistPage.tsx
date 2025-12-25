@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 // Global Player Context
 import { usePlayer } from '../contexts/PlayerContext';
 import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
+import { toast } from "sonner";
 
 import { createPortal } from "react-dom";
 import { Lock, Unlock } from "lucide-react";
@@ -48,7 +49,7 @@ export function PlaylistPage() {
   const [showAddToPlaylistForSong, setShowAddToPlaylistForSong] = useState<number | null>(null);
 
   // use shared liked-songs hook
-  const { likedSongIds, likingSongId, handleLikeSong } = useLikedSongs();
+  const { likedSongIds, likingSongId, blinkingSongId, handleLikeSong } = useLikedSongs();
 
 
   useEffect(() => {
@@ -538,7 +539,7 @@ export function PlaylistPage() {
                       className={`flex items-center transition-colors ${likedSongIds.has(String(song.id)) ? 'text-pink opacity-100' : 'text-gray-400 group-hover:text-pink opacity-0 group-hover:opacity-100'} ${likingSongId === String(song.id) ? 'opacity-80 scale-95' : ''}`}
                       title={likedSongIds.has(String(song.id)) ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
                     >
-                      <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(String(song.id)) ? 'fill-pink text-pink' : ''}`} />
+                      <Heart className={`w-4 h-4 transition-colors ${likedSongIds.has(String(song.id)) ? 'fill-pink text-pink' : ''} ${blinkingSongId === String(song.id) ? 'heart-blink' : ''}`} />
                     </button>
 
                     <span className="mr-2">{song.url && song.url !== "no" ? "0:30" : "--:--"}</span>

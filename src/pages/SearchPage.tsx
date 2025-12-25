@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 import { useLikedSongs } from "../hooks/useLikedSongs";
 import { Input } from "../components/ui/input";
+import { toast } from "sonner";
 import {
   Tabs,
   TabsContent,
@@ -50,7 +51,7 @@ export function SearchPage() {
   // `is_liked` and `likes_count` from `rawResults.playlists` directly.
 
   // use shared liked-songs hook
-  const { likedSongIds, likingSongId, handleLikeSong } = useLikedSongs();
+  const { likedSongIds, likingSongId, blinkingSongId, handleLikeSong } = useLikedSongs();
   const [showAddToPlaylistForSong, setShowAddToPlaylistForSong] = useState<number | null>(null);
 
   const fetchInitialData = async () => {
@@ -393,7 +394,7 @@ export function SearchPage() {
                     ${likingSongId === s.id ? 'scale-95 opacity-80' : ''}
                   `}
                 >
-                  <Heart className={`w-5 h-5 transition-colors ${likedSongIds.has(s.id) ? 'fill-pink text-pink' : ''}`} />
+                  <Heart className={`w-5 h-5 transition-colors ${likedSongIds.has(s.id) ? 'fill-pink text-pink' : ''} ${blinkingSongId === s.id ? 'heart-blink' : ''}`} />
                 </button>
 
                 <button

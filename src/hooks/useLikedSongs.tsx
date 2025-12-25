@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
 import { Playlist } from "../types";
+import { toast } from "sonner";
 
 // Lightweight hook to manage the "Liked Songs" playlist client-side.
 // Returns: likedSongIds (Set<string>), likingSongId, handleLikeSong(songId), fetchMyPlaylistsIfNeeded()
@@ -11,6 +12,7 @@ export function useLikedSongs() {
   const [likingSongId, setLikingSongId] = useState<string | null>(null);
   const [likedPlaylistId, setLikedPlaylistId] = useState<number | null>(null);
   const [likedSongIds, setLikedSongIds] = useState<Set<string>>(new Set());
+  const [blinkingSongId, setBlinkingSongId] = useState<string | null>(null);
 
   const fetchMyPlaylistsIfNeeded = useCallback(async () => {
     if (myPlaylists) return myPlaylists;
@@ -68,30 +70,36 @@ export function useLikedSongs() {
               ns.delete(songId);
               return ns;
             });
-            alert("Removed from Liked Songs");
+            toast("Removed from Liked Songs");
           } catch (err: any) {
             console.error("Failed to remove song from liked playlist:", err);
-            alert("Failed to remove from Liked Songs");
+            toast.error("Failed to remove from Liked Songs");
           }
         } else {
           try {
             await playlistService.addSongToPlaylist(pid, Number(songId));
             setLikedSongIds((prev) => new Set(prev).add(songId));
-            alert("Added to Liked Songs ❤️");
+            setBlinkingSongId(songId);
+            toast.success("Added to liked songs ❤️");
+            setTimeout(() => setBlinkingSongId(null), 600);
           } catch (err: any) {
             const detail = err?.response?.data?.detail;
             const status = err?.response?.status;
             if (detail === "Song already in playlist") {
-              alert("Already in Liked Songs ❤️");
+              setBlinkingSongId(songId);
+              toast.success("Already in liked songs ❤️");
               setLikedSongIds((prev) => new Set(prev).add(songId));
+              setTimeout(() => setBlinkingSongId(null), 600);
             } else if (status === 500) {
               // Treat 500 as success per UX requirement
               console.warn("Server returned 500 when adding song; treating as success.", err);
               setLikedSongIds((prev) => new Set(prev).add(songId));
-              alert("Added to Liked Songs ❤️");
+              setBlinkingSongId(songId);
+              toast.success("Added to liked songs ❤️");
+              setTimeout(() => setBlinkingSongId(null), 600);
             } else {
               console.error(err);
-              alert("Failed to add song to Liked Songs");
+              toast.error("Failed to add song to Liked Songs");
             }
           }
         }
@@ -113,6 +121,7 @@ export function useLikedSongs() {
   return {
     likedSongIds,
     likingSongId,
+    blinkingSongId,
     likedPlaylistId,
     fetchMyPlaylistsIfNeeded,
     handleLikeSong,
