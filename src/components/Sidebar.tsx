@@ -58,7 +58,7 @@ export function Sidebar({ currentUser }: SidebarProps) {
                 onClick={() => navigate(item.path)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                   isActive(item.path)
-                    ? "bg-gray-800 text-white"
+                    ? "bg-pink text-black"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -70,9 +70,9 @@ export function Sidebar({ currentUser }: SidebarProps) {
           <li>
             <button
               onClick={() => navigate("/app/create-playlist")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-gray-400 hover:text-white transition-colors ${
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
                 isActive("/app/create-playlist")
-                  ? "bg-gray-800 text-white"
+                  ? "bg-pink text-black"
                   : "text-gray-400 hover:text-white"
               }`}
             >
