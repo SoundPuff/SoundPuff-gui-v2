@@ -65,7 +65,7 @@
     --color-green-500: oklch(.723 .219 149.579);
     --color-pink: rgb(219, 119, 166);
     /* --color-green-500: rgb(219, 119, 166); */
-    --color-green-600: oklch(.627 .194 149.214);
+    --color-dark-pink: rgb(217, 106, 149);
     --color-green-700: oklch(.527 .154 150.069);
     --color-green-900: oklch(.393 .095 152.535);
     --color-gray-200: oklch(.928 .006 264.531);
@@ -1556,8 +1556,8 @@
   }
 
   @media (hover: hover) {
-    .hover\:bg-green-600:hover {
-      background-color: var(--color-green-600);
+    .hover\:bg-dark-pink:hover {
+      background-color: var(--color-dark-pink);
     }
   }
 
