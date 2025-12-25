@@ -293,6 +293,7 @@ export function SearchPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-12 bg-gray-900 border-gray-800 text-white h-12"
+            style={{ outline: "1px solid #DB77A6" }}
           />
         </div>
 
@@ -314,7 +315,10 @@ export function SearchPage() {
             {/* SONGS */}
             {rawResults.songs.length > 0 && (
               <div>
-                <h2 className="mb-4">Songs</h2>
+                <h2 className="mb-4"
+                style={{
+                  WebkitTextStroke: "0.5px #DB77A6"
+                }}>Songs</h2>
                 {/* YENİ GÖRÜNÜM İÇİN HELPER FONKSİYONU ÇAĞIRIYORUZ */}
                 {renderSongList(rawResults.songs.slice(0, 5))}
               </div>
@@ -323,7 +327,10 @@ export function SearchPage() {
             {/* PLAYLISTS */}
             {hydratedPlaylists.length > 0 && (
               <div>
-                <h2 className="mb-4">Playlists</h2>
+                <h2 className="mb-4"
+                style={{
+                  WebkitTextStroke: "0.5px #DB77A6"
+                }}>Playlists</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {hydratedPlaylists.slice(0, 4).map((playlist) => {
                     return (
@@ -342,7 +349,10 @@ export function SearchPage() {
             {/* USERS - ALL TAB */}
             {rawResults.users.length > 0 && (
               <div>
-                <h2 className="mb-4">Users</h2>
+                <h2 className="mb-4"
+                style={{
+                  WebkitTextStroke: "0.5px #DB77A6"
+                }}>Users</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {rawResults.users.slice(0, 6).map((searchUser) => {
                     const isFollowing = user.following?.includes(searchUser.id);
@@ -373,19 +383,22 @@ export function SearchPage() {
                           </div>
                         </div>
                         {!isCurrentUser && (
-                          <Button
-                            onClick={() =>
-                              handleFollow(searchUser.id, searchUser.username)
-                            }
-                            variant={isFollowing ? "outline" : "default"}
-                            className={`w-full mt-3 ${
-                              isFollowing
-                                ? "border-gray-700 text-white hover:bg-gray-800"
-                                : "bg-pink hover:bg-[#5b0426] text-black"
-                            }`}
-                          >
-                            {isFollowing ? "Unfollow" : "Follow"}
-                          </Button>
+                          isFollowing ? (
+                            <Button
+                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
+                              variant="outline"
+                              className="w-full mt-3 border-dark-pink text-pink hover:bg-pink hover:text-black hover:border-pink"
+                            >
+                              Unfollow
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
+                              className="w-full mt-3 bg-pink hover:bg-dark-pink text-black"
+                            >
+                              Follow
+                            </Button>
+                          )
                         )}
                       </div>
                     );
@@ -454,13 +467,22 @@ export function SearchPage() {
                           </div>
                         </div>
                         {!isCurrentUser && (
-                          <Button
-                            onClick={() => handleFollow(searchUser.id, searchUser.username)}
-                            variant={isFollowing ? "outline" : "default"}
-                            className={`w-full mt-3 ${isFollowing ? "border-gray-700 text-white hover:bg-gray-800" : "bg-pink hover:bg-[#5b0426] text-black"}`}
-                          >
-                            {isFollowing ? "Unfollow" : "Follow"}
-                          </Button>
+                          isFollowing ? (
+                            <Button
+                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
+                              variant="outline"
+                              className="w-full mt-3 border-dark-pink text-pink hover:bg-pink hover:text-black hover:border-pink"
+                            >
+                              Unfollow
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() => handleFollow(searchUser.id, searchUser.username)}
+                              className="w-full mt-3 bg-pink hover:bg-dark-pink text-black"
+                            >
+                              Follow
+                            </Button>
+                          )
                         )}
                       </div>
                     );
