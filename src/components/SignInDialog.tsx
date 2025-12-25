@@ -119,7 +119,7 @@ export function SignInDialog({ open, onClose }: SignInDialogProps) {
             Sign In to Interact
           </h2>
           <h4
-            className="text-sm text-gray-400 mt-2"
+            className="text-sm text-white mt-2"
             style={{
               WebkitTextStroke: "0.5px #d95a96",
             }}
