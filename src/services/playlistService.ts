@@ -70,10 +70,14 @@ const mapBackendCommentToFrontend = (backendComment: BackendComment): Comment =>
     text: backendComment.body,
     createdAt: backendComment.created_at,
 
-    likes_count: (backendComment.likes_count ?? 0), // add this
-    is_liked: (backendComment.is_liked ?? false),   // add this
+    likes_count: backendComment.likes_count ?? 0,
+    is_liked: backendComment.is_liked ?? false,
+
+    parentCommentId: (backendComment as any).parent_comment_id ?? null, // NEW
+    replies: [], // initialize empty replies array
   };
 };
+
 
 
 
@@ -233,25 +237,30 @@ export const playlistService = {
   },
 
   /**
-   * Create a comment on a playlist
+   * Create a comment or reply on a playlist
    * @param playlistId - The ID of the playlist
    * @param commentData - Comment data
+   * @param parentCommentId - Optional parent comment ID for replies
    */
   createComment: async (
-    playlistId: number,
-    commentData: CommentCreateRequest
-  ): Promise<Comment> => {
-    try {
-      const response = await api.post<BackendComment>(
-        `/playlists/${playlistId}/comments`,
-        commentData
-      );
-      return mapBackendCommentToFrontend(response.data);
-    } catch (error) {
-      console.error("Create comment error:", error);
-      throw error;
-    }
-  },
+  playlistId: number,
+  commentData: CommentCreateRequest
+): Promise<Comment> => {
+  try {
+    console.log("CREATE COMMENT REQUEST JSON:", commentData); // logs snake_case
+    const response = await api.post<BackendComment>(
+      `/playlists/${playlistId}/comments`,
+      commentData
+    );
+    console.log("CREATE COMMENT RESPONSE:", response.data);
+    return mapBackendCommentToFrontend(response.data);
+  } catch (error) {
+    console.error("Create comment error:", error);
+    throw error;
+  }
+},
+
+
 
   /**
    * Update a comment
