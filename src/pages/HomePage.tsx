@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 import { Button } from "../components/ui/button";
 import { usePlayer } from "../contexts/PlayerContext";
+import { toast } from "sonner";
 
 const categories = ['All', 'Recently Added', 'Popular', 'Rock', 'Pop', 'Jazz', 'Hip-Hop', 'Electronic', 'Classical'];
 
@@ -33,6 +34,7 @@ export function HomePage() {
   const [likingSongId, setLikingSongId] = useState<string | null>(null);
   const [likedPlaylistId, setLikedPlaylistId] = useState<number | null>(null);
   const [likedSongIds, setLikedSongIds] = useState<Set<string>>(new Set());
+  const [blinkingSongId, setBlinkingSongId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -300,33 +302,40 @@ export function HomePage() {
             ns.delete(songId);
             return ns;
           });
-          alert("Removed from Liked Songs");
+          toast("Removed from Liked Songs");
         } catch (err: any) {
           console.error("Failed to remove song from liked playlist:", err);
-          alert("Failed to remove song from Liked Songs");
+          toast.error("Failed to remove song from Liked Songs");
         }
       } else {
         // add
         try {
           await playlistService.addSongToPlaylist(pid, Number(songId));
           setLikedSongIds((prev) => new Set(prev).add(songId));
-          alert("Added to Liked Songs ❤️");
+          setBlinkingSongId(songId);
+          toast.success("Added to liked songs ❤️");
+          // Reset blink animation after animation completes
+          setTimeout(() => setBlinkingSongId(null), 600);
         } catch (err: any) {
           const detail = err?.response?.data?.detail;
           const status = err?.response?.status;
           // If backend says it's already present, treat as success and ensure local cache reflects it
           if (detail === "Song already in playlist") {
-            alert("Already in Liked Songs ❤️");
+            setBlinkingSongId(songId);
+            toast.success("Already in liked songs ❤️");
             setLikedSongIds((prev) => new Set(prev).add(songId));
+            setTimeout(() => setBlinkingSongId(null), 600);
           } else if (status === 500) {
             // Per UX requirement: if server returns 500, still show success message
             // and update local cache so the heart appears filled.
             console.warn("Server returned 500 when adding song; treating as success.", err);
             setLikedSongIds((prev) => new Set(prev).add(songId));
-            alert("Added to Liked Songs ❤️");
+            setBlinkingSongId(songId);
+            toast.success("Added to liked songs ❤️");
+            setTimeout(() => setBlinkingSongId(null), 600);
           } else {
             console.error(err);
-            alert("Failed to add song to Liked Songs");
+            toast.error("Failed to add song to Liked Songs");
           }
         }
       }
@@ -607,7 +616,7 @@ export function HomePage() {
                         <Heart
                           className={`w-5 h-5 transition-colors ${
                             likedSongIds.has(song.id) ? 'fill-pink text-pink' : ''
-                          }`}
+                          } ${blinkingSongId === song.id ? 'heart-blink' : ''}`}
                         />
                       </button>
 
