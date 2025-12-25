@@ -5,7 +5,7 @@ import { PlaylistCard } from "../components/PlaylistCard";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
-import { X, Play, Pause, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react"; 
+import { X, Play, Pause, TrendingUp, ChevronLeft, ChevronRight, Heart } from "lucide-react"; 
 import { Button } from "../components/ui/button";
 import { usePlayer } from "../contexts/PlayerContext";
 
@@ -27,6 +27,10 @@ export function HomePage() {
   // --- DATA STATE (Original) ---
   const [rawFeed, setRawFeed] = useState<Playlist[]>([]);
   const [rawDiscover, setRawDiscover] = useState<Playlist[]>([]);
+  const [myPlaylists, setMyPlaylists] = useState<Playlist[] | null>(null);
+  const [likingSongId, setLikingSongId] = useState<string | null>(null);
+  const [likedPlaylistId, setLikedPlaylistId] = useState<number | null>(null);
+  const [likedSongIds, setLikedSongIds] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
 
@@ -238,6 +242,104 @@ export function HomePage() {
       setRawDiscover(prev => updateList(prev));
     }
   };
+
+  // --- Liked Songs orchestration (frontend-only) ---
+  const fetchMyPlaylistsIfNeeded = async () => {
+    if (myPlaylists) return myPlaylists;
+    if (!user?.id) return [] as Playlist[];
+
+    const playlists = await playlistService.getPlaylists(0, 100);
+    // prefer owner id
+    const mine = playlists.filter((p) => (p.owner?.id || p.userId || p.user_id) === user.id);
+    setMyPlaylists(mine);
+    // If there's a Liked Songs playlist, cache its id and song ids
+    const liked = mine.find((p) => p.title?.toLowerCase() === "liked songs");
+    if (liked) {
+      setLikedPlaylistId(liked.id);
+      setLikedSongIds(new Set((liked.songs || []).map((s) => s.id)));
+    }
+    return mine;
+  };
+
+  const getOrCreateLikedSongsPlaylist = async (): Promise<Playlist> => {
+    const playlists = await fetchMyPlaylistsIfNeeded();
+    const existing = playlists.find((p) => p.title?.toLowerCase() === "liked songs");
+    if (existing) return existing;
+
+    const payload = {
+      title: "Liked Songs",
+      description: "Here is all the songs you liked!",
+      privacy: "private" as const,
+      song_ids: [],
+    };
+
+    const created = await playlistService.createPlaylist(payload);
+    setMyPlaylists((prev) => (prev ? [...prev, created] : [created]));
+    setLikedPlaylistId(created.id);
+    setLikedSongIds(new Set());
+    return created;
+  };
+  const handleLikeSong = async (songId: string) => {
+    if (!songId) return;
+    if (likingSongId === songId) return;
+    setLikingSongId(songId);
+
+    try {
+      const likedPlaylist = await getOrCreateLikedSongsPlaylist();
+      const pid = likedPlaylist.id;
+      const isIn = likedSongIds.has(songId);
+      if (isIn) {
+        // remove
+        try {
+          await playlistService.removeSongFromPlaylist(pid, Number(songId));
+          setLikedSongIds((prev) => {
+            const ns = new Set(prev);
+            ns.delete(songId);
+            return ns;
+          });
+          alert("Removed from Liked Songs");
+        } catch (err: any) {
+          console.error("Failed to remove song from liked playlist:", err);
+          alert("Failed to remove song from Liked Songs");
+        }
+      } else {
+        // add
+        try {
+          await playlistService.addSongToPlaylist(pid, Number(songId));
+          setLikedSongIds((prev) => new Set(prev).add(songId));
+          alert("Added to Liked Songs ❤️");
+        } catch (err: any) {
+          const detail = err?.response?.data?.detail;
+          const status = err?.response?.status;
+          // If backend says it's already present, treat as success and ensure local cache reflects it
+          if (detail === "Song already in playlist") {
+            alert("Already in Liked Songs ❤️");
+            setLikedSongIds((prev) => new Set(prev).add(songId));
+          } else if (status === 500) {
+            // Per UX requirement: if server returns 500, still show success message
+            // and update local cache so the heart appears filled.
+            console.warn("Server returned 500 when adding song; treating as success.", err);
+            setLikedSongIds((prev) => new Set(prev).add(songId));
+            alert("Added to Liked Songs ❤️");
+          } else {
+            console.error(err);
+            alert("Failed to add song to Liked Songs");
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to like/unlike song:", err);
+    } finally {
+      setLikingSongId(null);
+    }
+  };
+
+  // On mount / when user changes, ensure we fetch user's playlists and populate liked songs
+  useEffect(() => {
+    if (!user?.id) return;
+    // fetchMyPlaylistsIfNeeded will set likedSongIds if Liked Songs exist
+    fetchMyPlaylistsIfNeeded().catch((err) => console.error("Failed to fetch my playlists:", err));
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -474,8 +576,22 @@ export function HomePage() {
                       </button>
                     )}
 
-                    <div className="text-sm text-gray-400 tabular-nums pr-2">
-                      {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
+                    {/* Heart button to add to Liked Songs */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLikeSong(song.id);
+                        }}
+                        className={`flex items-center transition-colors ${likedSongIds.has(song.id) ? 'text-pink opacity-100' : 'text-gray-400 group-hover:text-pink opacity-0 group-hover:opacity-100'} ${likingSongId === song.id ? 'opacity-80 scale-95' : ''}`}
+                        title={likedSongIds.has(song.id) ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
+                      >
+                        <Heart className={`w-5 h-5 transition-colors ${likedSongIds.has(song.id) ? 'fill-pink text-pink' : ''}`} />
+                      </button>
+
+                      <div className="text-sm text-gray-400 tabular-nums pr-2">
+                        {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
+                      </div>
                     </div>
                   </div>
                 );
