@@ -101,7 +101,11 @@ export function HomePage() {
     return list.filter(p => p.title.toLowerCase().includes(selectedCategory.toLowerCase()));
   }, [rawDiscover, selectedCategory]);
 
-  // --- SLIDER LOGIC (New Feature) ---
+  // --- SLIDER LOGIC (Updated for Infinite Loop) ---
+  
+  // 1. Önce sabit bir süre tanımlayalım (istersen bunu değiştirebilirsin)
+  const AUTO_SLIDE_INTERVAL = 5000; 
+
   const getAnimationClass = (state: AnimationState, direction: Direction) => {
     if (state === 'idle') return 'opacity-100 translate-x-0 transition-all duration-500 ease-out';
     if (state === 'exiting') {
@@ -125,6 +129,7 @@ export function HomePage() {
     const setDir = isFeed ? setFeedDirection : setDiscoverDirection;
     const animState = isFeed ? feedAnimState : discoverAnimState;
 
+    // Animasyon oynuyorsa veya liste boşsa işlem yapma
     if (animState !== 'idle' || list.length === 0) return;
 
     setDir(direction);
@@ -142,28 +147,55 @@ export function HomePage() {
       setTimeout(() => setAnimState('idle'), 50);
     }, ANIMATION_DURATION);
 
+    // Eğer kullanıcı elle tıkladıysa, timer'ı o anlık sıfırla ve yeniden başlat
+    // (Böylece kullanıcı tıkladıktan hemen sonra slayt kaymaz, süre yeniden başlar)
     if (isManual) {
-      if (isFeed && feedTimerRef.current) clearInterval(feedTimerRef.current);
-      if (!isFeed && discoverTimerRef.current) clearInterval(discoverTimerRef.current);
-      
-      // Timer'ı yeniden başlat (Otomatik kaydırma devam etsin)
-      if (isFeed) feedTimerRef.current = setInterval(() => handleSlide('feed', 'next'), 5000);
-      else discoverTimerRef.current = setInterval(() => handleSlide('discover', 'next'), 5000);
+      if (isFeed) {
+        if (feedTimerRef.current) clearInterval(feedTimerRef.current);
+        feedTimerRef.current = setInterval(() => handleSlideRef.current('feed', 'next'), AUTO_SLIDE_INTERVAL);
+      } else {
+        if (discoverTimerRef.current) clearInterval(discoverTimerRef.current);
+        discoverTimerRef.current = setInterval(() => handleSlideRef.current('discover', 'next'), AUTO_SLIDE_INTERVAL);
+      }
     }
   };
 
-  // --- TIMERS (New Feature) ---
+  // --- REF PATTERN (Kesintisiz Döngü İçin Kritik Kısım) ---
+  // handleSlide fonksiyonunun en güncel halini bir Ref içinde tutuyoruz.
+  // Bu sayede useEffect içindeki timer, handleSlide değişse bile (state değiştiğinde)
+  // her zaman en güncel fonksiyonu çağırmaya devam eder ve timer'ı durdurup başlatmaya gerek kalmaz.
+  const handleSlideRef = useRef(handleSlide);
+  handleSlideRef.current = handleSlide;
+
+  // --- TIMERS ---
   useEffect(() => {
     if (filteredFeedPlaylists.length <= VISIBLE_COUNT) return;
-    feedTimerRef.current = setInterval(() => handleSlide('feed', 'next'), 5000);
+    
+    // Timer sadece component mount olduğunda veya liste uzunluğu değiştiğinde başlar
+    const startTimer = () => {
+        if (feedTimerRef.current) clearInterval(feedTimerRef.current);
+        // Burada doğrudan handleSlide yerine handleSlideRef.current kullanıyoruz
+        feedTimerRef.current = setInterval(() => handleSlideRef.current('feed', 'next'), AUTO_SLIDE_INTERVAL);
+    };
+
+    startTimer();
+
+    // Index değiştiğinde timer SIFIRLANMAZ (dependency array'de index yok)
     return () => { if (feedTimerRef.current) clearInterval(feedTimerRef.current); };
-  }, [filteredFeedPlaylists.length, feedIndex]); // Dependency updated
+  }, [filteredFeedPlaylists.length]); 
 
   useEffect(() => {
     if (filteredDiscoverPlaylists.length <= VISIBLE_COUNT) return;
-    discoverTimerRef.current = setInterval(() => handleSlide('discover', 'next'), 5000);
+
+    const startTimer = () => {
+        if (discoverTimerRef.current) clearInterval(discoverTimerRef.current);
+        discoverTimerRef.current = setInterval(() => handleSlideRef.current('discover', 'next'), AUTO_SLIDE_INTERVAL);
+    };
+
+    startTimer();
+
     return () => { if (discoverTimerRef.current) clearInterval(discoverTimerRef.current); };
-  }, [filteredDiscoverPlaylists.length, discoverIndex]); // Dependency updated
+  }, [filteredDiscoverPlaylists.length]);
 
 
   // --- MEMOIZED HELPERS (Original Logic Preserved) ---
