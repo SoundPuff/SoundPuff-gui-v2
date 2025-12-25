@@ -96,6 +96,7 @@ export function SignInDialog({ open, onClose }: SignInDialogProps) {
           margin: "0 auto",
           transform: "translateY(0)",
           zIndex: 10000,
+          outline: "3px solid #DB77A6",
         }}
       >
         {/* Kapatma Butonu (X) */}
