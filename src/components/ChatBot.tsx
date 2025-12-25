@@ -95,6 +95,7 @@ export function ChatBot() {
          * DO NOT generate {"action": "start_playlist_draft"} again.
          * Treat ANY input (names, titles, genres) as a SEARCH request to add songs to the current playlist.
          * Example: User says "Pop" -> Return {"action": "search", "query": "Pop"} (Do NOT start a new playlist called Pop).
+         * Example: User says "Soviet songs" -> Return {"action": "search", "query": "Soviet"} (Do NOT add "songs or song" to the query).
 
     3. AMBIGUOUS INPUTS (SINGLE NAMES / KEYWORDS):
        - If "PLAYLIST_DRAFT_MODE" is "OFF" and the user types ONLY a name (e.g., "Tarkan", "Taylor Swift") without verbs:
