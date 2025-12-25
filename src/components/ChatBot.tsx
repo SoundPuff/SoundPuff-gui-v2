@@ -100,6 +100,7 @@ export function ChatBot() {
     3. AMBIGUOUS INPUTS (SINGLE NAMES / KEYWORDS):
        - If "PLAYLIST_DRAFT_MODE" is "OFF" and the user types ONLY a name (e.g., "Tarkan", "Taylor Swift") without verbs:
        - Do NOT search automatically. Reply with TEXT: "Did you want to search for [Name], play their songs, or create a playlist? Please be more specific."
+       - User says " Can you find me Soviet songs -> Return {"action": "search", "query": "Soviet"} (Do NOT add "songs or song" to the query).
 
     4. UNCLEAR / NONSENSE INPUTS:
        - If the user input is gibberish or lacks clear intent (e.g., just "gemini lyrics" or "asdf"), DO NOT SEARCH.

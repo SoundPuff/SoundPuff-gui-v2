@@ -591,11 +591,13 @@ export function PlaylistPage() {
               );
             })}
 
-{showAddToPlaylistForSong !== null && (
+{showAddToPlaylistForSong !== null && createPortal(
   <div
     className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center"
-    onClick={() => setShowAddToPlaylistForSong(null)} // outside click closes
+    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }} // Ekstra garanti stil
+    onClick={() => setShowAddToPlaylistForSong(null)} // Siyah alana tıklayınca kapat
   >
+    {/* Tıklamayı durdur ki modalın içine basınca kapanmasın */}
     <div onClick={(e) => e.stopPropagation()}>
       <AddToPlaylistModal
         onSelect={async (targetPlaylistId) => {
@@ -606,29 +608,24 @@ export function PlaylistPage() {
               targetPlaylistId,
               showAddToPlaylistForSong
             );
-
-            // ✅ normal success
             alert("Song successfully added to playlist!");
           } catch (err: any) {
             const detail = err?.response?.data?.detail;
-
             if (detail === "Song already in playlist") {
-              // ✅ treat as success UX
               alert("Song is already in that playlist ✔");
             } else {
-              // ❌ real error
               alert("Song successfully added to playlist ✔");
               console.error(err);
             }
           } finally {
-            // ✅ ALWAYS close modal
             setShowAddToPlaylistForSong(null);
           }
         }}
         onClose={() => setShowAddToPlaylistForSong(null)}
       />
     </div>
-  </div>
+  </div>,
+  document.body // 👈 SİHİRLİ KISIM: Modalı doğrudan body elementine render eder
 )}
 
 
