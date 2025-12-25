@@ -5,7 +5,9 @@ import { PlaylistCard } from "../components/PlaylistCard";
 import { LoadingSkeleton } from "../components/LoadingSkeleton";
 import { playlistService } from "../services/playlistService";
 import { useAuth } from "../contexts/AuthContext";
-import { X, Play, Pause, TrendingUp, ChevronLeft, ChevronRight, Heart } from "lucide-react"; 
+import { X, Play, Pause, TrendingUp, ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react"; 
+import { createPortal } from "react-dom";
+import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 import { Button } from "../components/ui/button";
 import { usePlayer } from "../contexts/PlayerContext";
 
@@ -46,6 +48,7 @@ export function HomePage() {
 
   const feedTimerRef = useRef<NodeJS.Timeout | null>(null);
   const discoverTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [showAddToPlaylistForSong, setShowAddToPlaylistForSong] = useState<number | null>(null);
 
   // --- FETCH DATA (Original Logic Preserved) ---
   useEffect(() => {
@@ -576,23 +579,57 @@ export function HomePage() {
                       </button>
                     )}
 
-                    {/* Heart button to add to Liked Songs */}
-                    <div className="flex items-center gap-3">
+                    {/* Like + Add + Duration */}
+                    <div className="flex items-center justify-end gap-3 pr-2 text-sm text-gray-400 tabular-nums">
+
+                      {/* LIKE */}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           handleLikeSong(song.id);
                         }}
-                        className={`flex items-center transition-colors ${likedSongIds.has(song.id) ? 'text-pink opacity-100' : 'text-gray-400 group-hover:text-pink opacity-0 group-hover:opacity-100'} ${likingSongId === song.id ? 'opacity-80 scale-95' : ''}`}
-                        title={likedSongIds.has(song.id) ? 'Remove from Liked Songs' : 'Add to Liked Songs'}
+                        className={`
+                          flex items-center transition-all
+                          ${likedSongIds.has(song.id)
+                            ? 'text-pink opacity-100'
+                            : 'text-gray-400 opacity-0 group-hover:opacity-100 group-hover:text-pink'}
+                          ${likingSongId === song.id ? 'scale-95 opacity-80' : ''}
+                        `}
+                        title={likedSongIds.has(song.id)
+                          ? 'Remove from Liked Songs'
+                          : 'Add to Liked Songs'}
                       >
-                        <Heart className={`w-5 h-5 transition-colors ${likedSongIds.has(song.id) ? 'fill-pink text-pink' : ''}`} />
+                        <Heart
+                          className={`w-5 h-5 transition-colors ${
+                            likedSongIds.has(song.id) ? 'fill-pink text-pink' : ''
+                          }`}
+                        />
                       </button>
 
-                      <div className="text-sm text-gray-400 tabular-nums pr-2">
-                        {Math.floor(song.duration / 60)}:{String(song.duration % 60).padStart(2, '0')}
+                      {/* ADD TO PLAYLIST */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAddToPlaylistForSong(Number(song.id));
+                        }}
+                        className="
+                          p-1 transition-all
+                          text-gray-400
+                          opacity-0 group-hover:opacity-100
+                          hover:text-white hover:scale-110
+                        "
+                        title="Add to another playlist"
+                      >
+                        <Plus className="w-5 h-5" />
+                      </button>
+
+                      {/* DURATION (always visible, last) */}
+                      <div className="min-w-[44px] text-right">
+                        {song.url && song.url !== "no" ? "0:30" : "--:--"}
                       </div>
+
                     </div>
+
                   </div>
                 );
               })}
@@ -696,6 +733,40 @@ export function HomePage() {
           )}
         </div>
       </div>
+
+      {showAddToPlaylistForSong !== null && createPortal(
+        <div
+          className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center"
+          style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
+          onClick={() => setShowAddToPlaylistForSong(null)}
+        >
+          <div onClick={(e) => e.stopPropagation()}>
+            <AddToPlaylistModal
+              onSelect={async (targetPlaylistId) => {
+                if (showAddToPlaylistForSong === null) return;
+                try {
+                  await playlistService.addSongToPlaylist(
+                    targetPlaylistId,
+                    showAddToPlaylistForSong
+                  );
+                  alert("Song successfully added to playlist!");
+                } catch (err: any) {
+                  const detail = err?.response?.data?.detail;
+                  if (detail === "Song already in playlist") {
+                    alert("Song is already in that playlist ✔");
+                  } else {
+                    console.error(err);
+                    alert("Failed to add song to playlist");
+                  }
+                } finally {
+                  setShowAddToPlaylistForSong(null);
+                }
+              }}
+              onClose={() => setShowAddToPlaylistForSong(null)}
+            />
+          </div>
+        </div>
+      , document.body)}
     </div>
   );
 }

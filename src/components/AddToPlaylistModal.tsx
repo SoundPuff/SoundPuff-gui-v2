@@ -55,9 +55,6 @@ export function AddToPlaylistModal({
       className="bg-gray-900 w-[420px] max-w-[90vw] rounded-lg p-6 shadow-2xl"
       onClick={(e) => e.stopPropagation()}
     >
-        <div className="text-white text-xl">
-    MODAL CONTENT RENDERED
-    </div>
 
       <h3 className="text-white mb-4 text-lg font-semibold">
         Add to playlist
