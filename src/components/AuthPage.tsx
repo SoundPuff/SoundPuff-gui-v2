@@ -25,7 +25,6 @@ export function AuthPage() {
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSuccess, setResetSuccess] = useState(false);
-  const [isSignUpHovered, setIsSignUpHovered] = useState(false);
   const [isLogInHovered, setIsLogInHovered] = useState(false);
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
 
@@ -170,7 +169,7 @@ export function AuthPage() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="login-email" className="text-white">
                       Login
                     </Label>
@@ -182,9 +181,10 @@ export function AuthPage() {
                       placeholder="Enter your email"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="login-password" className="text-white">
                       Password
                     </Label>
@@ -196,15 +196,16 @@ export function AuthPage() {
                       placeholder="Enter your password"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
                   <Button 
                     type="submit" 
                     className="w-full bg-pink hover:bg-[#5b0426] text-black"
-                    onMouseEnter={() => setIsSignUpHovered(true)}
-                    onMouseLeave={() => setIsSignUpHovered(false)}
+                    onMouseEnter={() => setIsLogInHovered(true)}
+                    onMouseLeave={() => setIsLogInHovered(false)}
                     style={{
-                      backgroundColor: isSignUpHovered ? '#D95A96' : '#DB77A6',
+                      backgroundColor: isLogInHovered ? '#D95A96' : '#DB77A6',
                     }}
                     disabled={loading}
                   >
@@ -238,12 +239,23 @@ export function AuthPage() {
               style={{ outline: '3px solid #DB77A6' }}
             >
               <CardHeader>
-                <CardTitle className="text-white">Create account</CardTitle>
-                <CardDescription>Join the SoundPuff community</CardDescription>
+                <CardTitle className="text-white">
+                  <h4 className='text-white'
+                  style={{
+                        WebkitTextStroke: '0.5px #d95a96'
+                      }}>Create Account</h4>
+                </CardTitle>
+                <CardDescription>
+                  <p className='text-white'
+                  style={{ 
+                        color: '#d95a96', 
+                        WebkitTextStroke: '0.5px #d95a96'
+                      }}>Join the SoundPuff community</p>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="signup-username" className="text-white">
                       Username
                     </Label>
@@ -255,9 +267,10 @@ export function AuthPage() {
                       placeholder="Choose a username"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="signup-email" className="text-white">
                       Email
                     </Label>
@@ -269,9 +282,10 @@ export function AuthPage() {
                       placeholder="Enter your email"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="signup-password" className="text-white">
                       Password
                     </Label>
@@ -283,11 +297,12 @@ export function AuthPage() {
                       placeholder="Create a password"
                       required
                       className="bg-gray-800 border-gray-700 text-white"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
                   <Button 
                     type="submit" 
-                    className="w-full bg-pink hover:bg-[#5b0426] text-black"
+                    className="w-full bg-pink hover:bg-dark-pink text-black"
                     disabled={loading}
                   >
                     {loading ? 'Creating account...' : 'Sign Up'}
@@ -337,16 +352,24 @@ export function AuthPage() {
 
               {/* Başlık ve Açıklama */}
               <div className="mb-6 text-center">
-                <h2 className="text-lg font-semibold text-white">Forgot password</h2>
-                <p className="text-sm text-gray-400 mt-2">
+                <h2 className="text-lg font-semibold text-white"
+                style={{ 
+                    WebkitTextStroke: '1px #d95a96'
+                  }}>
+                  Forgot your password?</h2>
+                <h4 className="text-sm text-gray-400 mt-2"
+                style={{ 
+                  color: '#d95a96', 
+                  WebkitTextStroke: '0.5px #5b0425'
+                }}>
                   Enter your email below and we'll send you a password reset link.
-                </p>
+                </h4>
               </div>
 
               {/* Form */}
               <form onSubmit={handleResetPassword} className="flex flex-col items-center justify-center">
                 <div className="space-y-4 w-full">
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <Label htmlFor="reset-email" className="text-white">Email</Label>
                     <Input
                       id="reset-email"
@@ -356,12 +379,13 @@ export function AuthPage() {
                       placeholder="Enter your email"
                       required
                       className="bg-gray-800 border-gray-700 text-white focus:ring-pink focus:border-pink"
+                      style={{ outline: "1px solid #DB77A6" }}
                     />
                   </div>
                   
                   <Button
                     type="submit"
-                    className="w-full bg-pink hover:bg-green-600 text-black font-medium"
+                    className="w-full bg-pink hover:bg-dark-pink text-black font-medium"
                     disabled={loading}
                   >
                     {loading ? 'Sending...' : 'Send password reset link'}
