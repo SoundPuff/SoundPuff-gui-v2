@@ -102,7 +102,10 @@ export function PlaylistCard({
 
         {/* Metinler */}
         <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-          <h3 className="text-white font-semibold text-sm leading-tight line-clamp-2 mb-1 group-hover:text-[#33ace3] transition-colors" title={playlist.title}>
+          <h3 className="text-white font-semibold text-sm leading-tight line-clamp-2 mb-1 group-hover:text-[#33ace3] transition-colors" title={playlist.title}
+          style={{
+                WebkitTextStroke: "0.3px #DB77A6"
+              }}>
             {playlist.title}
           </h3>
           
