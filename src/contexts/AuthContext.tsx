@@ -132,9 +132,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteAccount = async () => {
-    // İleride API çağrısı eklenebilir
-    localStorage.removeItem("access_token");
-    setUser(null);
+    console.log("[AuthContext] deleteAccount invoked");
+    setIsLoading(true);
+    try {
+      console.log("[AuthContext] calling userService.deleteCurrentUser");
+      await userService.deleteCurrentUser();
+      console.log("[AuthContext] deleteCurrentUser success, logging out");
+      await logout();
+    } catch (error) {
+      console.error("Delete account failed:", error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateUser = (updatedUser: User) => {
