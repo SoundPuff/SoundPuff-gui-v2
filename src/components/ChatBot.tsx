@@ -451,7 +451,8 @@ export function ChatBot() {
             height: '500px',        
             maxHeight: '80vh',      
             display: 'flex',        
-            flexDirection: 'column' 
+            flexDirection: 'column',
+            outline: "1px solid #db77a6",
           }} 
         >
           {/* Header */}
@@ -507,7 +508,7 @@ export function ChatBot() {
                 className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl p-3 text-sm ${
+                  className={`max-w-[85%] rounded-lg p-3 text-sm ${
                     message.sender === 'user'
                       ? 'bg-pink text-black font-medium rounded-br-none'
                       : 'bg-gray-800 text-gray-200 rounded-bl-none border border-gray-700'
@@ -542,6 +543,7 @@ export function ChatBot() {
                 placeholder={playlistDraft.isActive ? "Search songs to add..." : "Ask SoundPuff AI..."}
                 className="bg-gray-800 border-gray-600 text-white placeholder:text-gray-500 focus:ring-1 focus:ring-pink focus:border-pink rounded-full px-4 h-10 text-sm"
                 disabled={isTyping}
+                style={{outline: "1px solid #db77a6"}}
               />
               <Button
                 onClick={handleSend}
