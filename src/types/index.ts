@@ -63,7 +63,11 @@ export interface Comment {
 
   likes_count?: number; // new
   is_liked?: boolean;   // new
+
+  parentCommentId?: number | null; // NEW: parent comment ID
+  replies?: Comment[];             // NEW: nested replies
 }
+
 
 
 // Backend SONG SEARCH TYPE
@@ -210,8 +214,9 @@ export interface PlaylistUpdateRequest {
 // --- COMMENT REQUEST TYPES ---
 // Matches API schema "CommentCreate"
 export interface CommentCreateRequest {
-  body: string; // required
-  playlist_id: number; // required
+  body: string;
+  playlist_id: number;
+  parent_comment_id?: number; // Add this line
 }
 
 // Matches API schema "CommentUpdate"

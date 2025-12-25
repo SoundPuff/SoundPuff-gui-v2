@@ -8,14 +8,12 @@ import { Input } from '../components/ui/input';
 import { LoadingSkeleton } from '../components/LoadingSkeleton';
 import { playlistService } from '../services/playlistService';
 import { useAuth } from '../contexts/AuthContext';
-// Global Player Context
 import { usePlayer } from '../contexts/PlayerContext';
 import { AddToPlaylistModal } from "../components/AddToPlaylistModal";
 import { toast } from "sonner";
 
 import { createPortal } from "react-dom";
 import { Lock, Unlock } from "lucide-react";
-
 
 interface PlaylistUser {
   id: string;
@@ -28,24 +26,24 @@ export function PlaylistPage() {
   const { playlistId } = useParams<{ playlistId: string }>();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  
-  // GÜNCELLEME: Global player fonksiyonları çekildi
   const { playSong, currentSong, isPlaying } = usePlayer();
-  
+
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
   const [playlistUser, setPlaylistUser] = useState<PlaylistUser | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentText, setCommentText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // inside PlaylistPage component, add near other useState declarations:
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null); // which comment menu is open
+  // Reply state
+  const [replyingToId, setReplyingToId] = useState<number | null>(null); // which comment is being replied to
+  const [replyText, setReplyText] = useState<string>('');
+
+  // menus / edit state
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [editingCommentId, setEditingCommentId] = useState<number | null>(null);
   const [editingText, setEditingText] = useState<string>('');
 
-  // --- change state declarations near top of component ---
   const [openSongMenuId, setOpenSongMenuId] = useState<string | null>(null);
-  // change to number | null
   const [showAddToPlaylistForSong, setShowAddToPlaylistForSong] = useState<number | null>(null);
 
   // use shared liked-songs hook
@@ -84,6 +82,14 @@ export function PlaylistPage() {
   }, [playlistId, currentUser?.id]);
 
   useEffect(() => {
+  console.log('--- COMMENTS STATE ---');
+  comments.forEach(c => {
+    console.log(`Comment ID: ${c.id}, Parent ID: ${c.parentCommentId ?? 'null'}, Text: ${c.text}`);
+  });
+  console.log('----------------------');
+}, [comments]);
+
+  useEffect(() => {
     const handleClickOutside = () => {
       setOpenSongMenuId(null);
     };
@@ -99,15 +105,15 @@ export function PlaylistPage() {
     if (isLoading) {
       return (
         <div className="flex-1 text-white overflow-y-auto pb-32"
-        style={{
-        background: `
+          style={{
+            background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
           black
         `,
-      }}>
+          }}>
           <div className="bg-gradient-to-b from-pink to-transparent p-8">
             <div className="max-w-7xl mx-auto">
               <div className="flex gap-6 items-end">
@@ -138,12 +144,12 @@ export function PlaylistPage() {
   const isLiked = playlist.is_liked;
   const isOwner = playlist.userId === currentUser.id;
 
+  
   const togglePrivacy = async () => {
     if (!playlist) return;
 
     const newPrivacy = playlist.privacy === "public" ? "private" : "public";
 
-    // ✅ optimistic UI (always)
     setPlaylist(prev =>
       prev ? { ...prev, privacy: newPrivacy } : prev
     );
@@ -155,24 +161,22 @@ export function PlaylistPage() {
 
       alert(`Successfully set to ${newPrivacy}`);
     } catch (err) {
-      // ❗ backend error ama UX success
       console.error("Privacy update failed, but UX treated as success", err);
       alert(`Successfully set to ${newPrivacy}`);
     }
   };
 
-
-  
   const handleSubmitComment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!commentText.trim() || !playlistId || !currentUser?.id) return;
 
     try {
       const playlistIdNum = parseInt(playlistId);
+      // Allow sending parentCommentId via body if desired; for top-level it is omitted
       const newComment = await playlistService.createComment(playlistIdNum, {
         body: commentText,
         playlist_id: playlistIdNum,
-      });
+      } as any);
       setComments((prev) => [...prev, newComment]);
       setCommentText('');
     } catch (error) {
@@ -186,16 +190,15 @@ export function PlaylistPage() {
     const playlistIdNum = Number(playlistId);
     const currentlyLiked = playlist.is_liked;
 
-    // ✅ Optimistic UI update
     setPlaylist((prev) =>
       prev
         ? {
-            ...prev,
-            is_liked: !currentlyLiked,
-            likes_count: currentlyLiked
-              ? Math.max(0, prev.likes_count - 1)
-              : prev.likes_count + 1,
-          }
+          ...prev,
+          is_liked: !currentlyLiked,
+          likes_count: currentlyLiked
+            ? Math.max(0, prev.likes_count - 1)
+            : prev.likes_count + 1,
+        }
         : prev
     );
 
@@ -208,19 +211,17 @@ export function PlaylistPage() {
     } catch (error) {
       console.error('Failed to like/unlike playlist:', error);
 
-      // ❌ Revert on failure
       setPlaylist((prev) =>
         prev
           ? {
-              ...prev,
-              is_liked: currentlyLiked,
-              likes_count: prev.likes_count,
-            }
+            ...prev,
+            is_liked: currentlyLiked,
+            likes_count: prev.likes_count,
+          }
           : prev
       );
     }
   };
-
 
   const handleDeletePlaylist = async () => {
     if (!playlistId) return;
@@ -247,6 +248,8 @@ export function PlaylistPage() {
     navigate(`/app/user/${userId}`);
   };
 
+  
+
   const handleLikeComment = async (commentId: number) => {
     if (!currentUser) return;
 
@@ -265,7 +268,10 @@ export function PlaylistPage() {
     );
 
     try {
-      if (comments.find((c) => c.id === commentId)?.is_liked) {
+      // Note: our UI already toggled the flag, backend calls will be the source of truth
+      const comment = comments.find((c) => c.id === commentId);
+      if (comment?.is_liked) {
+        // it was liked before clicking (we toggled already), so now we should unlike
         await playlistService.unlikeComment(commentId);
       } else {
         await playlistService.likeComment(commentId);
@@ -334,6 +340,46 @@ export function PlaylistPage() {
     }
   };
 
+  // NEW: handle click on Reply action
+  const handleReplyClick = (parentCommentId: number) => {
+    console.log('Replying to parent comment id:', parentCommentId);
+    // Toggle behavior: clicking same id again closes the box
+    setReplyingToId((prev) => (prev === parentCommentId ? null : parentCommentId));
+    setReplyText('');
+  };
+
+  // NEW: send reply (attach parentCommentId in request body)
+const handleSendReply = async (parentCommentId: number) => {
+  if (!replyText.trim() || !playlistId) return;
+  try {
+    const playlistIdNum = Number(playlistId);
+
+    // Prepare request body with correct snake_case
+    const body = {
+      body: replyText,
+      playlist_id: playlistIdNum,
+      parent_comment_id: parentCommentId, // ✅ correct key
+    };
+
+    console.log("REPLY REQUEST BODY:", body); // check in console
+
+    const newComment = await playlistService.createComment(playlistIdNum, body);
+
+    // Update state
+    setComments(prev => [...prev, newComment]);
+    setReplyText('');
+    setReplyingToId(null);
+
+  } catch (err) {
+    console.error('Failed to create reply:', err);
+    alert('Failed to send reply. Try again.');
+  }
+};
+
+
+
+
+
 
   const PLAYABLE_SONG_DURATION = 30; // seconds
 
@@ -355,10 +401,9 @@ export function PlaylistPage() {
     return `${minutes} min`;
   };
 
-
   return (
     <div className="flex-1 text-white overflow-y-auto pb-32"
-    style={{
+      style={{
         background: `
           radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
           radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
@@ -403,7 +448,6 @@ export function PlaylistPage() {
           </div>
 
           <div className="flex items-center gap-4 mt-6">
-            {/* Büyük Play Butonu */}
             <Button
               size="lg"
               className="bg-pink hover:bg-dark-pink text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
@@ -414,7 +458,6 @@ export function PlaylistPage() {
                   startIndex: 0,
                 })
               }
-
             >
               <Play className="w-6 h-6 fill-black ml-0.5" />
             </Button>
@@ -429,7 +472,6 @@ export function PlaylistPage() {
             <span className="text-gray-400">{playlist.likes_count || 0} likes</span>
             {isOwner && (
               <div className="flex items-center gap-2">
-                {/* Edit */}
                 <Button
                   variant="ghost"
                   onClick={handleEditPlaylist}
@@ -439,7 +481,6 @@ export function PlaylistPage() {
                   Edit
                 </Button>
 
-                {/* Privacy toggle */}
                 <Button
                   variant="ghost"
                   onClick={togglePrivacy}
@@ -482,7 +523,6 @@ export function PlaylistPage() {
               </div>
             </div>
             {playlist.songs.map((song, index) => {
-              // Çalan şarkı kontrolü
               const isCurrentSong = currentSong?.id === song.id;
 
               return (
@@ -496,10 +536,7 @@ export function PlaylistPage() {
                     })
                   }
                 >
-
-
                   <div className="w-8 text-gray-400 flex items-center justify-center">
-                    {/* İkon Mantığı: Çalıyorsa Pause, değilse numara veya hover ile Play */}
                     {isCurrentSong && isPlaying ? (
                       <Pause className="w-4 h-4 text-pink fill-pink" />
                     ) : isCurrentSong ? (
@@ -515,7 +552,6 @@ export function PlaylistPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <img src={song.coverArt} alt={song.album} className="w-10 h-10 rounded object-cover" />
                     <div className="min-w-0">
-                      {/* Çalan şarkının rengini pembe yap */}
                       <div className={`truncate ${isCurrentSong ? 'text-pink font-semibold' : 'text-white'}`}>
                         {song.title}
                       </div>
@@ -524,13 +560,11 @@ export function PlaylistPage() {
                   </div>
 
                   <div className="flex items-center text-gray-400 truncate">{song.album}</div>
-                  
-                  {/* Duration + heart + three-dots column */}
+
                   <div
                     className="flex items-center justify-end gap-3 text-gray-400 relative"
-                    onClick={(e) => e.stopPropagation()} // important: prevent row click when interacting here
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {/* Heart button (add/remove from Liked Songs) */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -559,93 +593,90 @@ export function PlaylistPage() {
                   </div>
 
                   {openSongMenuId === song.id && (
-                  <div
-                    className="absolute right-0 top-7 w-48 bg-gray-800 rounded-md shadow-lg z-[9999] overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {isOwner && (
-                      <button
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          try {
-                            await playlistService.removeSongFromPlaylist(
-                              Number(playlistId),
-                              Number(song.id)
-                            );
-                            setPlaylist(prev =>
-                              prev
-                                ? { ...prev, songs: prev.songs.filter(s => s.id !== song.id) }
-                                : prev
-                            );
-                          } catch (err) {
-                            console.error("Failed to remove song:", err);
-                          } finally {
-                            setOpenSongMenuId(null);
-                          }
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700"
-                      >
-                        Remove from playlist
-                      </button>
-                    )}
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-
-                        setOpenSongMenuId(null);              // 👈 close song menu FIRST
-                        setShowAddToPlaylistForSong(Number(song.id)); // 👈 open modal
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700"
+                    <div
+                      className="absolute right-0 top-7 w-48 bg-gray-800 rounded-md shadow-lg z-[9999] overflow-hidden"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      Add to another playlist
-                    </button>
+                      {isOwner && (
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await playlistService.removeSongFromPlaylist(
+                                Number(playlistId),
+                                Number(song.id)
+                              );
+                              setPlaylist(prev =>
+                                prev
+                                  ? { ...prev, songs: prev.songs.filter(s => s.id !== song.id) }
+                                  : prev
+                              );
+                            } catch (err) {
+                              console.error("Failed to remove song:", err);
+                            } finally {
+                              setOpenSongMenuId(null);
+                            }
+                          }}
+                          className="w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-gray-700"
+                        >
+                          Remove from playlist
+                        </button>
+                      )}
 
-                  </div>
-                )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+
+                          setOpenSongMenuId(null);
+                          setShowAddToPlaylistForSong(Number(song.id));
+                        }}
+                        className="w-full px-3 py-2 text-left text-sm text-gray-200 hover:bg-gray-700"
+                      >
+                        Add to another playlist
+                      </button>
+
+                    </div>
+                  )}
 
                 </div>
               );
             })}
 
-{showAddToPlaylistForSong !== null && createPortal(
-  <div
-    className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center"
-    style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }} // Ekstra garanti stil
-    onClick={() => setShowAddToPlaylistForSong(null)} // Siyah alana tıklayınca kapat
-  >
-    {/* Tıklamayı durdur ki modalın içine basınca kapanmasın */}
-    <div onClick={(e) => e.stopPropagation()}>
-      <AddToPlaylistModal
-        onSelect={async (targetPlaylistId) => {
-          if (showAddToPlaylistForSong === null) return;
+            {showAddToPlaylistForSong !== null && createPortal(
+              <div
+                className="fixed inset-0 z-[99999] bg-black/60 flex items-center justify-center"
+                style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}
+                onClick={() => setShowAddToPlaylistForSong(null)}
+              >
+                <div onClick={(e) => e.stopPropagation()}>
+                  <AddToPlaylistModal
+                    onSelect={async (targetPlaylistId) => {
+                      if (showAddToPlaylistForSong === null) return;
 
-          try {
-            await playlistService.addSongToPlaylist(
-              targetPlaylistId,
-              showAddToPlaylistForSong
-            );
-            alert("Song successfully added to playlist!");
-          } catch (err: any) {
-            const detail = err?.response?.data?.detail;
-            if (detail === "Song already in playlist") {
-              alert("Song is already in that playlist ✔");
-            } else {
-              alert("Song successfully added to playlist ✔");
-              console.error(err);
-            }
-          } finally {
-            setShowAddToPlaylistForSong(null);
-          }
-        }}
-        onClose={() => setShowAddToPlaylistForSong(null)}
-      />
-    </div>
-  </div>,
-  document.body // 👈 SİHİRLİ KISIM: Modalı doğrudan body elementine render eder
-)}
-
-
+                      try {
+                        await playlistService.addSongToPlaylist(
+                          targetPlaylistId,
+                          showAddToPlaylistForSong
+                        );
+                        alert("Song successfully added to playlist!");
+                      } catch (err: any) {
+                        const detail = err?.response?.data?.detail;
+                        if (detail === "Song already in playlist") {
+                          alert("Song is already in that playlist ✔");
+                        } else {
+                          alert("Song successfully added to playlist ✔");
+                          console.error(err);
+                        }
+                      } finally {
+                        setShowAddToPlaylistForSong(null);
+                      }
+                    }}
+                    onClose={() => setShowAddToPlaylistForSong(null)}
+                  />
+                </div>
+              </div>,
+              document.body
+            )}
 
           </div>
 
@@ -653,9 +684,9 @@ export function PlaylistPage() {
           <div className="mt-12">
             <div className="flex items-center gap-2 mb-6">
               <MessageCircle className="w-6 h-6 text-pink" />
-              <h2
-              style={{WebkitTextStroke: "0.5px #d95a96"}}>Comments ({comments.length})</h2>
+              <h2 style={{ WebkitTextStroke: "0.5px #d95a96" }}>Comments ({comments.length})</h2>
             </div>
+
             <form onSubmit={handleSubmitComment} className="mb-8">
               <div className="flex gap-3">
                 <Input
@@ -670,107 +701,237 @@ export function PlaylistPage() {
                 </Button>
               </div>
             </form>
-            <div className="space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex gap-3 relative">
-                  <img
-                    src={comment.avatar}
-                    alt={comment.username}
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-
-                  <div className="flex-1">
-                    <div className="bg-gray-900 rounded-lg p-4 relative">
-                    
-
-                    {/* three-dot menu button (only for owner) */}
-                      {comment.userId === currentUser.id && (
-                        <div className="absolute top-2 right-2 left-[-8px] p-1 rounded-full">
-                          <button
-                            onClick={() => toggleMenu(comment.id)}
-                            className="w-5 h-5 text-gray-400 hover:text-white"
-                          >
-                            <MoreHorizontal className="w-5 h-5 text-gray-400 hover:text-white" />
-                          </button>
 
 
-                          {/* dropdown menu */}
-                          {openMenuId === comment.id && (
-                            <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-30 overflow-hidden">
-                              <button
-                                onClick={() => startEditComment(comment)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700"
-                              >
-                                <Edit className="w-4 h-4" />
-                                Edit
-                              </button>
+<div className="space-y-4">
+  {(() => {
+    const topLevelComments = comments.filter(c => !c.parentCommentId);
 
-                              <button
-                                onClick={() => handleDeleteComment(comment.id)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {/* Username + Date */}
-                      <div className="flex items-center gap-2 mb-2 pr-12">
-                        <span className="text-white font-semibold">{comment.username}</span>
-                        <span className="text-gray-500 text-sm">
-                          {new Date(comment.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+    // Map parent -> replies
+    const repliesMap: Record<number, Comment[]> = {};
+    comments.forEach(c => {
+      if (c.parentCommentId) {
+        if (!repliesMap[c.parentCommentId]) repliesMap[c.parentCommentId] = [];
+        repliesMap[c.parentCommentId].push(c);
+      }
+    });
 
-                      {/* Comment text or editable textarea */}
-                      {editingCommentId === comment.id ? (
-                        <div>
-                          <textarea
-                            value={editingText}
-                            onChange={(e) => setEditingText(e.target.value)}
-                            className="w-full bg-gray-800 text-white p-2 rounded resize-none border border-gray-700"
-                            rows={3}
-                          />
-                          <div className="mt-2 flex gap-2">
-                            <button
-                              onClick={() => saveEditedComment(comment.id)}
-                              className="bg-pink text-black px-3 py-1 rounded"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={cancelEdit}
-                              className="px-3 py-1 rounded border border-gray-700 text-gray-300"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <p className="text-gray-300">{comment.text}</p>
-                      )}
+    // Flatten replies in logical order (parent → all its replies → next sibling)
+    const flattenReplies = (commentId: number): Comment[] => {
+      const result: Comment[] = [];
+      const queue = repliesMap[commentId] ? [...repliesMap[commentId]] : [];
 
-                      {/* Likes (heart + count) */}
-                      <div className="flex items-center gap-2 mt-3">
-                        <button
-                          onClick={() => handleLikeComment(comment.id)}
-                          className="hover:text-pink text-gray-400"
-                          aria-label="Like comment"
-                        >
-                          <Heart className={`w-6 h-6 ${comment.is_liked ? 'fill-pink text-pink' : ''}`} />
-                        </button>
-                        <span className="text-gray-400 text-sm">{comment.likes_count || 0}</span>
-                      </div>
-                    </div>
+      while (queue.length) {
+        const r = queue.shift()!;
+        result.push(r);
+        if (repliesMap[r.id]) {
+          // Insert replies of r immediately after r
+          queue.unshift(...repliesMap[r.id]);
+        }
+      }
+      return result;
+    };
+
+    const renderComment = (comment: Comment) => (
+      <div key={comment.id} className="flex gap-3">
+        <img src={comment.avatar} alt={comment.username} className="w-10 h-10 rounded-full object-cover" />
+        <div className="flex-1">
+          <div className="bg-gray-900 rounded-lg p-4 relative border border-gray-700">
+            {/* Edit/Delete */}
+            {comment.userId === currentUser.id && (
+              <div className="absolute top-2 right-2">
+                <button onClick={() => toggleMenu(comment.id)} className="w-5 h-5 text-gray-400 hover:text-white">
+                  <MoreHorizontal className="w-5 h-5" />
+                </button>
+                {openMenuId === comment.id && (
+                  <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-30 overflow-hidden">
+                    <button onClick={() => startEditComment(comment)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700">
+                      <Edit className="w-4 h-4" /> Edit
+                    </button>
+                    <button onClick={() => handleDeleteComment(comment.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700">
+                      <Trash2 className="w-4 h-4" /> Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Username + Date */}
+            <div className="flex items-center gap-2 mb-2 pr-12">
+              <span className="text-white font-semibold">{comment.username}</span>
+              {comment.parentCommentId && (
+                <span className="text-gray-400 text-sm">• replying to @{comments.find(c => c.id === comment.parentCommentId)?.username}</span>
+              )}
+              <span className="text-gray-500 text-sm">{new Date(comment.createdAt).toLocaleDateString()}</span>
+            </div>
+
+            {/* Comment text */}
+            {editingCommentId === comment.id ? (
+              <div>
+                <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded resize-none border border-gray-700" rows={3} />
+                <div className="mt-2 flex gap-2">
+                  <button onClick={() => saveEditedComment(comment.id)} className="bg-pink text-black px-3 py-1 rounded">Save</button>
+                  <button onClick={cancelEdit} className="px-3 py-1 rounded border border-gray-700 text-gray-300">Cancel</button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-gray-300">{comment.text}</p>
+            )}
+
+            {/* Likes + Reply */}
+            <div className="flex items-center gap-4 mt-3">
+              <div className="flex items-center gap-2">
+                <button onClick={() => handleLikeComment(comment.id)} className="hover:text-pink text-gray-400">
+                  <Heart className={`w-6 h-6 ${comment.is_liked ? 'fill-pink text-pink' : ''}`} />
+                </button>
+                <span className="text-gray-400 text-sm">{comment.likes_count || 0}</span>
+              </div>
+              <button onClick={() => handleReplyClick(comment.id)} className={`text-sm px-2 py-1 rounded ${replyingToId === comment.id ? 'text-pink' : 'text-gray-400 hover:text-pink'}`}>
+                Reply
+              </button>
+            </div>
+          </div>
+
+          {/* Flattened replies */}
+          {/* Flattened replies */}
+{flattenReplies(comment.id).map(reply => (
+  <React.Fragment key={reply.id}>
+    <div className="flex gap-3 mt-2 ml-12">
+      <img src={reply.avatar} alt={reply.username} className="w-10 h-10 rounded-full object-cover" />
+      <div className="flex-1">
+        <div className="bg-gray-900 rounded-lg p-4 border border-gray-700 relative">
+          {/* Edit/Delete menu for reply */}
+          {reply.userId === currentUser.id && (
+            <div className="absolute top-2 right-2">
+              <button onClick={() => toggleMenu(reply.id)} className="w-5 h-5 text-gray-400 hover:text-white">
+                <MoreHorizontal className="w-5 h-5" />
+              </button>
+              {openMenuId === reply.id && (
+                <div className="absolute right-0 mt-2 w-40 bg-gray-800 rounded-md shadow-lg z-30 overflow-hidden">
+                  <button onClick={() => startEditComment(reply)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700">
+                    <Edit className="w-4 h-4" /> Edit
+                  </button>
+                  <button onClick={() => handleDeleteComment(reply.id)} className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-gray-700">
+                    <Trash2 className="w-4 h-4" /> Delete
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Username + replying to */}
+          <div className="flex items-center gap-2 mb-2 pr-12">
+            <span className="text-white font-semibold">{reply.username}</span>
+            {reply.parentCommentId && (
+              <span className="text-gray-400 text-sm">• replying to @{comments.find(c => c.id === reply.parentCommentId)?.username}</span>
+            )}
+            <span className="text-gray-500 text-sm">{new Date(reply.createdAt).toLocaleDateString()}</span>
+          </div>
+
+          {/* Reply text */}
+          {editingCommentId === reply.id ? (
+            <div>
+              <textarea value={editingText} onChange={(e) => setEditingText(e.target.value)} className="w-full bg-gray-800 text-white p-2 rounded resize-none border border-gray-700" rows={3} />
+              <div className="mt-2 flex gap-2">
+                <button onClick={() => saveEditedComment(reply.id)} className="bg-pink text-black px-3 py-1 rounded">Save</button>
+                <button onClick={cancelEdit} className="px-3 py-1 rounded border border-gray-700 text-gray-300">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-gray-300">{reply.text}</p>
+          )}
+
+          {/* Likes + Reply action */}
+          <div className="flex items-center gap-4 mt-3">
+            <div className="flex items-center gap-2">
+              <button onClick={() => handleLikeComment(reply.id)} className="hover:text-pink text-gray-400">
+                <Heart className={`w-6 h-6 ${reply.is_liked ? 'fill-pink text-pink' : ''}`} />
+              </button>
+              <span className="text-gray-400 text-sm">{reply.likes_count || 0}</span>
+            </div>
+            <button onClick={() => handleReplyClick(reply.id)} className={`text-sm px-2 py-1 rounded ${replyingToId === reply.id ? 'text-pink' : 'text-gray-400 hover:text-pink'}`}>
+              Reply
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {/* Reply box directly under this reply (same indent as replies) */}
+    {replyingToId === reply.id && (
+      <div className="flex mt-2 gap-3 ml-12">
+        <img src={currentUser.avatar} alt={currentUser.username} className="w-10 h-10 rounded-full object-cover" />
+        <div className="flex-1">
+          <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-white font-semibold">{currentUser.username}</span>
+              <span className="text-gray-500 text-sm">{new Date().toLocaleDateString()}</span>
+            </div>
+
+            <textarea
+              autoFocus
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              className="w-full bg-gray-800 text-gray-200 p-2 rounded resize-none border border-gray-700 focus:outline-none focus:border-pink-500"
+              rows={3}
+              placeholder="Write your reply..."
+            />
+
+            <div className="mt-2 flex gap-2">
+              <button
+                onClick={() => {
+                  handleSendReply(reply.id);
+                }}
+                className="bg-pink text-black px-3 py-1 rounded"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => { setReplyingToId(null); setReplyText(''); }}
+                className="px-3 py-1 rounded border border-gray-700 text-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+  </React.Fragment>
+))}
+
+
+          {/* Reply Box */}
+          {replyingToId && replyingToId === comment.id && (
+            <div className="flex mt-2 gap-3 ml-12">
+              <img src={currentUser.avatar} alt={currentUser.username} className="w-10 h-10 rounded-full object-cover" />
+              <div className="flex-1">
+                <div className="bg-gray-900 rounded-lg p-4 border border-gray-700">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-white font-semibold">{currentUser.username}</span>
+                    <span className="text-gray-500 text-sm">{new Date().toLocaleDateString()}</span>
+                  </div>
+                  <textarea autoFocus value={replyText} onChange={(e) => setReplyText(e.target.value)} className="w-full bg-gray-800 text-gray-200 p-2 rounded resize-none border border-gray-700 focus:outline-none focus:border-pink-500" rows={3} placeholder="Write your reply..." />
+                  <div className="mt-2 flex gap-2">
+                    <button onClick={() => handleSendReply(replyingToId)} className="bg-pink text-black px-3 py-1 rounded">Save</button>
+                    <button onClick={() => { setReplyingToId(null); setReplyText(''); }} className="px-3 py-1 rounded border border-gray-700 text-gray-300">Cancel</button>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
+          )}
+        </div>
+      </div>
+    );
+
+    return topLevelComments.map(c => renderComment(c));
+  })()}
+</div>
+
+
           </div>
         </div>
       </div>
     </div>
   );
-} 
+}
