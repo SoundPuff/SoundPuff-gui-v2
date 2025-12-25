@@ -33,22 +33,30 @@ const mapBackendPlaylistToFrontend = (
   );
 
   return {
-    id: backendPlaylist.id, // Keep as number to match API
+    id: backendPlaylist.id,
     title: backendPlaylist.title,
-    description: backendPlaylist.description || "", // Convert null to empty string for frontend
+    description: backendPlaylist.description || "",
     songs: mappedSongs,
-    userId: backendPlaylist.user_id, // Frontend convenience field
-    user_id: backendPlaylist.user_id, // API field
-    likes: [], // Frontend convenience field (not from API, only likes_count is available)
-    createdAt: backendPlaylist.created_at, // Frontend convenience field
-    created_at: backendPlaylist.created_at, // API field
-    updated_at: backendPlaylist.updated_at, // API field
-    privacy: backendPlaylist.privacy, // API field
-    owner: backendPlaylist.owner, // API field (BackendUser)
-    likes_count: backendPlaylist.likes_count, // API field
-    comments_count: backendPlaylist.comments_count, // API field
-    coverArt: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200", // Frontend convenience field
+
+    userId: backendPlaylist.user_id,
+    user_id: backendPlaylist.user_id,
+
+    createdAt: backendPlaylist.created_at,
+    created_at: backendPlaylist.created_at,
+    updated_at: backendPlaylist.updated_at,
+
+    privacy: backendPlaylist.privacy,
+    owner: backendPlaylist.owner,
+
+    likes_count: backendPlaylist.likes_count,
+    comments_count: backendPlaylist.comments_count,
+    is_liked: Boolean(backendPlaylist.is_liked), // ✅ ADD THIS
+
+    coverArt:
+      backendPlaylist.cover_image_url ||
+      "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=200",
   };
+
 };
 
 // Helper function to map backend comment to frontend comment

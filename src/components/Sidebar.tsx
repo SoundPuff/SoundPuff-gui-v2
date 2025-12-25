@@ -84,7 +84,6 @@ export function Sidebar({ currentUser }: SidebarProps) {
 
         {/* Right Side: Theme Toggle and User */}
         <div className="flex items-center gap-4">
-          <ThemeToggle />
           {currentUser && (
             <div className="flex items-center gap-2 border-l border-gray-800 pl-4">
               <button

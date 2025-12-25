@@ -20,9 +20,7 @@ export function PlaylistCard({
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const isLiked = user?.likedPlaylists?.includes(playlist.id.toString()) 
-    || (currentUserId && playlist.likes?.includes(currentUserId)) 
-    || false;
+  const isLiked = playlist.is_liked === true;
 
   const onUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -117,14 +115,24 @@ export function PlaylistCard({
           </div>
 
           <div className="flex items-center text-xs text-gray-500 mt-0.5">
-         <button
-           onClick={onLikeClick}
-           disabled={isGuestMode}
-           className={`flex items-center gap-1 group/like hover:text-white transition-colors z-20 ${isLiked ? 'text-green-500 hover:text-[#5b0426]' : ''}`}
-         >
-                <Heart className={`w-3.5 h-3.5 ${isLiked ? 'fill-current' : ''}`} />
-                <span>{playlist.likes_count || 0}</span>
-             </button>
+
+<button
+  onClick={onLikeClick}
+  disabled={isGuestMode}
+  className="flex items-center gap-1.5 text-gray-400 hover:text-pink transition-colors z-20"
+>
+  <Heart
+    className={`w-5 h-5 transition-colors ${
+      isLiked ? 'fill-pink text-pink' : ''
+    }`}
+  />
+  <span className="text-sm">
+    {playlist.likes_count || 0}
+  </span>
+</button>
+
+
+
              <span className="mx-1.5">•</span>
              <span>{formatDate(playlist.createdAt || playlist.created_at)}</span>
           </div>

@@ -33,35 +33,19 @@ export function SearchPage() {
     users: User[];
   }>({ songs: [], playlists: [], users: [] });
 
+  // Hydrate playlists: do NOT invent a `likes` array. Use server contract fields only.
+  // - `is_liked` tells whether the current user liked the playlist
+  // - `likes_count` is the total count
   const hydratedPlaylists = useMemo(() => {
-    if (!user || !rawResults.playlists) return rawResults.playlists;
+    if (!rawResults.playlists) return [];
 
-    return rawResults.playlists.map((playlist) => {
-      const playlistIdStr = playlist.id.toString();
-      const userLikedList = user.likedPlaylists || []; 
-      
-      const isLiked = userLikedList.includes(playlistIdStr);
-
-      let updatedLikes = [...(playlist.likes || [])];
-
-      if (isLiked && user.id && !updatedLikes.includes(user.id)) {
-        updatedLikes.push(user.id);
-      } 
-      else if (!isLiked && user.id && updatedLikes.includes(user.id)) {
-        updatedLikes = updatedLikes.filter(id => id !== user.id);
-      }
-
-      let updatedCount = playlist.likes_count || 0;
-      if (isLiked && updatedCount === 0) {
-        updatedCount = 1;
-      }
-
-      return {
-        ...playlist,
-        likes: updatedLikes,
-        likes_count: updatedCount
-      };
-    });
+    return rawResults.playlists.map((playlist) => ({
+      ...playlist,
+      is_liked:
+        user?.likedPlaylists?.includes(playlist.id.toString()) ??
+        playlist.is_liked,
+      likes_count: playlist.likes_count,
+    }));
   }, [rawResults.playlists, user]);
 
   const fetchInitialData = async () => {
@@ -139,35 +123,48 @@ export function SearchPage() {
   };
 
   const handleLike = async (playlistId: string) => {
-    if (!user?.id) return;
+    if (!user) return;
 
-    const playlistIdStr = playlistId.toString();
-    const isLiked = user.likedPlaylists?.includes(playlistIdStr) ?? false;
-    const playlistIdNum = parseInt(playlistId);
+    const idStr = playlistId.toString();
+    const wasLiked = user.likedPlaylists?.includes(idStr) ?? false;
 
-    const updatedLikedPlaylists = isLiked
-        ? user.likedPlaylists.filter(id => id !== playlistIdStr)
-        : [...(user.likedPlaylists || []), playlistIdStr];
+    // capture previous state for potential rollback
+    const prevUser = user;
+    const prevRaw = rawResults;
 
+    // optimistic user update
     updateUser({
-        ...user,
-        likedPlaylists: updatedLikedPlaylists
+      ...user,
+      likedPlaylists: wasLiked
+        ? (user.likedPlaylists || []).filter((id) => id !== idStr)
+        : [...(user.likedPlaylists || []), idStr],
     });
 
+    // optimistic playlist update (only flip is_liked and adjust likes_count)
+    setRawResults((prev) => ({
+      ...prev,
+      playlists: prev.playlists.map((p) =>
+        p.id.toString() === idStr
+          ? {
+              ...p,
+              is_liked: !wasLiked,
+              likes_count: (p.likes_count || 0) + (wasLiked ? -1 : 1),
+            }
+          : p
+      ),
+    }));
+
     try {
-      if (isLiked) {
-        await playlistService.unlikePlaylist(playlistIdNum);
+      if (wasLiked) {
+        await playlistService.unlikePlaylist(+playlistId);
       } else {
-        await playlistService.likePlaylist(playlistIdNum);
+        await playlistService.likePlaylist(+playlistId);
       }
     } catch (error: any) {
-      const errorMessage = error.response?.data?.detail;
-      if (errorMessage === "Already liked this playlist" || error.response?.status === 400) {
-        console.log("State zaten senkronize.");
-      } else {
-        console.error("Like hatası, geri alınıyor:", error);
-        updateUser({ ...user, likedPlaylists: user.likedPlaylists }); 
-      }
+      // rollback to previous state on error
+      console.error("Like error, rolling back:", error);
+      updateUser(prevUser);
+      setRawResults(prevRaw);
     }
   };
 

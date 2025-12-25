@@ -24,7 +24,6 @@ export function CreatePlaylistPage() {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [coverArt, setCoverArt] = useState("");
   const [availableSongs, setAvailableSongs] = useState<Song[]>([]);
   const [selectedSongs, setSelectedSongs] = useState<Song[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -43,7 +42,7 @@ export function CreatePlaylistPage() {
           const playlist = await playlistService.getPlaylist(playlistIdNum);
           setTitle(playlist.title);
           setDescription(playlist.description || "");
-          setCoverArt(playlist.coverArt || "");
+          setCoverImage(playlist.cover_image_url || "");
           setSelectedSongs(playlist.songs);
         } catch (error) {
           console.error("Failed to fetch playlist:", error);
@@ -144,36 +143,34 @@ export function CreatePlaylistPage() {
     });
   };
 
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!title.trim() || selectedSongs.length === 0 || !user?.id) return;
+
+    const payload = {
+      title,
+      description: description || null,
+      privacy: "public" as const, // ✅ FIX
+      cover_image_url: coverImage || null,
+      song_ids: selectedSongs.map((s) => Number(s.id)),
+    };
+
 
     try {
       if (isEditing && playlistId) {
-        // Update existing playlist
-        const playlistIdNum = parseInt(playlistId);
-        await playlistService.updatePlaylist(playlistIdNum, {
-          title,
-          description,
-          privacy: "public",
-          // song_ids: selectedSongs.map((song) => parseInt(song.id)),
-          coverArt: coverImage,
-        } as any);
+        await playlistService.updatePlaylist(Number(playlistId), payload);
       } else {
-        // Create new playlist
-        await playlistService.createPlaylist({
-          title,
-          description,
-          privacy: "public",
-          song_ids: selectedSongs.map((song) => parseInt(song.id)),
-          coverArt: coverImage,
-        } as any);
+        await playlistService.createPlaylist(payload);
       }
+
       navigate("/app/library");
     } catch (error) {
       console.error("Failed to save playlist:", error);
     }
   };
+
 
   const isSongSelected = (songId: string) => {
     return selectedSongs.some((s) => s.id === songId);

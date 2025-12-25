@@ -29,22 +29,28 @@ export interface PlaylistOwner {
   created_at: string;
 }
 export interface Playlist {
-  id: number; // API returns integer
+  id: number;
   title: string;
-  description: string | null;
+  description: string;
   songs: Song[];
-  userId?: string; // Frontend convenience field
-  user_id: string; // API field (UUID)
-  likes?: string[]; // Frontend convenience field (not from API)
-  createdAt?: string; // Frontend convenience field
-  created_at: string; // API field (date-time)
-  updated_at?: string | null; // API field (date-time or null)
-  coverArt?: string; // Frontend convenience field
-  privacy: "public" | "private"; // API field
-  owner: BackendUser; // API field (User schema)
-  likes_count: number; // API field (default: 0)
-  comments_count: number; // API field (default: 0)
+
+  userId: string;
+  user_id: string;
+  owner: BackendUser;
+
+  createdAt?: string;
+  created_at?: string;
+  updated_at?: string | null;
+  cover_image_url?: string | null;
+
+  privacy: string;
+  coverArt?: string;
+
+  likes_count: number;
+  comments_count: number;
+  is_liked: boolean; // ✅ REQUIRED
 }
+
 
 export interface Comment {
   id: number; // API returns integer
@@ -89,10 +95,11 @@ export interface SearchResponse {
 export interface BackendUser {
   id: string;
   username: string;
-  bio: string | null;
-  avatar_url: string | null;
+  avatar_url?: string | null;
+  bio?: string | null;
   created_at: string;
 }
+
 
 // Backend'den profil güncelleme isteği için (PUT /users/me)
 export interface UserUpdateRequest {
@@ -140,16 +147,32 @@ export interface SearchAllResponse {
 export interface BackendPlaylistFull {
   id: number;
   title: string;
-  description: string | null;
-  privacy: "public" | "private";
-  user_id: string; // UUID
-  created_at: string; // date-time
-  updated_at: string | null; // date-time or null
-  owner: BackendUser; // User schema
-  songs: BackendSong[]; // Array of Song schema
-  likes_count: number; // default: 0
-  comments_count: number; // default: 0
+  description?: string | null;
+  privacy: string;
+
+  user_id: string;
+  created_at: string;
+  updated_at: string | null;
+
+  owner: {
+    id: string;
+    username: string;
+    avatar_url?: string;
+    bio?: string;
+    created_at: string;
+  };
+
+  songs: BackendSong[];
+
+  // ✅ ADD THESE
+  likes_count: number;
+  comments_count: number;
+  is_liked: boolean;
+
+  // ✅ ADD THIS
+  cover_image_url?: string | null;
 }
+
 
 // --- BACKEND COMMENT TYPES ---
 // Matches API schema "Comment"
