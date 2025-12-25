@@ -497,7 +497,7 @@ return (
                           targetId,
                           showAddToPlaylistForSong!
                         );
-                        alert('Added!');
+                        // alert('Added!');
                       } catch (err) {
                         console.error(err);
                       } finally {

@@ -118,7 +118,7 @@ export function CreatePlaylistPage() {
 
   const handleFile = async (file: File) => {
     if (!file.type.startsWith("image/")) {
-      alert("Please select an image file.");
+      // alert("Please select an image file.");
       return;
     }
 
@@ -144,7 +144,7 @@ export function CreatePlaylistPage() {
       }
     } catch (err) {
       console.error("Cover upload failed:", err);
-      alert("Image upload failed");
+      // alert("Image upload failed");
     }
   };
 

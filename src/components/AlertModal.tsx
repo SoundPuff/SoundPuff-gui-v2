@@ -1,23 +1,26 @@
-// components/AlertModal.tsx
-import { FC } from "react";
-import { Button } from "./ui/button";
+// components/AlertWidget.tsx
+import { FC, useEffect, useState } from "react";
 
-interface AlertModalProps {
+interface AlertWidgetProps {
   title?: string;
   message: string;
-  onClose: () => void;
+  duration?: number; // otomatik kaybolma süresi
 }
 
-export const AlertModal: FC<AlertModalProps> = ({ title, message, onClose }) => {
+export const AlertWidget: FC<AlertWidgetProps> = ({ title, message, duration = 3000 }) => {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setVisible(false), duration);
+    return () => clearTimeout(timer);
+  }, [duration]);
+
+  if (!visible) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-gray-900 rounded-lg p-6 w-80 max-w-full text-center">
-        {title && <h2 className="text-lg font-bold mb-2">{title}</h2>}
-        <p className="text-gray-300 mb-4">{message}</p>
-        <Button onClick={onClose} className="bg-pink text-black hover:bg-[#5b0426]">
-          OK
-        </Button>
-      </div>
+    <div className="fixed bottom-4 right-4 z-50 bg-gray-900 text-white rounded-lg shadow-lg p-4 max-w-xs w-full animate-slide-in">
+      {title && <h4 className="font-semibold mb-1">{title}</h4>}
+      <p className="text-sm">{message}</p>
     </div>
   );
 };

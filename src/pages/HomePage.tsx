@@ -787,14 +787,14 @@ export function HomePage() {
                     targetPlaylistId,
                     showAddToPlaylistForSong
                   );
-                  alert("Song successfully added to playlist!");
+                  // alert("Song successfully added to playlist!");
                 } catch (err: any) {
                   const detail = err?.response?.data?.detail;
                   if (detail === "Song already in playlist") {
-                    alert("Song is already in that playlist ✔");
+                    // alert("Song is already in that playlist ✔");
                   } else {
                     console.error(err);
-                    alert("Failed to add song to playlist");
+                    // alert("Failed to add song to playlist");
                   }
                 } finally {
                   setShowAddToPlaylistForSong(null);
