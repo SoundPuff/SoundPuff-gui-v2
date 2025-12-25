@@ -22,7 +22,7 @@ export function PlaylistPage() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   
-  // ✅ GÜNCELLEME: Global player fonksiyonları çekildi
+  // GÜNCELLEME: Global player fonksiyonları çekildi
   const { playSong, currentSong, isPlaying } = usePlayer();
   
   const [playlist, setPlaylist] = useState<Playlist | null>(null);
@@ -292,7 +292,16 @@ export function PlaylistPage() {
 
 
   return (
-    <div className="flex-1 text-white overflow-y-auto pb-32">
+    <div className="flex-1 text-white overflow-y-auto pb-32"
+    style={{
+        background: `
+          radial-gradient(circle at 0% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 0%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 0% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          radial-gradient(circle at 100% 100%, rgba(231, 140, 137, 0.15), transparent 30%),
+          black
+        `,
+      }}>
       {/* Header */}
       <div className="bg-gradient-to-b from-pink to-transparent p-8">
         <div className="max-w-7xl mx-auto">
@@ -317,7 +326,7 @@ export function PlaylistPage() {
                   className="w-6 h-6 rounded-full object-cover cursor-pointer"
                   onClick={() => handleUserClick(playlistUser.id)}
                 />
-                <button onClick={() => handleUserClick(playlistUser.id)} className="hover:underline">
+                <button onClick={() => handleUserClick(playlistUser.username)} className="hover:underline">
                   {playlistUser.username}
                 </button>
                 <span className="text-gray-400">•</span>
@@ -332,7 +341,7 @@ export function PlaylistPage() {
             {/* Büyük Play Butonu */}
             <Button
               size="lg"
-              className="bg-pink hover:bg-green-600 text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
+              className="bg-pink hover:bg-dark-pink text-black rounded-full w-14 h-14 p-0 shadow-lg shadow-pink/20 transition-transform hover:scale-105"
               onClick={() =>
                 playlist.songs.length > 0 &&
                 playSong(playlist.songs[0], {
@@ -386,7 +395,7 @@ export function PlaylistPage() {
               </div>
             </div>
             {playlist.songs.map((song, index) => {
-              // ✅ Çalan şarkı kontrolü
+              // Çalan şarkı kontrolü
               const isCurrentSong = currentSong?.id === song.id;
 
               return (
@@ -401,7 +410,7 @@ export function PlaylistPage() {
                   }
                 >
                   <div className="w-8 text-gray-400 flex items-center justify-center">
-                    {/* ✅ İkon Mantığı: Çalıyorsa Pause, değilse numara veya hover ile Play */}
+                    {/* İkon Mantığı: Çalıyorsa Pause, değilse numara veya hover ile Play */}
                     {isCurrentSong && isPlaying ? (
                       <Pause className="w-4 h-4 text-pink fill-pink" />
                     ) : isCurrentSong ? (
@@ -417,7 +426,7 @@ export function PlaylistPage() {
                   <div className="flex items-center gap-3 min-w-0">
                     <img src={song.coverArt} alt={song.album} className="w-10 h-10 rounded object-cover" />
                     <div className="min-w-0">
-                      {/* ✅ Çalan şarkının rengini pembe yap */}
+                      {/* Çalan şarkının rengini pembe yap */}
                       <div className={`truncate ${isCurrentSong ? 'text-pink font-semibold' : 'text-white'}`}>
                         {song.title}
                       </div>
@@ -448,7 +457,7 @@ export function PlaylistPage() {
                   placeholder="Add a comment..."
                   className="bg-gray-900 border-gray-800 text-white"
                 />
-                <Button type="submit" className="bg-pink hover:bg-green-600 text-black">
+                <Button type="submit" className="bg-pink hover:bg-dark-pink text-black">
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
