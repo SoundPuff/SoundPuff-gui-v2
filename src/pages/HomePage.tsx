@@ -16,7 +16,7 @@ const categories = ['All', 'Recently Added', 'Popular', 'Rock', 'Pop', 'Jazz', '
 
 // --- CAROUSEL CONSTANTS ---
 const VISIBLE_COUNT = 4; // Ekranda aynı anda kaç tane görünecek
-const ANIMATION_DURATION = 1000;
+const ANIMATION_DURATION = 10000;
 
 type AnimationState = 'idle' | 'exiting' | 'entering';
 type Direction = 'next' | 'prev';
