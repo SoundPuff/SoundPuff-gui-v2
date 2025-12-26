@@ -104,7 +104,7 @@ export function HomePage() {
   // --- SLIDER LOGIC (Updated for Infinite Loop) ---
   
   // 1. Önce sabit bir süre tanımlayalım (istersen bunu değiştirebilirsin)
-  const AUTO_SLIDE_INTERVAL = 20000; 
+  const AUTO_SLIDE_INTERVAL = 10000; 
 
   const getAnimationClass = (state: AnimationState, direction: Direction) => {
     if (state === 'idle') return 'opacity-100 translate-x-0 transition-all duration-500 ease-out';
