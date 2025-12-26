@@ -171,7 +171,7 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const searchQuery = 'a';
+      const searchQuery = Math.floor(Math.random() * (19023 - 2 + 1) + 2).toString();
       const songs = await searchService.searchSongs(searchQuery);
 
       if (!songs || songs.length === 0) {
