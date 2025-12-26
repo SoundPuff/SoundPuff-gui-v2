@@ -15,7 +15,7 @@ import { toast } from "sonner";
 const categories = ['All', 'Recently Added', 'Popular', 'Rock', 'Pop', 'Jazz', 'Hip-Hop', 'Electronic', 'Classical'];
 
 // --- CAROUSEL CONSTANTS ---
-const VISIBLE_COUNT = 10; // Ekranda aynı anda kaç tane görünecek
+const VISIBLE_COUNT = 4; // Ekranda aynı anda kaç tane görünecek
 const ANIMATION_DURATION = 500;
 
 type AnimationState = 'idle' | 'exiting' | 'entering';
@@ -104,7 +104,7 @@ export function HomePage() {
   // --- SLIDER LOGIC (Updated for Infinite Loop) ---
   
   // 1. Önce sabit bir süre tanımlayalım (istersen bunu değiştirebilirsin)
-  const AUTO_SLIDE_INTERVAL = 5000; 
+  const AUTO_SLIDE_INTERVAL = 20000; 
 
   const getAnimationClass = (state: AnimationState, direction: Direction) => {
     if (state === 'idle') return 'opacity-100 translate-x-0 transition-all duration-500 ease-out';
