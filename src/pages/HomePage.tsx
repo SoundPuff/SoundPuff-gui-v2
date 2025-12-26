@@ -15,8 +15,8 @@ import { toast } from "sonner";
 const categories = ['All', 'Recently Added', 'Popular', 'Rock', 'Pop', 'Jazz', 'Hip-Hop', 'Electronic', 'Classical'];
 
 // --- CAROUSEL CONSTANTS ---
-const VISIBLE_COUNT = 4; // Ekranda aynı anda kaç tane görünecek
-const ANIMATION_DURATION = 10000;
+const VISIBLE_COUNT = 10; // Ekranda aynı anda kaç tane görünecek
+const ANIMATION_DURATION = 500;
 
 type AnimationState = 'idle' | 'exiting' | 'entering';
 type Direction = 'next' | 'prev';
