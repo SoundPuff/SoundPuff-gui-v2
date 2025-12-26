@@ -548,22 +548,123 @@ return (
                 }
               });
 
-              const flattenReplies = (id: number): Comment[] => {
-                const result: Comment[] = [];
-                const queue = repliesMap[id] ? [...repliesMap[id]] : [];
-                while (queue.length) {
-                  const r = queue.shift()!;
-                  result.push(r);
-                  if (repliesMap[r.id]) queue.unshift(...repliesMap[r.id]);
-                }
-                return result;
-              };
+              const renderComment = (c: Comment) => {
+                const isEditing = editingCommentId === c.id;
+                const isReplying = replyingToId === c.id;
+                const replies = repliesMap[c.id] || [];
 
-              const renderComment = (c: Comment) => (
-                <div key={c.id} className="flex gap-3">
-                  {/* ...Comment and Replies JSX... */}
-                </div>
-              );
+                return (
+                  <div key={c.id} className="flex flex-col gap-4">
+                    <div className="flex gap-3">
+                      <img
+                        src={c.avatar}
+                        alt={c.username}
+                        className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                        onClick={() => handleUserClick(String(c.userId))}
+                      />
+                      <div className="flex-1">
+                        <div className="bg-gray-900/50 rounded-lg p-3">
+                          <div className="flex justify-between items-start mb-1">
+                            <span 
+                              className="font-semibold text-sm cursor-pointer hover:underline"
+                              onClick={() => handleUserClick(String(c.userId))}
+                            >
+                              {c.username}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                              {new Date(c.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                          
+                          {isEditing ? (
+                            <div className="flex gap-2">
+                              <Input
+                                value={editingText}
+                                onChange={(e) => setEditingText(e.target.value)}
+                                className="bg-gray-800 border-gray-700 h-8"
+                              />
+                              <Button size="sm" onClick={() => saveEditedComment(c.id)}>Save</Button>
+                              <Button size="sm" variant="ghost" onClick={cancelEdit}>Cancel</Button>
+                            </div>
+                          ) : (
+                            <p className="text-gray-300 text-sm">{c.text}</p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-4 mt-1 ml-1">
+                          <button 
+                            onClick={() => handleLikeComment(c.id)}
+                            className={`text-xs flex items-center gap-1 ${c.is_liked ? 'text-pink' : 'text-gray-500 hover:text-gray-300'}`}
+                          >
+                            <Heart className={`w-3 h-3 ${c.is_liked ? 'fill-pink' : ''}`} />
+                            {c.likes_count || 0}
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleReplyClick(c.id)}
+                            className="text-xs text-gray-500 hover:text-gray-300"
+                          >
+                            Reply
+                          </button>
+
+                          {currentUser?.id === String(c.userId) && (
+                            <div className="relative">
+                              <button 
+                                onClick={() => toggleMenu(c.id)}
+                                className="text-gray-500 hover:text-gray-300"
+                              >
+                                <MoreHorizontal className="w-3 h-3" />
+                              </button>
+                              
+                              {openMenuId === c.id && (
+                                <div className="absolute left-0 top-5 bg-gray-800 rounded shadow-lg z-10 py-1 min-w-[100px]">
+                                  <button 
+                                    onClick={() => startEditComment(c)}
+                                    className="w-full text-left px-3 py-1 text-xs hover:bg-gray-700 flex items-center gap-2"
+                                  >
+                                    <Edit className="w-3 h-3" /> Edit
+                                  </button>
+                                  <button 
+                                    onClick={() => handleDeleteComment(c.id)}
+                                    className="w-full text-left px-3 py-1 text-xs hover:bg-gray-700 text-red-400 flex items-center gap-2"
+                                  >
+                                    <Trash2 className="w-3 h-3" /> Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        {isReplying && (
+                          <div className="mt-3 flex gap-2">
+                            <Input
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder={`Reply to ${c.username}...`}
+                              className="bg-gray-900 border-gray-800 h-8 text-sm"
+                            />
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleSendReply(c.id)}
+                              className="bg-pink hover:bg-dark-pink text-black h-8"
+                            >
+                              Reply
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Render Replies */}
+                    {replies.length > 0 && (
+                      <div className="ml-12 space-y-4 border-l-2 border-gray-800 pl-4">
+                        {replies.map(reply => renderComment(reply))}
+                      </div>
+                    )}
+                  </div>
+                );
+              };
 
               return topLevelComments.map((c) => renderComment(c));
             })()}
