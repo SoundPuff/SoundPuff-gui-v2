@@ -139,4 +139,6 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 .DS_Store
-build
+build.venv/
+__pycache__/
+*.pyc
