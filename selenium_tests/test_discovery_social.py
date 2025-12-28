@@ -179,3 +179,43 @@ def test_guest_cannot_access_protected_routes(browser):
     
     # "Share Your Music" veya benzeri landing page metni
     wait.until(EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), 'Share Your Music')]")))
+
+# ----------------------------------------------------------------
+# TEST 5: SEARCH PERFORMANCE (NFR-4 variant)
+# ----------------------------------------------------------------
+def test_search_response_time(browser):
+    """
+    Performance Test: Measures how fast search results appear.
+    Criteria: Results should appear within 2 seconds (NFR-4).
+    """
+    login_with_env(browser)
+    wait = WebDriverWait(browser, 15)
+    
+    # 1. Arama sayfasına git
+    browser.get(f"{BASE_URL}/app/search")
+    
+    # 2. Input'u bul
+    search_input = wait.until(
+        EC.visibility_of_element_located((By.XPATH, "//input[@placeholder='Search for songs, playlists, or users...']"))
+    )
+    
+    # 3. Sayacı başlat ve Arama yap
+    search_term = "Pop"
+    search_input.clear()
+    
+    start_time = time.time() # Kronometre başla ⏱️
+    search_input.send_keys(search_term)
+    
+    # 4. Sonuçların DOM'a düşmesini bekle (Songs veya Users başlığı)
+    # Not: React state update + Network gecikmesi dahil süre
+    wait.until(EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), 'Songs')] | //h2[contains(text(), 'Users')]")))
+    
+    end_time = time.time() # Kronometre dur 🛑
+    
+    response_time = end_time - start_time
+    print(f"   [Performans] Search Response Time: {response_time:.2f}s")
+    
+    # Hedef: 2.0 saniyenin altında olmalı
+    assert response_time < 2.0, f"Arama çok yavaş: {response_time:.2f}s (Hedef: < 2.0s)"
+
+   
